@@ -2,14 +2,17 @@ package server
 
 import (
 	"fmt"
-	"github.com/filecoin-project/go-jsonrpc"
 	"net/http"
+
+	"github.com/filecoin-project/go-jsonrpc"
 )
 
+// RPCServer is a JSON-RPC server
 type RPCServer struct {
 	Handler *jsonrpc.RPCServer
 }
 
+// NewRPCHandler creates a new RPCServer instance
 func NewRPCHandler() *RPCServer {
 	rpcServer := jsonrpc.NewServer(jsonrpc.WithServerMethodNamer(jsonrpc.NoNamespaceDecapitalizedMethodNamer))
 
@@ -22,6 +25,7 @@ func NewRPCHandler() *RPCServer {
 	}
 }
 
+// Register registers the RPCServer with the provided ServeMux
 func (s *RPCServer) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /{$}", s.Handler.ServeHTTP)
 	mux.HandleFunc("POST /.well-known/auth", s.handleAuth)
@@ -31,8 +35,6 @@ func (s *RPCServer) handleAuth(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("handleAuth")
 	_ = r.Body.Close()
 
+	// from-kt: this is a workaround to pass the client to the next step
 	w.WriteHeader(http.StatusInternalServerError)
-
-	//_, _ = w.Write([]byte(`{}`))
-	//w.WriteHeader(http.StatusOK)
 }

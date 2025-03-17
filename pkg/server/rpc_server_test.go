@@ -2,11 +2,12 @@ package server
 
 import (
 	"context"
-	"github.com/filecoin-project/go-jsonrpc"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/filecoin-project/go-jsonrpc"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRPCServer(t *testing.T) {
