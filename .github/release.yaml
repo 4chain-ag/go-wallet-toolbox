@@ -1,0 +1,12 @@
+changelog:
+  exclude:
+    labels:
+      - chore
+      - dependencies
+      - ci
+      - documentation
+      - test
+  categories:
+    - title: Changes
+      labels:
+        - "*"
