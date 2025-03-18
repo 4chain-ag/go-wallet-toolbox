@@ -29,6 +29,10 @@ func NewServer(opts ...InitOption) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
+	err = cfg.Validate()
+	if err != nil {
+		return nil, fmt.Errorf("config validation failed: %w", err)
+	}
 
 	return &Server{
 		Config: cfg,

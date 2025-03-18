@@ -2,24 +2,21 @@ package config
 
 import (
 	"fmt"
-	"os"
-	"strings"
-	"sync"
-
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/spf13/viper"
+	"os"
+	"strings"
 )
 
 const (
 	DefaultConfigFilePath = "config.yaml"
 )
 
-var viperLock sync.Mutex
-
 type Loader[T any] struct {
 	cfg            T
 	envPrefix      string
 	configFilePath string
+	viper          *viper.Viper
 }
 
 func NewLoader[T any](defaults func() T, envPrefix string) *Loader[T] {
@@ -27,6 +24,7 @@ func NewLoader[T any](defaults func() T, envPrefix string) *Loader[T] {
 		cfg:            defaults(),
 		envPrefix:      envPrefix,
 		configFilePath: DefaultConfigFilePath,
+		viper:          viper.New(),
 	}
 }
 
@@ -51,9 +49,6 @@ func (l *Loader[T]) SetConfigFilePath(path string) {
 // the ENV variable should be named as: <ENVPREFIX>_A_B_WITH_LONG_NAME_C
 // the ENVPREFIX is the prefix that is passed to the NewLoader function.
 func (l *Loader[T]) Load() (T, error) {
-	viperLock.Lock()
-	defer viperLock.Unlock()
-
 	if err := l.setViperDefaults(); err != nil {
 		return l.cfg, err
 	}
@@ -79,16 +74,16 @@ func (l *Loader[T]) setViperDefaults() error {
 	}
 
 	for k, v := range defaultsMap {
-		viper.SetDefault(k, v)
+		l.viper.SetDefault(k, v)
 	}
 
 	return nil
 }
 
 func (l *Loader[T]) loadFromEnv() {
-	viper.SetEnvPrefix(l.envPrefix)
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	viper.AutomaticEnv()
+	l.viper.SetEnvPrefix(l.envPrefix)
+	l.viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	l.viper.AutomaticEnv()
 }
 
 func (l *Loader[T]) loadFromFile() error {
@@ -100,8 +95,8 @@ func (l *Loader[T]) loadFromFile() error {
 		}
 	}
 
-	viper.SetConfigFile(l.configFilePath)
-	if err := viper.ReadInConfig(); err != nil {
+	l.viper.SetConfigFile(l.configFilePath)
+	if err := l.viper.ReadInConfig(); err != nil {
 		return fmt.Errorf("error while reading config fiel: %w", err)
 	}
 
@@ -109,7 +104,7 @@ func (l *Loader[T]) loadFromFile() error {
 }
 
 func (l *Loader[T]) viperToCfg() error {
-	if err := viper.Unmarshal(&l.cfg); err != nil {
+	if err := l.viper.Unmarshal(&l.cfg); err != nil {
 		return fmt.Errorf("error while unmarshalling config from viper: %w", err)
 	}
 	return nil
