@@ -9,10 +9,12 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/server"
 )
 
+// Server is a struct that holds the "infra" server configuration
 type Server struct {
 	Config Config
 }
 
+// NewServer creates a new server instance with given options, like config file path or a prefix for environment variables
 func NewServer(opts ...InitOption) (*Server, error) {
 	params := DefaultParams()
 	for _, option := range opts {
@@ -33,6 +35,7 @@ func NewServer(opts ...InitOption) (*Server, error) {
 	}, nil
 }
 
+// ListenAndServe starts the JSON-RPC server
 func (s *Server) ListenAndServe() error {
 	rpcServer := server.NewRPCHandler()
 

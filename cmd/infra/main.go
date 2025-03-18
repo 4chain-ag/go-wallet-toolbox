@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/infra"
 )
 
