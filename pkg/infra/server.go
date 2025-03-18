@@ -16,14 +16,14 @@ type Server struct {
 
 // NewServer creates a new server instance with given options, like config file path or a prefix for environment variables
 func NewServer(opts ...InitOption) (*Server, error) {
-	params := DefaultParams()
+	options := DefaultOptions()
 	for _, option := range opts {
-		option(&params)
+		option(&options)
 	}
 
-	loader := config.NewLoader(Defaults, params.EnvPrefix)
-	if params.ConfigFile != "" {
-		loader.SetConfigFilePath(params.ConfigFile)
+	loader := config.NewLoader(Defaults, options.EnvPrefix)
+	if options.ConfigFile != "" {
+		loader.SetConfigFilePath(options.ConfigFile)
 	}
 	cfg, err := loader.Load()
 	if err != nil {
