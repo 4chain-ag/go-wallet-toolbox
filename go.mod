@@ -7,6 +7,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.2.1
 	github.com/spf13/viper v1.20.0
 	github.com/stretchr/testify v1.10.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -31,7 +32,6 @@ require (
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 replace github.com/filecoin-project/go-jsonrpc => github.com/chris-4chain/go-jsonrpc v0.0.0-20250317062812-cb17873a64c7
