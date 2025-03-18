@@ -2,10 +2,11 @@ package config
 
 import (
 	"fmt"
-	"github.com/go-viper/mapstructure/v2"
-	"github.com/spf13/viper"
 	"os"
 	"strings"
+
+	"github.com/go-viper/mapstructure/v2"
+	"github.com/spf13/viper"
 )
 
 const (
