@@ -23,8 +23,8 @@ type Storage struct {
 	logger *slog.Logger
 }
 
-// StorageConfig is a struct that configures the database connection
-type StorageConfig struct {
+// Config is a struct that configures the database connection
+type Config struct {
 	// LogLevel is the importance and amount of information printed: debug, info, warn, error
 	LogLevel string
 	// Datastore engine (PostgreSQL, SQLite)
@@ -55,6 +55,7 @@ type StorageConfig struct {
 	ExistingConnection gorm.ConnPool
 }
 
+// SQLiteConfig is configuration struct for SQLite database
 type SQLiteConfig struct {
 	// DatabasePath is the path to sqlite DB
 	DatabasePath string
@@ -62,7 +63,8 @@ type SQLiteConfig struct {
 	Shared bool
 }
 
-func NewStorage(cfg *StorageConfig, logger *slog.Logger) *Storage {
+// NewStorage will configure and return database storage based on provided config
+func NewStorage(cfg *Config, logger *slog.Logger) *Storage {
 	var store *gorm.DB
 	logLevel := parseLogLevel(cfg.LogLevel)
 

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"log"
 	"os"
 	"time"
@@ -18,7 +19,7 @@ const (
 )
 
 // openSQLiteDatabase will open a SQLite database connection
-func openSQLiteDatabase(cfg *StorageConfig, logger glogger.Interface) (*gorm.DB, error) {
+func openSQLiteDatabase(cfg *Config, logger glogger.Interface) (*gorm.DB, error) {
 	dialector := sqlite.New(sqlite.Config{
 		Conn:       cfg.ExistingConnection,
 		DriverName: sqlite3extended.NAME,
@@ -33,12 +34,12 @@ func openSQLiteDatabase(cfg *StorageConfig, logger glogger.Interface) (*gorm.DB,
 		logger,
 	))
 	if err != nil {
-		return nil, err
+		return nil, errors.Join(err, errors.New("failed to create new database connection with gorm"))
 	}
 
 	sqlDB, err := db.DB()
 	if err != nil {
-		return nil, err
+		return nil, errors.Join(err, errors.New("failed to connect to the database with gorm"))
 	}
 	sqlDB.SetMaxIdleConns(cfg.MaxIdleConnections)
 	sqlDB.SetMaxOpenConns(cfg.MaxOpenConnections)

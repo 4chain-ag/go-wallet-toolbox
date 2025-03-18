@@ -11,9 +11,9 @@ import (
 
 func TestStorage(t *testing.T) {
 	t.Run("Test storage", func(t *testing.T) {
-		var settingsFromDB []models.Settings
+		var settingsFromDB models.Settings
 		storageID := "12344666"
-		store := storage.NewStorage(&storage.StorageConfig{
+		store := storage.NewStorage(&storage.Config{
 			SQLiteConfig: &storage.SQLiteConfig{
 				DatabasePath: "./spv-wallet.db",
 			},
@@ -33,10 +33,9 @@ func TestStorage(t *testing.T) {
 
 		fmt.Printf("Error: %v, RowsAffected: %d", result.Error, result.RowsAffected)
 		fmt.Printf("%+v,", settings)
-		res := store.DB.Where("storage_identity_key = ?", storageID).Find(&settingsFromDB)
+		res := store.DB.Where("storage_identity_key = ?", storageID).First(&settingsFromDB)
 
 		require.NoError(t, res.Error)
-		require.Equal(t, 1, len(settingsFromDB))
-		require.Equal(t, storageID, settingsFromDB[0].StorageIdentityKey)
+		require.Equal(t, storageID, settingsFromDB.StorageIdentityKey)
 	})
 }
