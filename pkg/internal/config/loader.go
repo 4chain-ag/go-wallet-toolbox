@@ -34,6 +34,22 @@ func (l *Loader[T]) SetConfigFilePath(path string) {
 	l.configFilePath = path
 }
 
+// Load loads the configuration from the environment and the config file.
+// NOTE: The priority of the values is as follows:
+// 1. Environment variables
+// 2. Config file
+// 3. Default values
+//
+// NOTE: The config file is optional.
+// NOTE: For multilevel nested structs, the keys in the ENV variables should be separated by underscores.
+// e.g. for the nesting:
+// a:
+//
+//	b_with_long_name:
+//	  c: value
+//
+// the ENV variable should be named as: <ENVPREFIX>_A_B_WITH_LONG_NAME_C
+// the ENVPREFIX is the prefix that is passed to the NewLoader function.
 func (l *Loader[T]) Load() (T, error) {
 	viperLock.Lock()
 	defer viperLock.Unlock()
