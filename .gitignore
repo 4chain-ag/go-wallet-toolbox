@@ -33,3 +33,7 @@ go.work.sum
 
 # OSX
 .DS_Store
+
+infra-config.yaml
+infra-config.*.yaml
+!config.example.yaml
