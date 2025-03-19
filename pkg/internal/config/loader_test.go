@@ -36,6 +36,11 @@ c_sub_config:
 `
 
 const dotEnvConfig = `
+TEST_B_WITH_LONG_NAME=4
+TEST_C_SUB_CONFIG_D_NESTED_FIELD="dotenv_world"
+`
+
+const dotEnvConfigEmptyPrefix = `
 B_WITH_LONG_NAME=4
 C_SUB_CONFIG_D_NESTED_FIELD="dotenv_world"
 `
@@ -180,6 +185,59 @@ func TestMixedConfig(t *testing.T) {
 	require.Equal(t, "default_hello", cfg.A)
 	require.Equal(t, 2, cfg.B)
 	require.Equal(t, "file_world", cfg.C.D)
+}
+
+func TestWithEmptyPrefix(t *testing.T) {
+	// given:
+	loader := config.NewLoader(Defaults, "")
+
+	// and:
+	t.Setenv("A", "env_hello")
+
+	// and:
+	configFilePath := tempConfig(t, dotEnvConfigEmptyPrefix, "env")
+
+	// when:
+	err := loader.SetConfigFilePath(configFilePath)
+
+	// then:
+	require.NoError(t, err)
+
+	// and:
+	cfg, err := loader.Load()
+
+	// then:
+	require.NoError(t, err)
+	require.Equal(t, "env_hello", cfg.A)
+	require.Equal(t, 4, cfg.B)
+	require.Equal(t, "dotenv_world", cfg.C.D)
+}
+
+func TestEnvOverridesDotEnv(t *testing.T) {
+	// given:
+	loader := config.NewLoader(Defaults, "TEST")
+
+	// and:
+	t.Setenv("TEST_B_WITH_LONG_NAME", "2")
+	t.Setenv("TEST_C_SUB_CONFIG_D_NESTED_FIELD", "env_world")
+
+	// and:
+	configFilePath := tempConfig(t, dotEnvConfig, "env")
+
+	// when:
+	err := loader.SetConfigFilePath(configFilePath)
+
+	// then:
+	require.NoError(t, err)
+
+	// and:
+	cfg, err := loader.Load()
+
+	// then:
+	require.NoError(t, err)
+	require.Equal(t, "default_hello", cfg.A)
+	require.Equal(t, 2, cfg.B)
+	require.Equal(t, "env_world", cfg.C.D)
 }
 
 func tempConfig(t *testing.T, content, extension string) string {

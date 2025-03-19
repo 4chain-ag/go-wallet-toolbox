@@ -124,10 +124,12 @@ func (l *Loader[T]) loadFromFile() error {
 
 	if l.configFileExt == "dotenv" || l.configFileExt == "env" {
 		// Register aliases for nested keys. Necessary for .env files to avoid "." in the key names (underscores are used instead)
+		prefix := l.envPrefix
+		if prefix != "" {
+			prefix += "_"
+		}
 		for _, key := range l.viper.AllKeys() {
-			if strings.Contains(key, ".") {
-				l.viper.RegisterAlias(key, strings.ReplaceAll(key, ".", "_"))
-			}
+			l.viper.RegisterAlias(prefix+strings.ReplaceAll(key, ".", "_"), key)
 		}
 	}
 
