@@ -1,24 +1,19 @@
 package database
 
 import (
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"time"
 )
 
 const (
 	dsnDefault         = "file::memory:" // DSN for connection (file or memory, default is memory)
 	defaultTablePrefix = "bsv_"
-
-	// SQLite is one of supported databases
-	SQLite Engine = "sqlite"
 )
-
-// Engine is the different engines that are supported (databases)
-type Engine string
 
 // Config is a struct that configures the database connection
 type Config struct {
 	// Engine is the database engine (PostgreSQL, SQLite)
-	Engine Engine
+	Engine defs.DBType
 
 	// SQLiteConfig is configuration struct for SQLite database
 	SQLiteConfig SQLiteConfig

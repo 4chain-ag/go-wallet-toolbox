@@ -3,6 +3,7 @@ package database
 import (
 	"errors"
 	"fmt"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/database/sqlite3extended"
@@ -27,7 +28,7 @@ func NewDatabase(cfg *Config, logger *slog.Logger) (*Database, error) {
 	}
 
 	switch cfg.Engine {
-	case SQLite:
+	case defs.DBTypeSQLite:
 		db, err := openSQLiteDatabase(cfg, &SlogGormLogger{
 			logger: logger,
 		})

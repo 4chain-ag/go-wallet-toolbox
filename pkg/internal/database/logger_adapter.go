@@ -15,18 +15,18 @@ type SlogGormLogger struct {
 }
 
 // Info logs info-level messages
-func (l *SlogGormLogger) Info(_ context.Context, msg string, args ...any) {
-	l.logger.Info(fmt.Sprintf(msg, args...))
+func (l *SlogGormLogger) Info(ctx context.Context, msg string, args ...any) {
+	l.logger.InfoContext(ctx, fmt.Sprintf(msg, args...))
 }
 
 // Warn logs warn-level messages
-func (l *SlogGormLogger) Warn(_ context.Context, msg string, args ...any) {
-	l.logger.Warn(fmt.Sprintf(msg, args...))
+func (l *SlogGormLogger) Warn(ctx context.Context, msg string, args ...any) {
+	l.logger.WarnContext(ctx, fmt.Sprintf(msg, args...))
 }
 
 // Error logs error-level messages
-func (l *SlogGormLogger) Error(_ context.Context, msg string, args ...interface{}) {
-	l.logger.Error(fmt.Sprintf(msg, args...))
+func (l *SlogGormLogger) Error(ctx context.Context, msg string, args ...any) {
+	l.logger.ErrorContext(ctx, fmt.Sprintf(msg, args...))
 }
 
 // Trace logs SQL queries with execution time
