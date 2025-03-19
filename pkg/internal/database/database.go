@@ -27,6 +27,7 @@ func NewDatabase(cfg *Config, logger *slog.Logger) (*Database, error) {
 		logger = slog.Default()
 	}
 
+	//nolint:exhaustive
 	switch cfg.Engine {
 	case defs.DBTypeSQLite:
 		db, err := openSQLiteDatabase(cfg, &SlogGormLogger{
