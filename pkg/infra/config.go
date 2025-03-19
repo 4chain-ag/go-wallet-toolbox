@@ -38,12 +38,12 @@ func Defaults() Config {
 }
 
 // Validate validates the whole configuration
-func (c Config) Validate() error {
-	if _, err := defs.ParseBSVNetworkStr(string(c.BSVNetwork)); err != nil {
+func (c *Config) Validate() (err error) {
+	if c.BSVNetwork, err = defs.ParseBSVNetworkStr(string(c.BSVNetwork)); err != nil {
 		return fmt.Errorf("invalid BSV network: %w", err)
 	}
 
-	if err := c.DBConfig.Validate(); err != nil {
+	if err = c.DBConfig.Validate(); err != nil {
 		return fmt.Errorf("invalid DB config: %w", err)
 	}
 
@@ -51,8 +51,8 @@ func (c Config) Validate() error {
 }
 
 // Validate validates the DB configuration
-func (c DBConfig) Validate() error {
-	if _, err := defs.ParseDBTypeStr(string(c.Engine)); err != nil {
+func (c *DBConfig) Validate() (err error) {
+	if c.Engine, err = defs.ParseDBTypeStr(string(c.Engine)); err != nil {
 		return fmt.Errorf("invalid DB engine: %w", err)
 	}
 
@@ -60,7 +60,7 @@ func (c DBConfig) Validate() error {
 }
 
 // ToYAMLFile writes the configuration to a YAML file
-func (c Config) ToYAMLFile(filename string) error {
+func (c *Config) ToYAMLFile(filename string) error {
 	err := config.ToYAMLFile(c, filename)
 	if err != nil {
 		return fmt.Errorf("failed to write config to file: %w", err)
