@@ -1,9 +1,15 @@
 package infra
 
+import (
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/logging"
+	"log/slog"
+)
+
 // Options is the parameters for initializing the "infra" server
 type Options struct {
 	EnvPrefix  string
 	ConfigFile string
+	Logger     *slog.Logger
 }
 
 // DefaultOptions returns the default parameters to initialize the "infra" server
@@ -11,6 +17,7 @@ func DefaultOptions() Options {
 	return Options{
 		EnvPrefix:  "INFRA",
 		ConfigFile: "",
+		Logger:     nil, // logging will be suppressed by default
 	}
 }
 
@@ -29,5 +36,15 @@ func WithEnvPrefix(prefix string) InitOption {
 func WithConfigFile(file string) InitOption {
 	return func(o *Options) {
 		o.ConfigFile = file
+	}
+}
+
+// WithLogger sets the logger for the "infra" server
+func WithLogger(logger *slog.Logger) InitOption {
+	return func(o *Options) {
+		if logger == nil {
+			logger = logging.New().Nop().Logger()
+		}
+		o.Logger = logger
 	}
 }

@@ -14,6 +14,7 @@ const (
 
 type Configurer interface {
 	WithLevel(level slog.Level) HandlerConfigurer
+	Nop() LoggerMaker
 }
 
 type HandlerConfigurer interface {
@@ -38,6 +39,11 @@ func New() Configurer {
 
 func (c *configurer) WithLevel(level slog.Level) HandlerConfigurer {
 	c.level.Set(level)
+	return c
+}
+
+func (c *configurer) Nop() LoggerMaker {
+	c.handler = slog.DiscardHandler
 	return c
 }
 

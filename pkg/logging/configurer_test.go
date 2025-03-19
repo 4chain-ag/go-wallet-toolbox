@@ -1,16 +1,15 @@
 package logging_test
 
 import (
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/logging"
 	"github.com/stretchr/testify/require"
 	"log/slog"
-	"strings"
 	"testing"
 )
 
 func TestTextLogger(t *testing.T) {
 	// given:
-	stringWriter := &StringWriter{}
+	stringWriter := &logging.TestWriter{}
 	logger := logging.New().
 		WithLevel(slog.LevelDebug).
 		WithHandler(logging.TextHandler, stringWriter).
@@ -20,7 +19,7 @@ func TestTextLogger(t *testing.T) {
 	logger.Debug("debug message")
 
 	// then:
-	msg := stringWriter.builder.String()
+	msg := stringWriter.String()
 	require.Contains(t, msg, "time=")
 	require.Contains(t, msg, "level=DEBUG")
 	require.Contains(t, msg, `msg="debug message"`)
@@ -28,7 +27,7 @@ func TestTextLogger(t *testing.T) {
 
 func TestJSONLogger(t *testing.T) {
 	// given:
-	stringWriter := &StringWriter{}
+	stringWriter := &logging.TestWriter{}
 	logger := logging.New().
 		WithLevel(slog.LevelDebug).
 		WithHandler(logging.JSONHandler, stringWriter).
@@ -38,16 +37,8 @@ func TestJSONLogger(t *testing.T) {
 	logger.Debug("debug message")
 
 	// then:
-	msg := stringWriter.builder.String()
+	msg := stringWriter.String()
 	require.Contains(t, msg, `"time"`)
 	require.Contains(t, msg, `"level":"DEBUG"`)
 	require.Contains(t, msg, `"msg":"debug message"`)
-}
-
-type StringWriter struct {
-	builder strings.Builder
-}
-
-func (w *StringWriter) Write(p []byte) (n int, err error) {
-	return w.builder.Write(p)
 }
