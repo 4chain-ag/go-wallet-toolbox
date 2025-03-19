@@ -1,0 +1,5 @@
+bsv_network: main
+db:
+    engine: MySQL
+http:
+    port: 8100
