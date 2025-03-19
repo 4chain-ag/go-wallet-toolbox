@@ -2,12 +2,12 @@ package infra
 
 import (
 	"fmt"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/logging"
 	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/config"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/server"
 )
 

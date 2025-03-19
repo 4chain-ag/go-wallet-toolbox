@@ -2,12 +2,12 @@ package server_test
 
 import (
 	"context"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/logging"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/server"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/logging"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/server"
 	"github.com/filecoin-project/go-jsonrpc"
 	"github.com/stretchr/testify/require"
 )

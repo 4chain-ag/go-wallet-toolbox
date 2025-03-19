@@ -1,10 +1,11 @@
 package logging_test
 
 import (
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/logging"
-	"github.com/stretchr/testify/require"
 	"log/slog"
 	"testing"
+
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/logging"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSprintf(t *testing.T) {

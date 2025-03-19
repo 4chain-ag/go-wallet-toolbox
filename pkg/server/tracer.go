@@ -2,9 +2,10 @@ package server
 
 import (
 	"context"
-	"github.com/filecoin-project/go-jsonrpc"
 	"log/slog"
 	"reflect"
+
+	"github.com/filecoin-project/go-jsonrpc"
 )
 
 func tracer(logger *slog.Logger) jsonrpc.Tracer {

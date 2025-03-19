@@ -1,8 +1,9 @@
 package infra
 
 import (
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/logging"
 	"log/slog"
+
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/logging"
 )
 
 // Options is the parameters for initializing the "infra" server

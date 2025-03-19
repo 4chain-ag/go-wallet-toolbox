@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/logging"
 	"log/slog"
 	"os"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/infra"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/logging"
 )
 
 func main() {
