@@ -25,6 +25,8 @@ func NewServer(opts ...InitOption) (*Server, error) {
 		option(&options)
 	}
 
+	logger := logging.NopIfNil(options.Logger)
+
 	loader := config.NewLoader(Defaults, options.EnvPrefix)
 	if options.ConfigFile != "" {
 		err := loader.SetConfigFilePath(options.ConfigFile)
@@ -44,7 +46,7 @@ func NewServer(opts ...InitOption) (*Server, error) {
 	return &Server{
 		Config: cfg,
 
-		logger: options.Logger,
+		logger: logger,
 	}, nil
 }
 

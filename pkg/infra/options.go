@@ -2,8 +2,6 @@ package infra
 
 import (
 	"log/slog"
-
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/logging"
 )
 
 // Options is the parameters for initializing the "infra" server
@@ -43,9 +41,6 @@ func WithConfigFile(file string) InitOption {
 // WithLogger sets the logger for the "infra" server
 func WithLogger(logger *slog.Logger) InitOption {
 	return func(o *Options) {
-		if logger == nil {
-			logger = logging.New().Nop().Logger()
-		}
 		o.Logger = logger
 	}
 }
