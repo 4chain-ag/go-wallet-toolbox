@@ -1,9 +1,9 @@
 package database_test
 
 import (
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"testing"
 
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/database/models"
 	"github.com/stretchr/testify/require"

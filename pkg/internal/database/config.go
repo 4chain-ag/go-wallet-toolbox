@@ -1,8 +1,9 @@
 package database
 
 import (
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"time"
+
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 )
 
 const (
