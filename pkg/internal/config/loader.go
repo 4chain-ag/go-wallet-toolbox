@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/go-viper/mapstructure/v2"
@@ -13,10 +15,13 @@ const (
 	DefaultConfigFilePath = "config.yaml"
 )
 
+var SupportedExts = []string{"yaml", "yml", "json", "dotenv", "env"}
+
 type Loader[T any] struct {
 	cfg            T
 	envPrefix      string
 	configFilePath string
+	configFileExt  string
 	viper          *viper.Viper
 }
 
@@ -29,14 +34,25 @@ func NewLoader[T any](defaults func() T, envPrefix string) *Loader[T] {
 	}
 }
 
-func (l *Loader[T]) SetConfigFilePath(path string) {
+func (l *Loader[T]) SetConfigFilePath(path string) error {
+	ext := filepath.Ext(path)
+	if len(ext) > 1 {
+		ext = ext[1:]
+	}
+
+	if !slices.Contains(SupportedExts, ext) {
+		return fmt.Errorf("unsupported config file extension: %s", ext)
+	}
+
 	l.configFilePath = path
+	l.configFileExt = ext
+	return nil
 }
 
 // Load loads the configuration from the environment and the config file.
 // NOTE: The priority of the values is as follows:
 // 1. Environment variables
-// 2. Config file
+// 2. Config file (supported types: "json", "toml", "yaml", "yml", "properties", "props", "prop", "env", "dotenv") - see the viper documentation for more details
 // 3. Default values
 //
 // NOTE: The config file is optional.
@@ -54,7 +70,7 @@ func (l *Loader[T]) Load() (T, error) {
 		return l.cfg, err
 	}
 
-	l.loadFromEnv()
+	l.prepareViper()
 
 	if err := l.loadFromFile(); err != nil {
 		return l.cfg, err
@@ -81,7 +97,7 @@ func (l *Loader[T]) setViperDefaults() error {
 	return nil
 }
 
-func (l *Loader[T]) loadFromEnv() {
+func (l *Loader[T]) prepareViper() {
 	l.viper.SetEnvPrefix(l.envPrefix)
 	l.viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	l.viper.AutomaticEnv()
@@ -99,6 +115,15 @@ func (l *Loader[T]) loadFromFile() error {
 	l.viper.SetConfigFile(l.configFilePath)
 	if err := l.viper.ReadInConfig(); err != nil {
 		return fmt.Errorf("error while reading config fiel: %w", err)
+	}
+
+	if l.configFileExt == "dotenv" || l.configFileExt == "env" {
+		// Register aliases for nested keys. Necessary for .env files to avoid "." in the key names (underscores are used instead)
+		for _, key := range l.viper.AllKeys() {
+			if strings.Contains(key, ".") {
+				l.viper.RegisterAlias(key, strings.ReplaceAll(key, ".", "_"))
+			}
+		}
 	}
 
 	return nil

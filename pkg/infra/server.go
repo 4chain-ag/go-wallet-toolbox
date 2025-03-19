@@ -23,7 +23,10 @@ func NewServer(opts ...InitOption) (*Server, error) {
 
 	loader := config.NewLoader(Defaults, options.EnvPrefix)
 	if options.ConfigFile != "" {
-		loader.SetConfigFilePath(options.ConfigFile)
+		err := loader.SetConfigFilePath(options.ConfigFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to set config file path: %w", err)
+		}
 	}
 	cfg, err := loader.Load()
 	if err != nil {
