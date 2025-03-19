@@ -69,7 +69,6 @@ func (l *Loader[T]) SetConfigFilePath(path string) error {
 //
 // the ENV variable should be named as: <ENVPREFIX>_A_B_WITH_LONG_NAME_C
 // the ENVPREFIX is the prefix that is passed to the NewLoader function.
-// NOTE: For .env files, skip the ENVPREFIX and use the key names as is.
 func (l *Loader[T]) Load() (T, error) {
 	if err := l.setViperDefaults(); err != nil {
 		return l.cfg, err
