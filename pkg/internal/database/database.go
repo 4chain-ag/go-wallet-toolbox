@@ -3,12 +3,13 @@ package database
 import (
 	"errors"
 	"fmt"
+	"log/slog"
+
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/database/sqlite3extended"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	glogger "gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
-	"log/slog"
 )
 
 // Database is a struct that holds logger for database connection and the connection itself

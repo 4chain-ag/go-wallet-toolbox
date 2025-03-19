@@ -1,10 +1,11 @@
 package database_test
 
 import (
+	"testing"
+
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/database/models"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestStorage(t *testing.T) {
