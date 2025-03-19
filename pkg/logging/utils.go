@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 )
 
 const (
@@ -21,6 +22,12 @@ func Child(logger *slog.Logger, serviceName string) *slog.Logger {
 // Sprintf logs a message with the given level and arguments.
 func Sprintf(logger *slog.Logger, level slog.Level, format string, args ...any) {
 	logger.Log(context.Background(), level, fmt.Sprintf(format, args...))
+}
+
+// Fatalf logs the error and exits the program.
+func Fatalf(logger *slog.Logger, err error, msg string, args ...any) {
+	logger.Error("Fatal error: "+fmt.Sprintf(msg, args...), slog.String("error", err.Error()))
+	os.Exit(1)
 }
 
 // NopIfNil returns a new NOP logger if the given logger is nil, otherwise returns the given logger.
