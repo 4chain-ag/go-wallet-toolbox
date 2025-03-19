@@ -1,10 +1,11 @@
 package infra_test
 
 import (
+	"testing"
+
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/infra"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestCaseInsensitiveEnums(t *testing.T) {
