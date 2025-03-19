@@ -2,10 +2,11 @@ package config_test
 
 import (
 	"fmt"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/config"
-	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
+
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/config"
+	"github.com/stretchr/testify/require"
 )
 
 type MockConfig struct {
