@@ -9,7 +9,7 @@ import (
 type Handler struct {
 }
 
-// MakeAvailable is an RPC method that makes this storage available and returns the table settings
+// MakeAvailable is an RPC method that makes this database available and returns the table settings
 func (h *Handler) MakeAvailable() TableSettings {
 	fmt.Println("MakeAvailable")
 	return TableSettings{
