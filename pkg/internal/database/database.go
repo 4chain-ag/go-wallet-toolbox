@@ -3,10 +3,13 @@ package database
 import (
 	"errors"
 	"fmt"
+	"gorm.io/driver/postgres"
 	"log/slog"
+	"strings"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/database/sqlite3extended"
+	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	glogger "gorm.io/gorm/logger"
@@ -86,8 +89,8 @@ func mergeConfig(defaultCfg *defs.Database, providedCfg *defs.Database) *defs.Da
 		mergedCfg.Engine = providedCfg.Engine
 	}
 
-	if providedCfg.SQLiteConfig.ConnectionString != "" {
-		mergedCfg.SQLiteConfig.ConnectionString = providedCfg.SQLiteConfig.ConnectionString
+	if providedCfg.SQLite.ConnectionString != "" {
+		mergedCfg.SQLite.ConnectionString = providedCfg.SQLite.ConnectionString
 	}
 
 	if providedCfg.MaxIdleConnections > 0 {
@@ -106,12 +109,22 @@ func mergeConfig(defaultCfg *defs.Database, providedCfg *defs.Database) *defs.Da
 		mergedCfg.MaxOpenConnections = providedCfg.MaxOpenConnections
 	}
 
+	if providedCfg.PostgreSQL.SslMode != "" {
+		mergedCfg.PostgreSQL.SslMode = providedCfg.PostgreSQL.SslMode
+	}
+
+	if providedCfg.MySQL.Protocol != "" {
+		mergedCfg.MySQL.Protocol = providedCfg.MySQL.Protocol
+	}
+
+	mergedCfg.SQLCommon = providedCfg.SQLCommon
+
 	return &mergedCfg
 }
 
 // openSQLiteDatabase will open a SQLite database connection
 func openSQLiteDatabase(cfg *defs.Database, logger glogger.Interface) (*gorm.DB, error) {
-	dsn := cfg.SQLiteConfig.ConnectionString
+	dsn := cfg.SQLite.ConnectionString
 	if dsn == "" {
 		dsn = defs.DSNDefault
 	}
@@ -122,7 +135,46 @@ func openSQLiteDatabase(cfg *defs.Database, logger glogger.Interface) (*gorm.DB,
 		DSN:        dsn,
 	})
 
-	// create new connection
+	// create and configure new connection
+	return createAndConfigureDatabaseConnection(dialector, cfg, logger)
+}
+
+// openPostgresDatabase will open a PostrgreSQL database connection
+func openPostgresDatabase(cfg *defs.Database, logger glogger.Interface) (*gorm.DB, error) {
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=%s",
+		cfg.SQLCommon.Host, cfg.SQLCommon.User, cfg.SQLCommon.Password, cfg.SQLCommon.DBName,
+		cfg.SQLCommon.Port, cfg.PostgreSQL.SslMode, cfg.SQLCommon.TimeZone,
+	)
+	dialector := postgres.New(postgres.Config{
+		PreferSimpleProtocol: true, // turn to TRUE to disable implicit prepared statement usage
+		WithoutReturning:     false,
+		DSN:                  dsn,
+	})
+
+	// create and configure new connection
+	return createAndConfigureDatabaseConnection(dialector, cfg, logger)
+}
+
+// openMySQLDatabase will open a MySQL database connection
+func openMySQLDatabase(cfg *defs.Database, logger glogger.Interface) (*gorm.DB, error) {
+	// parseTime=True is required for the db to be able to parse time correctly
+	// charset=utf8mb4 is required for the db to parse utf-8 encoding properly
+	// please refer to: https://gorm.io/docs/connecting_to_the_database.html#MySQL
+	dsn := fmt.Sprintf("%s:%s@%s(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=%s",
+		cfg.SQLCommon.User, cfg.SQLCommon.Password, cfg.MySQL.Protocol, cfg.SQLCommon.Host,
+		cfg.SQLCommon.Port, cfg.SQLCommon.DBName, normalizeTimeZone(cfg.SQLCommon.TimeZone),
+	)
+	// potentially use null as default
+	dialector := mysql.New(mysql.Config{
+		DSN:  dsn,
+		Conn: nil,
+	})
+
+	// create and configure new connection
+	return createAndConfigureDatabaseConnection(dialector, cfg, logger)
+}
+
+func createAndConfigureDatabaseConnection(dialector gorm.Dialector, cfg *defs.Database, logger glogger.Interface) (*gorm.DB, error) {
 	db, err := gorm.Open(dialector, createGormConfig(
 		logger,
 	))
@@ -132,27 +184,14 @@ func openSQLiteDatabase(cfg *defs.Database, logger glogger.Interface) (*gorm.DB,
 
 	sqlDB, err := db.DB()
 	if err != nil {
-		return nil, errors.Join(err, errors.New("failed to connect to the database with gorm"))
+		return nil, err
 	}
 	sqlDB.SetMaxIdleConns(cfg.MaxIdleConnections)
 	sqlDB.SetMaxOpenConns(cfg.MaxOpenConnections)
 	sqlDB.SetConnMaxLifetime(cfg.MaxConnectionTime)
 	sqlDB.SetConnMaxIdleTime(cfg.MaxConnectionIdleTime)
 
-	// Return the connection
 	return db, nil
-}
-
-// openPostgresDatabase will open a PostrgreSQL database connection
-func openPostgresDatabase(_ *defs.Database, _ glogger.Interface) (*gorm.DB, error) {
-
-	return nil, nil
-}
-
-// openMySQLDatabase will open a MySQL database connection
-func openMySQLDatabase(_ *defs.Database, _ glogger.Interface) (*gorm.DB, error) {
-
-	return nil, nil
 }
 
 // createGormConfig returns valid gorm.Config for database connections
@@ -190,4 +229,10 @@ func createGormConfig(logger glogger.Interface) *gorm.Config {
 	}
 
 	return gormCfg
+}
+
+// normalizeTimeZone changes every "/" in timezone to special char "%2F" for mysql to parse time location correctly
+// https://github.com/go-sql-driver/mysql?tab=readme-ov-file#loc
+func normalizeTimeZone(tz string) string {
+	return strings.Replace(tz, "/", "%2F", -1)
 }

@@ -21,45 +21,60 @@ const (
 // Database is a struct that configures the database connection
 type Database struct {
 	// Engine is the database engine (PostgreSQL, SQLite)
-	Engine DBType
+	Engine DBType `mapstructure:"engine"`
 
-	// SQLiteConfig is configuration struct for SQLite database
-	SQLiteConfig SQLiteDatabase
+	// SQLite is configuration struct for SQLite database
+	SQLite SQLite `mapstructure:"sqlite"`
 
-	// SQLConfig is configuration for SQL databases such as postgres or mysql
-	SQLConfig SQLConfig
+	// SQLCommon is configuration for SQLCommon databases such as postgres or mysql
+	SQLCommon SQLCommon `mapstructure:"sql_common"`
+
+	// PostgreSQL is configuration for PostgreSQL databases
+	PostgreSQL PostgreSQL `mapstructure:"postgresql"`
+
+	// MySQL is configuration for MySQL databases
+	MySQL MySQL `mapstructure:"mysql"`
 
 	// MaxIdleConnections defines the maximum number of idle connections allowed for the database.
-	MaxIdleConnections int
+	MaxIdleConnections int `mapstructure:"max_idle_connections"`
 
 	// MaxConnectionIdleTime sets the maximum duration an idle connection can remain open before being closed.
 	// Typically set in seconds.
-	MaxConnectionIdleTime time.Duration
+	MaxConnectionIdleTime time.Duration `mapstructure:"max_connection_idle_time"`
 
 	// MaxConnectionTime defines the maximum amount of time a connection may be reused.
 	// Typically set in seconds.
-	MaxConnectionTime time.Duration
+	MaxConnectionTime time.Duration `mapstructure:"max_connection_time"`
 
 	// MaxOpenConnections specifies the maximum number of open connections to the database.
-	MaxOpenConnections int
+	MaxOpenConnections int `mapstructure:"max_open_connections"`
 }
 
-// SQLiteDatabase is configuration struct for SQLite database
-type SQLiteDatabase struct {
+// SQLite is configuration struct for SQLite database
+type SQLite struct {
 	// ConnectionString is the path to SQLite DB
-	ConnectionString string
+	ConnectionString string `mapstructure:"connection_string"`
 }
 
-type SQLConfig struct {
-	Host      string
-	DBName    string
-	Password  string
-	Port      string
-	Replica   bool
-	TimeZone  string
-	TxTimeout time.Duration
-	User      string
-	SslMode   string
+// PostgreSQL is configuration struct for PostgreSQL database
+type PostgreSQL struct {
+	// ssl mode  [disable|allow|prefer|require|verify-ca|verify-full]. Will default to disable if not provided
+	SslMode string `mapstructure:"ssl_mode"`
+}
+
+// MySQL is configuration struct for MySQL database
+type MySQL struct {
+	// protocol for database connection [tcp|socket|pipe|memory]. Will default to tcp if not provided
+	Protocol string `mapstructure:"protocol"`
+}
+
+type SQLCommon struct {
+	Host     string `mapstructure:"host"`
+	DBName   string `mapstructure:"db_name"`
+	Password string `mapstructure:"password"`
+	Port     string `mapstructure:"port"`
+	TimeZone string `mapstructure:"time_zone"`
+	User     string `mapstructure:"user"`
 }
 
 // ParseDBTypeStr parses a string to a DBType or returns an error
@@ -70,11 +85,17 @@ func ParseDBTypeStr(dbType string) (DBType, error) {
 func DefaultDBConfig() *Database {
 	return &Database{
 		Engine:                DBTypeSQLite,
-		SQLiteConfig:          SQLiteDatabase{ConnectionString: DSNDefault},
+		SQLite:                SQLite{ConnectionString: DSNDefault},
 		MaxIdleConnections:    5,
 		MaxConnectionIdleTime: 360 * time.Second,
 		MaxConnectionTime:     60 * time.Second,
 		MaxOpenConnections:    5,
+		PostgreSQL: PostgreSQL{
+			SslMode: "disable",
+		},
+		MySQL: MySQL{
+			Protocol: "tcp",
+		},
 	}
 }
 

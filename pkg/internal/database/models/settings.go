@@ -9,7 +9,7 @@ type Settings struct {
 
 	StorageIdentityKey string `gorm:"type:varchar(130);not null"`
 	StorageName        string `gorm:"type:varchar(128);not null"`
-	Chain              string `gorm:"type:varchar(10);not null"`
+	Chain              string `gorm:"type:varchar(10)"`
 	DBType             string `gorm:"type:varchar(10);not null"`
 	MaxOutputs         int32  `gorm:"not null"`
 }
