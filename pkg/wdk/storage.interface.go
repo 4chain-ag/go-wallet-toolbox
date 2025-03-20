@@ -1,49 +1,5 @@
 package wdk
 
-// DescriptionString5to2000Bytes represents a string used for descriptions,
-// with a length between 5 and 2000 characters.
-type DescriptionString5to2000Bytes string
-
-// Base64String is a string in base64 format
-type Base64String string
-
-// HexString is a string in hexadecimal format
-type HexString string
-
-// BooleanDefaultTrue is a boolean with a default value of true
-type BooleanDefaultTrue bool
-
-// BooleanDefaultFalse is a boolean with a default value of false
-type BooleanDefaultFalse bool
-
-// PositiveInteger represents a positive integer value
-type PositiveInteger uint
-
-// SatoshiValue Represents a value in Satoshis, constrained by the max supply of Bitcoin (2.1 * 10^15 Satoshis).
-// @minimum 1
-// @maximum 2100000000000000
-type SatoshiValue uint
-
-// PositiveIntegerOrZero represents a positive integer or zero value
-type PositiveIntegerOrZero uint
-
-// BasketStringUnder300Bytes is a string used for basket names, with a length under 300 bytes
-type BasketStringUnder300Bytes string
-
-// TXIDHexString is a hexadecimal transaction ID
-type TXIDHexString string
-
-// BEEF An array of integers, each ranging from 0 to 255, indicating transaction data in BEEF (BRC-62) format.
-type BEEF []byte
-
-// OutPoint identifies a unique transaction output by its txid and index vout
-type OutPoint struct {
-	// TxID Transaction double sha256 hash as big endian hex string
-	TxID string
-	// Vout Zero based output index within the transaction
-	Vout int
-}
-
 // ValidCreateActionInput represents the input for a transaction action
 type ValidCreateActionInput struct {
 	Outpoint              OutPoint
@@ -101,37 +57,30 @@ type ValidProcessActionArgs struct {
 
 // ValidCreateActionArgs represents the arguments for creating a transaction action
 type ValidCreateActionArgs struct {
-	Description                  DescriptionString5to2000Bytes
-	InputBEEF                    BEEF
-	Inputs                       []ValidCreateActionInput
-	Outputs                      []ValidCreateActionOutput
-	LockTime                     int
-	Version                      int
-	Labels                       []string
-	IsSignAction                 bool
-	RandomVals                   *[]int
-	IncludeAllSourceTransactions bool
+	Description                  DescriptionString5to2000Bytes `json:"description,omitempty"`
+	InputBEEF                    BEEF                          `json:"input_beef,omitempty"`
+	Inputs                       []ValidCreateActionInput      `json:"inputs,omitempty"`
+	Outputs                      []ValidCreateActionOutput     `json:"outputs,omitempty"`
+	LockTime                     int                           `json:"lock_time,omitempty"`
+	Version                      int                           `json:"version,omitempty"`
+	Labels                       []string                      `json:"labels,omitempty"`
+	IsSignAction                 bool                          `json:"is_sign_action,omitempty"`
+	RandomVals                   *[]int                        `json:"random_vals,omitempty"`
+	IncludeAllSourceTransactions bool                          `json:"include_all_source_transactions,omitempty"`
 
 	// Below are args from ValidProcessActionArgs
 
 	// IsSendWith is true if a batch of transactions is included for processing
-	IsSendWith bool
+	IsSendWith bool `json:"is_send_with,omitempty"`
 	// IsNewTx is true if there is a new transaction (not no inputs and no outputs)
-	IsNewTx bool
+	IsNewTx bool `json:"is_new_tx,omitempty"`
 	// IsRemixChange is true if this is a request to remix change
 	// When true, IsNewTx will also be true and IsSendWith must be false
-	IsRemixChange bool
+	IsRemixChange bool `json:"is_remix_change,omitempty"`
 	// IsNoSend is true if any new transaction should NOT be sent to the network
-	IsNoSend bool
+	IsNoSend bool `json:"is_no_send,omitempty"`
 	// IsDelayed is true if options.AcceptDelayedBroadcast is true
-	IsDelayed bool
-}
-
-// AuthID represents the identity of the user making the request
-type AuthID struct {
-	IdentityKey string
-	UserID      *int
-	IsActive    *bool
+	IsDelayed bool `json:"is_delayed,omitempty"`
 }
 
 // WalletStorageWriter is an interface for writing to the wallet storage
