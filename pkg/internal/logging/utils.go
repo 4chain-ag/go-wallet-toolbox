@@ -2,9 +2,10 @@ package logging
 
 import (
 	"fmt"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"log/slog"
 	"os"
+
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 )
 
 const (

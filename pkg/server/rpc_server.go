@@ -2,10 +2,10 @@ package server
 
 import (
 	"fmt"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"log/slog"
 	"net/http"
 
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/filecoin-project/go-jsonrpc"
 )
 
