@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	// ServiceKey is the key used to store the service name in the logger attrs.
 	ServiceKey = "service"
+	ErrorKey   = "error"
 )
 
 var strLevelToSlog = map[defs.LogLevel]slog.Level{
@@ -27,13 +27,13 @@ func Child(logger *slog.Logger, serviceName string) *slog.Logger {
 	)
 }
 
-func Errorf(logger *slog.Logger, err error, format string, args ...any) {
-	logger.Error(fmt.Sprintf(format, args...), slog.String("error", err.Error()))
+func Error(err error) slog.Attr {
+	return slog.String(ErrorKey, err.Error())
 }
 
 // Fatalf logs the error and exits the program.
-func Fatalf(logger *slog.Logger, err error, msg string, args ...any) {
-	Errorf(logger, err, "Fatal error: "+msg, args...)
+func Fatalf(logger *slog.Logger, err error, format string, args ...any) {
+	logger.Error("Fatal error: "+fmt.Sprintf(format, args...), Error(err))
 	os.Exit(1)
 }
 
