@@ -179,7 +179,7 @@ func createAndConfigureDatabaseConnection(dialector gorm.Dialector, cfg *defs.Da
 		logger,
 	))
 	if err != nil {
-		return nil, errors.Join(err, errors.New("failed to initalize GORM database connection"))
+		return nil, errors.Join(err, errors.New("failed to initialize GORM database connection"))
 	}
 
 	sqlDB, err := db.DB()
