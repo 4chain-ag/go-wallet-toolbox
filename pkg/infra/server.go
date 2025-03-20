@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/config"
@@ -25,8 +26,6 @@ func NewServer(opts ...InitOption) (*Server, error) {
 		option(&options)
 	}
 
-	logger := logging.NopIfNil(options.Logger)
-
 	loader := config.NewLoader(Defaults, options.EnvPrefix)
 	if options.ConfigFile != "" {
 		err := loader.SetConfigFilePath(options.ConfigFile)
@@ -43,6 +42,8 @@ func NewServer(opts ...InitOption) (*Server, error) {
 		return nil, fmt.Errorf("config validation failed: %w", err)
 	}
 
+	logger := logging.Child(makeLogger(&cfg, &options), "infra")
+
 	return &Server{
 		Config: cfg,
 
@@ -52,7 +53,7 @@ func NewServer(opts ...InitOption) (*Server, error) {
 
 // ListenAndServe starts the JSON-RPC server
 func (s *Server) ListenAndServe() error {
-	rpcServer := server.NewRPCHandler(logging.Child(s.logger, "rpc_server"))
+	rpcServer := server.NewRPCHandler(s.logger)
 
 	mux := http.NewServeMux()
 	rpcServer.Register(mux)
@@ -67,11 +68,22 @@ func (s *Server) ListenAndServe() error {
 		IdleTimeout:       30 * time.Second,
 	}
 
-	logging.Sprintf(s.logger, slog.LevelInfo, "Listening on :%d", port)
+	s.logger.Info("Listening...", slog.Any("port", port))
 	err := httpServer.ListenAndServe()
 	if err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
 
 	return nil
+}
+
+func makeLogger(cfg *Config, options *Options) *slog.Logger {
+	if !cfg.Logging.Enabled {
+		return logging.DefaultIfNil(options.Logger)
+	}
+
+	return logging.New().
+		WithLevel(cfg.Logging.Level).
+		WithHandler(cfg.Logging.Handler, os.Stdout).
+		Logger()
 }

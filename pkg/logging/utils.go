@@ -1,8 +1,8 @@
 package logging
 
 import (
-	"context"
 	"fmt"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"log/slog"
 	"os"
 )
@@ -12,29 +12,34 @@ const (
 	ServiceKey = "service"
 )
 
+var strLevelToSlog = map[defs.LogLevel]slog.Level{
+	defs.LogLevelDebug: slog.LevelDebug,
+	defs.LogLevelInfo:  slog.LevelInfo,
+	defs.LogLevelWarn:  slog.LevelWarn,
+	defs.LogLevelError: slog.LevelError,
+}
+
 // Child returns a new logger with the given service name added to the logger attrs.
 func Child(logger *slog.Logger, serviceName string) *slog.Logger {
-	return logger.With(
+	return DefaultIfNil(logger).With(
 		slog.String(ServiceKey, serviceName),
 	)
 }
 
-// Sprintf logs a message with the given level and arguments.
-func Sprintf(logger *slog.Logger, level slog.Level, format string, args ...any) {
-	logger.Log(context.Background(), level, fmt.Sprintf(format, args...))
+func Errorf(logger *slog.Logger, err error, format string, args ...any) {
+	logger.Error(fmt.Sprintf(format, args...), slog.String("error", err.Error()))
 }
 
 // Fatalf logs the error and exits the program.
 func Fatalf(logger *slog.Logger, err error, msg string, args ...any) {
-	logger.Error("Fatal error: "+fmt.Sprintf(msg, args...), slog.String("error", err.Error()))
+	Errorf(logger, err, "Fatal error: "+msg, args...)
 	os.Exit(1)
 }
 
-// NopIfNil returns a new NOP logger if the given logger is nil, otherwise returns the given logger.
-// NOTE: NOP logger discards all logs.
-func NopIfNil(logger *slog.Logger) *slog.Logger {
+// DefaultIfNil returns the default logger if the given logger is nil.
+func DefaultIfNil(logger *slog.Logger) *slog.Logger {
 	if logger == nil {
-		return New().Nop().Logger()
+		return slog.Default()
 	}
 	return logger
 }

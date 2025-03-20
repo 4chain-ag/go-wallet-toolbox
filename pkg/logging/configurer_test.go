@@ -1,9 +1,9 @@
 package logging_test
 
 import (
-	"log/slog"
 	"testing"
 
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/logging"
 	"github.com/stretchr/testify/require"
 )
@@ -12,8 +12,8 @@ func TestTextLogger(t *testing.T) {
 	// given:
 	stringWriter := &logging.TestWriter{}
 	logger := logging.New().
-		WithLevel(slog.LevelDebug).
-		WithHandler(logging.TextHandler, stringWriter).
+		WithLevel(defs.LogLevelDebug).
+		WithHandler(defs.TextHandler, stringWriter).
 		Logger()
 
 	// when:
@@ -30,8 +30,8 @@ func TestJSONLogger(t *testing.T) {
 	// given:
 	stringWriter := &logging.TestWriter{}
 	logger := logging.New().
-		WithLevel(slog.LevelDebug).
-		WithHandler(logging.JSONHandler, stringWriter).
+		WithLevel(defs.LogLevelDebug).
+		WithHandler(defs.JSONHandler, stringWriter).
 		Logger()
 
 	// when:

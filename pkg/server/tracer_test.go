@@ -2,7 +2,7 @@ package server_test
 
 import (
 	"context"
-	"log/slog"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -18,7 +18,7 @@ func TestTracer(t *testing.T) {
 	// TODO: Reorganize the tests when testabilities are introduced
 	// given:
 	testWriter := logging.TestWriter{}
-	logger := logging.New().WithLevel(slog.LevelDebug).WithHandler(logging.TextHandler, &testWriter).Logger()
+	logger := logging.New().WithLevel(defs.LogLevelDebug).WithHandler(defs.TextHandler, &testWriter).Logger()
 
 	// given server:
 	rpcServer := server.NewRPCHandler(logger)

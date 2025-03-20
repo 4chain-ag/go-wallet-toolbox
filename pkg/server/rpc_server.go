@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/logging"
 	"log/slog"
 	"net/http"
 
@@ -11,12 +12,12 @@ import (
 // RPCServer is a JSON-RPC server
 type RPCServer struct {
 	Handler *jsonrpc.RPCServer
-
-	logger *slog.Logger
 }
 
 // NewRPCHandler creates a new RPCServer instance
-func NewRPCHandler(logger *slog.Logger) *RPCServer {
+func NewRPCHandler(parentLogger *slog.Logger) *RPCServer {
+	logger := logging.Child(parentLogger, "rpc_server")
+
 	rpcServer := jsonrpc.NewServer(
 		jsonrpc.WithServerMethodNamer(jsonrpc.NoNamespaceDecapitalizedMethodNamer),
 		jsonrpc.WithTracer(tracer(logger)),
@@ -28,8 +29,6 @@ func NewRPCHandler(logger *slog.Logger) *RPCServer {
 
 	return &RPCServer{
 		Handler: rpcServer,
-
-		logger: logger,
 	}
 }
 

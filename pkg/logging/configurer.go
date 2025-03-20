@@ -3,27 +3,20 @@ package logging
 import (
 	"io"
 	"log/slog"
-)
 
-// HandlerType are not-custom types of handlers that can be used.
-type HandlerType string
-
-// Supported handler types.
-const (
-	JSONHandler HandlerType = "json"
-	TextHandler HandlerType = "text"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 )
 
 // Configurer is the main interface for configuring a logger.
 type Configurer interface {
-	WithLevel(level slog.Level) HandlerConfigurer
+	WithLevel(level defs.LogLevel) HandlerConfigurer
 	Nop() LoggerMaker
 }
 
 // HandlerConfigurer is an interface for configuring a logger handler.
 type HandlerConfigurer interface {
 	WithCustomHandler(handler slog.Handler) LoggerMaker
-	WithHandler(handlerType HandlerType, writer io.Writer) LoggerMaker
+	WithHandler(handlerType defs.LogHandler, writer io.Writer) LoggerMaker
 }
 
 // LoggerMaker is an interface for creating a logger from a ready configuration.
@@ -44,8 +37,8 @@ func New() Configurer {
 }
 
 // WithLevel sets the log level for the logger.
-func (c *configurer) WithLevel(level slog.Level) HandlerConfigurer {
-	c.level.Set(level)
+func (c *configurer) WithLevel(level defs.LogLevel) HandlerConfigurer {
+	c.level.Set(strLevelToSlog[level])
 	return c
 }
 
@@ -62,13 +55,13 @@ func (c *configurer) WithCustomHandler(handler slog.Handler) LoggerMaker {
 }
 
 // WithHandler sets a handler for the logger (provided by slog package).
-func (c *configurer) WithHandler(handlerType HandlerType, writer io.Writer) LoggerMaker {
+func (c *configurer) WithHandler(handlerType defs.LogHandler, writer io.Writer) LoggerMaker {
 	opts := &slog.HandlerOptions{Level: c.level}
 
 	switch handlerType {
-	case JSONHandler:
+	case defs.JSONHandler:
 		c.handler = slog.NewJSONHandler(writer, opts)
-	case TextHandler:
+	case defs.TextHandler:
 		c.handler = slog.NewTextHandler(writer, opts)
 	default:
 		panic("unsupported handler type")

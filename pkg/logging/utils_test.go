@@ -1,7 +1,8 @@
 package logging_test
 
 import (
-	"log/slog"
+	"fmt"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/logging"
@@ -12,8 +13,8 @@ func TestChildLogger(t *testing.T) {
 	// given:
 	stringWriter := &logging.TestWriter{}
 	logger := logging.New().
-		WithLevel(slog.LevelDebug).
-		WithHandler(logging.TextHandler, stringWriter).
+		WithLevel(defs.LogLevelDebug).
+		WithHandler(defs.TextHandler, stringWriter).
 		Logger()
 
 	// when:
@@ -28,25 +29,29 @@ func TestChildLogger(t *testing.T) {
 	require.Contains(t, msg, `msg="debug message"`)
 }
 
-func TestSprintf(t *testing.T) {
+func TestErrorf(t *testing.T) {
 	// given:
 	stringWriter := &logging.TestWriter{}
 	logger := logging.New().
-		WithLevel(slog.LevelDebug).
-		WithHandler(logging.TextHandler, stringWriter).
+		WithLevel(defs.LogLevelError).
+		WithHandler(defs.TextHandler, stringWriter).
 		Logger()
 
+	// and:
+	err := fmt.Errorf("error message")
+
 	// when:
-	logging.Sprintf(logger, slog.LevelInfo, "info message: %d", 123)
+	logging.Errorf(logger, err, "additional context %d", 123)
 
 	// then:
 	msg := stringWriter.String()
-	require.Contains(t, msg, "info message: 123")
+	require.Contains(t, msg, `msg="additional context 123"`)
+	require.Contains(t, msg, `error="error message"`)
 }
 
 func TestNopIfNil(t *testing.T) {
 	// when:
-	logger := logging.NopIfNil(nil)
+	logger := logging.DefaultIfNil(nil)
 
 	// then:
 	require.NotNil(t, logger)
