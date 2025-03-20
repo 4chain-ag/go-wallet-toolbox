@@ -179,12 +179,12 @@ func createAndConfigureDatabaseConnection(dialector gorm.Dialector, cfg *defs.Da
 		logger,
 	))
 	if err != nil {
-		return nil, errors.Join(err, errors.New("failed to create new database connection with gorm"))
+		return nil, errors.Join(err, errors.New("failed to initalize GORM database connection"))
 	}
 
 	sqlDB, err := db.DB()
 	if err != nil {
-		return nil, err
+		return nil, errors.Join(err, errors.New("failed to retrieve underlying SQL database connection"))
 	}
 	sqlDB.SetMaxIdleConns(cfg.MaxIdleConnections)
 	sqlDB.SetMaxOpenConns(cfg.MaxOpenConnections)

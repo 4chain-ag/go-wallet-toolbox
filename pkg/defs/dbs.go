@@ -68,6 +68,7 @@ type MySQL struct {
 	Protocol string `mapstructure:"protocol"`
 }
 
+// SQLCommon is configuration struct for common properties for SQL databases such as postgres or mysql
 type SQLCommon struct {
 	Host     string `mapstructure:"host"`
 	DBName   string `mapstructure:"db_name"`
@@ -82,6 +83,7 @@ func ParseDBTypeStr(dbType string) (DBType, error) {
 	return parseEnumCaseInsensitive(dbType, DBTypeMySQL, DBTypeSQLite, DBTypePostgres)
 }
 
+// DefaultDBConfig sets default configuration for the database
 func DefaultDBConfig() *Database {
 	return &Database{
 		Engine:                DBTypeSQLite,
@@ -99,6 +101,7 @@ func DefaultDBConfig() *Database {
 	}
 }
 
+// Validate validates if database configuration is valid
 func (db *Database) Validate() (err error) {
 	if db.Engine, err = ParseDBTypeStr(string(db.Engine)); err != nil {
 		return fmt.Errorf("invalid DB engine: %w", err)
