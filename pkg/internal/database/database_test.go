@@ -24,8 +24,8 @@ func TestStorage(t *testing.T) {
 		}
 
 		// and:
-		storageDB, err := database.NewDatabase(&config.Database{
-			SQLiteConfig: config.SQLiteDatabase{
+		storageDB, err := database.NewDatabase(&defs.Database{
+			SQLiteConfig: defs.SQLiteDatabase{
 				ConnectionString: "file::memory:",
 			},
 			Engine: defs.DBTypeSQLite,

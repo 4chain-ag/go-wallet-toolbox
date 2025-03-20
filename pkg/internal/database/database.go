@@ -21,8 +21,8 @@ type Database struct {
 }
 
 // NewDatabase will configure and return database based on provided config
-func NewDatabase(cfg *config.Database, logger *slog.Logger) (*Database, error) {
-	defaultConfig := config.DefaultDBConfig()
+func NewDatabase(cfg *defs.Database, logger *slog.Logger) (*Database, error) {
+	defaultConfig := defs.DefaultDBConfig()
 	if cfg == nil {
 		return newDatabaseInternal(defaultConfig, logger)
 	}
@@ -32,19 +32,34 @@ func NewDatabase(cfg *config.Database, logger *slog.Logger) (*Database, error) {
 }
 
 // newDatabaseInternal configures database with merged default and provided config
-func newDatabaseInternal(cfg *config.Database, logger *slog.Logger) (*Database, error) {
+func newDatabaseInternal(cfg *defs.Database, logger *slog.Logger) (*Database, error) {
 	var database *gorm.DB
 
 	if logger == nil {
 		logger = slog.Default()
 	}
 
-	//nolint:exhaustive
+	gormLogger := &SlogGormLogger{
+		logger: logger,
+	}
+
 	switch cfg.Engine {
 	case defs.DBTypeSQLite:
-		db, err := openSQLiteDatabase(cfg, &SlogGormLogger{
-			logger: logger,
-		})
+		db, err := openSQLiteDatabase(cfg, gormLogger)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create gorm instance, caused by: %w", err)
+		}
+
+		database = db
+	case defs.DBTypePostgres:
+		db, err := openPostgresDatabase(cfg, gormLogger)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create gorm instance, caused by: %w", err)
+		}
+
+		database = db
+	case defs.DBTypeMySQL:
+		db, err := openMySQLDatabase(cfg, gormLogger)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create gorm instance, caused by: %w", err)
 		}
@@ -61,7 +76,7 @@ func newDatabaseInternal(cfg *config.Database, logger *slog.Logger) (*Database, 
 }
 
 // mergeConfig merges the default configuration with the provided one
-func mergeConfig(defaultCfg *config.Database, providedCfg *config.Database) *config.Database {
+func mergeConfig(defaultCfg *defs.Database, providedCfg *defs.Database) *defs.Database {
 	if providedCfg == nil {
 		return defaultCfg
 	}
@@ -96,10 +111,10 @@ func mergeConfig(defaultCfg *config.Database, providedCfg *config.Database) *con
 }
 
 // openSQLiteDatabase will open a SQLite database connection
-func openSQLiteDatabase(cfg *config.Database, logger glogger.Interface) (*gorm.DB, error) {
+func openSQLiteDatabase(cfg *defs.Database, logger glogger.Interface) (*gorm.DB, error) {
 	dsn := cfg.SQLiteConfig.ConnectionString
 	if dsn == "" {
-		dsn = config.DSNDefault
+		dsn = defs.DSNDefault
 	}
 
 	dialector := sqlite.New(sqlite.Config{
@@ -129,10 +144,22 @@ func openSQLiteDatabase(cfg *config.Database, logger glogger.Interface) (*gorm.D
 	return db, nil
 }
 
+// openPostgresDatabase will open a PostrgreSQL database connection
+func openPostgresDatabase(cfg *defs.Database, logger glogger.Interface) (*gorm.DB, error) {
+
+	return nil, nil
+}
+
+// openMySQLDatabase will open a MySQL database connection
+func openMySQLDatabase(cfg *defs.Database, logger glogger.Interface) (*gorm.DB, error) {
+
+	return nil, nil
+}
+
 // createGormConfig returns valid gorm.Config for database connections
 func createGormConfig(logger glogger.Interface) *gorm.Config {
 	// Set the prefix
-	tablePrefix := config.DefaultTablePrefix
+	tablePrefix := defs.DefaultTablePrefix
 
 	if logger == nil {
 		panic("Could not create gorm config. When creating database configuration you need to specify the logger to use")
