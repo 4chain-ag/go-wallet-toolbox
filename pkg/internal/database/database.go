@@ -3,13 +3,13 @@ package database
 import (
 	"errors"
 	"fmt"
-	"gorm.io/driver/postgres"
 	"log/slog"
 	"strings"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/database/sqlite3extended"
 	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	glogger "gorm.io/gorm/logger"
