@@ -12,6 +12,8 @@ func TestCaseInsensitiveEnums(t *testing.T) {
 	// given:
 	t.Setenv("TEST_DB_ENGINE", "SQLite")
 	t.Setenv("TEST_BSV_NETWORK", "MAIN")
+	t.Setenv("TEST_LOGGING_LEVEL", "DeBug")
+	t.Setenv("TEST_LOGGING_HANDLER", "Text")
 
 	// when:
 	infraSrv, err := infra.NewServer(infra.WithEnvPrefix("TEST"))
@@ -20,6 +22,8 @@ func TestCaseInsensitiveEnums(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, defs.DBTypeSQLite, infraSrv.Config.DBConfig.Engine)
 	require.Equal(t, defs.NetworkMainnet, infraSrv.Config.BSVNetwork)
+	require.Equal(t, defs.LogLevelDebug, infraSrv.Config.Logging.Level)
+	require.Equal(t, defs.TextHandler, infraSrv.Config.Logging.Handler)
 }
 
 func TestEnums(t *testing.T) {
@@ -34,6 +38,12 @@ func TestEnums(t *testing.T) {
 		},
 		"HTTP port": {
 			envKey: "TEST_HTTP_PORT",
+		},
+		"Logging level": {
+			envKey: "TEST_LOGGING_LEVEL",
+		},
+		"Logging handler": {
+			envKey: "TEST_LOGGING_HANDLER",
 		},
 	}
 	for name, test := range tests {
