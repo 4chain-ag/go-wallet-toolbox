@@ -12,6 +12,7 @@ type Config struct {
 	BSVNetwork defs.BSVNetwork `mapstructure:"bsv_network"`
 	DBConfig   DBConfig        `mapstructure:"db"`
 	HTTPConfig HTTPConfig      `mapstructure:"http"`
+	Logging    LogConfig       `mapstructure:"logging"`
 }
 
 // DBConfig is the configuration for the database
@@ -24,6 +25,13 @@ type HTTPConfig struct {
 	Port uint `mapstructure:"port"`
 }
 
+// LogConfig is the configuration for the logging
+type LogConfig struct {
+	Enabled bool            `mapstructure:"enabled"`
+	Level   defs.LogLevel   `mapstructure:"level"`
+	Handler defs.LogHandler `mapstructure:"handler"`
+}
+
 // Defaults returns the default configuration
 func Defaults() Config {
 	return Config{
@@ -33,6 +41,11 @@ func Defaults() Config {
 		},
 		HTTPConfig: HTTPConfig{
 			Port: 8100,
+		},
+		Logging: LogConfig{
+			Enabled: true,
+			Level:   defs.LogLevelInfo,
+			Handler: defs.JSONHandler,
 		},
 	}
 }
@@ -47,6 +60,10 @@ func (c *Config) Validate() (err error) {
 		return fmt.Errorf("invalid DB config: %w", err)
 	}
 
+	if err = c.Logging.Validate(); err != nil {
+		return fmt.Errorf("invalid HTTP config: %w", err)
+	}
+
 	return nil
 }
 
@@ -54,6 +71,19 @@ func (c *Config) Validate() (err error) {
 func (c *DBConfig) Validate() (err error) {
 	if c.Engine, err = defs.ParseDBTypeStr(string(c.Engine)); err != nil {
 		return fmt.Errorf("invalid DB engine: %w", err)
+	}
+
+	return nil
+}
+
+// Validate validates the HTTP configuration
+func (c *LogConfig) Validate() (err error) {
+	if c.Level, err = defs.ParseLogLevelStr(string(c.Level)); err != nil {
+		return fmt.Errorf("invalid log level: %w", err)
+	}
+
+	if c.Handler, err = defs.ParseHandlerTypeStr(string(c.Handler)); err != nil {
+		return fmt.Errorf("invalid log handler: %w", err)
 	}
 
 	return nil

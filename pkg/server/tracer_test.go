@@ -6,15 +6,22 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/server"
 	"github.com/filecoin-project/go-jsonrpc"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestRPCServer(t *testing.T) {
+func TestTracer(t *testing.T) {
+	// TODO: Reorganize the tests when testabilities are introduced
+	// given:
+	testWriter := logging.TestWriter{}
+	logger := logging.New().WithLevel(defs.LogLevelDebug).WithHandler(defs.TextHandler, &testWriter).Logger()
+
 	// given server:
-	rpcServer := server.NewRPCHandler(logging.New().Nop().Logger())
+	rpcServer := server.NewRPCHandler(logger)
 
 	mux := http.NewServeMux()
 	rpcServer.Register(mux)
@@ -38,8 +45,12 @@ func TestRPCServer(t *testing.T) {
 	defer closer()
 
 	// when:
-	tableSettings := client.MakeAvailable()
+	_ = client.MakeAvailable()
 
 	// then:
-	require.NotEmpty(t, tableSettings.StorageIdentityKey)
+	msg := testWriter.String()
+	assert.Contains(t, msg, "time=")
+	assert.Contains(t, msg, "level=INFO")
+	assert.Contains(t, msg, `msg="Handling RPC call"`)
+	assert.Contains(t, msg, `method=makeAvailable`)
 }
