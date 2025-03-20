@@ -3,10 +3,10 @@ package database
 import (
 	"errors"
 	"fmt"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/config"
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/config"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/database/sqlite3extended"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
