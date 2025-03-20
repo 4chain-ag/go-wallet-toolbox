@@ -3,6 +3,7 @@ package database
 import (
 	"errors"
 	"fmt"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/config"
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
@@ -20,7 +21,18 @@ type Database struct {
 }
 
 // NewDatabase will configure and return database based on provided config
-func NewDatabase(cfg *Config, logger *slog.Logger) (*Database, error) {
+func NewDatabase(cfg *config.Database, logger *slog.Logger) (*Database, error) {
+	defaultConfig := config.DefaultDBConfig()
+	if cfg == nil {
+		return newDatabaseInternal(defaultConfig, logger)
+	}
+
+	mergedCfg := mergeConfig(defaultConfig, cfg)
+	return newDatabaseInternal(mergedCfg, logger)
+}
+
+// newDatabaseInternal configures database with merged default and provided config
+func newDatabaseInternal(cfg *config.Database, logger *slog.Logger) (*Database, error) {
 	var database *gorm.DB
 
 	if logger == nil {
@@ -48,11 +60,46 @@ func NewDatabase(cfg *Config, logger *slog.Logger) (*Database, error) {
 	}, nil
 }
 
+// mergeConfig merges the default configuration with the provided one
+func mergeConfig(defaultCfg *config.Database, providedCfg *config.Database) *config.Database {
+	if providedCfg == nil {
+		return defaultCfg
+	}
+
+	mergedCfg := *defaultCfg
+
+	if providedCfg.Engine != "" {
+		mergedCfg.Engine = providedCfg.Engine
+	}
+
+	if providedCfg.SQLiteConfig.ConnectionString != "" {
+		mergedCfg.SQLiteConfig.ConnectionString = providedCfg.SQLiteConfig.ConnectionString
+	}
+
+	if providedCfg.MaxIdleConnections > 0 {
+		mergedCfg.MaxIdleConnections = providedCfg.MaxIdleConnections
+	}
+
+	if providedCfg.MaxConnectionIdleTime > 0 {
+		mergedCfg.MaxConnectionIdleTime = providedCfg.MaxConnectionIdleTime
+	}
+
+	if providedCfg.MaxConnectionTime > 0 {
+		mergedCfg.MaxConnectionTime = providedCfg.MaxConnectionTime
+	}
+
+	if providedCfg.MaxOpenConnections > 0 {
+		mergedCfg.MaxOpenConnections = providedCfg.MaxOpenConnections
+	}
+
+	return &mergedCfg
+}
+
 // openSQLiteDatabase will open a SQLite database connection
-func openSQLiteDatabase(cfg *Config, logger glogger.Interface) (*gorm.DB, error) {
+func openSQLiteDatabase(cfg *config.Database, logger glogger.Interface) (*gorm.DB, error) {
 	dsn := cfg.SQLiteConfig.ConnectionString
 	if dsn == "" {
-		dsn = dsnDefault
+		dsn = config.DSNDefault
 	}
 
 	dialector := sqlite.New(sqlite.Config{
@@ -85,14 +132,14 @@ func openSQLiteDatabase(cfg *Config, logger glogger.Interface) (*gorm.DB, error)
 // createGormConfig returns valid gorm.Config for database connections
 func createGormConfig(logger glogger.Interface) *gorm.Config {
 	// Set the prefix
-	tablePrefix := defaultTablePrefix
+	tablePrefix := config.DefaultTablePrefix
 
 	if logger == nil {
 		panic("Could not create gorm config. When creating database configuration you need to specify the logger to use")
 	}
 
 	// Create the configuration
-	config := &gorm.Config{
+	gormCfg := &gorm.Config{
 		AllowGlobalUpdate:                        false,
 		ClauseBuilders:                           nil,
 		ConnPool:                                 nil,
@@ -116,5 +163,5 @@ func createGormConfig(logger glogger.Interface) *gorm.Config {
 		TranslateError:         true,
 	}
 
-	return config
+	return gormCfg
 }

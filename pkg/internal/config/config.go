@@ -1,4 +1,4 @@
-package database
+package config
 
 import (
 	"time"
@@ -7,17 +7,17 @@ import (
 )
 
 const (
-	dsnDefault         = "file::memory:" // DSN for connection (file or memory, default is memory)
-	defaultTablePrefix = "bsv_"
+	DSNDefault         = "file::memory:" // DSN for connection (file or memory, default is memory)
+	DefaultTablePrefix = "bsv_"
 )
 
-// Config is a struct that configures the database connection
-type Config struct {
+// Database is a struct that configures the database connection
+type Database struct {
 	// Engine is the database engine (PostgreSQL, SQLite)
 	Engine defs.DBType
 
 	// SQLiteConfig is configuration struct for SQLite database
-	SQLiteConfig SQLiteConfig
+	SQLiteConfig SQLiteDatabase
 
 	// MaxIdleConnections defines the maximum number of idle connections allowed for the database.
 	MaxIdleConnections int
@@ -34,8 +34,19 @@ type Config struct {
 	MaxOpenConnections int
 }
 
-// SQLiteConfig is configuration struct for SQLite database
-type SQLiteConfig struct {
+// SQLiteDatabase is configuration struct for SQLite database
+type SQLiteDatabase struct {
 	// ConnectionString is the path to SQLite DB
 	ConnectionString string
+}
+
+func DefaultDBConfig() *Database {
+	return &Database{
+		Engine:                defs.DBTypeSQLite,
+		SQLiteConfig:          SQLiteDatabase{ConnectionString: DSNDefault},
+		MaxIdleConnections:    5,
+		MaxConnectionIdleTime: 360 * time.Second,
+		MaxConnectionTime:     60 * time.Second,
+		MaxOpenConnections:    5,
+	}
 }

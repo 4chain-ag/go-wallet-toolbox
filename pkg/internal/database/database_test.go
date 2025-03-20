@@ -1,6 +1,7 @@
 package database_test
 
 import (
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/config"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
@@ -23,9 +24,9 @@ func TestStorage(t *testing.T) {
 		}
 
 		// and:
-		storageDB, err := database.NewDatabase(&database.Config{
-			SQLiteConfig: database.SQLiteConfig{
-				ConnectionString: "./spv-wallet.db",
+		storageDB, err := database.NewDatabase(&config.Database{
+			SQLiteConfig: config.SQLiteDatabase{
+				ConnectionString: "file::memory:",
 			},
 			Engine: defs.DBTypeSQLite,
 		}, nil)
