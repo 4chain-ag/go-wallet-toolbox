@@ -11,12 +11,11 @@ type Options struct {
 	Logger     *slog.Logger
 }
 
-// DefaultOptions returns the default parameters to initialize the "infra" server
-func DefaultOptions() Options {
+func defaultOptions() Options {
 	return Options{
 		EnvPrefix:  "INFRA",
 		ConfigFile: "",
-		Logger:     nil, // logging will be suppressed by default
+		Logger:     nil,
 	}
 }
 

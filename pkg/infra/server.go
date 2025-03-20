@@ -2,13 +2,13 @@ package infra
 
 import (
 	"fmt"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"log/slog"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/config"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/server"
 )
 
@@ -21,7 +21,7 @@ type Server struct {
 
 // NewServer creates a new server instance with given options, like config file path or a prefix for environment variables
 func NewServer(opts ...InitOption) (*Server, error) {
-	options := DefaultOptions()
+	options := defaultOptions()
 	for _, option := range opts {
 		option(&options)
 	}
@@ -78,8 +78,12 @@ func (s *Server) ListenAndServe() error {
 }
 
 func makeLogger(cfg *Config, options *Options) *slog.Logger {
+	if options.Logger != nil {
+		return options.Logger
+	}
+
 	if !cfg.Logging.Enabled {
-		return logging.DefaultIfNil(options.Logger)
+		return logging.New().Nop().Logger()
 	}
 
 	return logging.New().

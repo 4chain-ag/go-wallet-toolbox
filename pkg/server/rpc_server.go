@@ -2,7 +2,7 @@ package server
 
 import (
 	"fmt"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/logging"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"log/slog"
 	"net/http"
 

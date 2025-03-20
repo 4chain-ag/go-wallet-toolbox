@@ -3,9 +3,9 @@ package logging_test
 import (
 	"fmt"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"testing"
 
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/logging"
 	"github.com/stretchr/testify/require"
 )
 
