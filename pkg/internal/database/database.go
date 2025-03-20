@@ -6,7 +6,6 @@ import (
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/config"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/database/sqlite3extended"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -145,13 +144,13 @@ func openSQLiteDatabase(cfg *defs.Database, logger glogger.Interface) (*gorm.DB,
 }
 
 // openPostgresDatabase will open a PostrgreSQL database connection
-func openPostgresDatabase(cfg *defs.Database, logger glogger.Interface) (*gorm.DB, error) {
+func openPostgresDatabase(_ *defs.Database, _ glogger.Interface) (*gorm.DB, error) {
 
 	return nil, nil
 }
 
 // openMySQLDatabase will open a MySQL database connection
-func openMySQLDatabase(cfg *defs.Database, logger glogger.Interface) (*gorm.DB, error) {
+func openMySQLDatabase(_ *defs.Database, _ glogger.Interface) (*gorm.DB, error) {
 
 	return nil, nil
 }
