@@ -25,6 +25,7 @@ type HTTPConfig struct {
 	Port uint `mapstructure:"port"`
 }
 
+// LogConfig is the configuration for the logging
 type LogConfig struct {
 	Enabled bool            `mapstructure:"enabled"`
 	Level   defs.LogLevel   `mapstructure:"level"`
@@ -75,6 +76,7 @@ func (c *DBConfig) Validate() (err error) {
 	return nil
 }
 
+// Validate validates the HTTP configuration
 func (c *LogConfig) Validate() (err error) {
 	if c.Level, err = defs.ParseLogLevelStr(string(c.Level)); err != nil {
 		return fmt.Errorf("invalid log level: %w", err)
