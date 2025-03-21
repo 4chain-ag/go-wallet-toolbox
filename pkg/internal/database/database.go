@@ -2,11 +2,11 @@ package database
 
 import (
 	"fmt"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"log/slog"
 	"strings"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"gorm.io/gorm"
 	glogger "gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
