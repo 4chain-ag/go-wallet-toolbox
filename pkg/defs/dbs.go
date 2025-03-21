@@ -84,8 +84,8 @@ func ParseDBTypeStr(dbType string) (DBType, error) {
 }
 
 // DefaultDBConfig sets default configuration for the database
-func DefaultDBConfig() *Database {
-	return &Database{
+func DefaultDBConfig() Database {
+	return Database{
 		Engine:                DBTypeSQLite,
 		SQLite:                SQLite{ConnectionString: DSNDefault},
 		MaxIdleConnections:    5,

@@ -34,7 +34,7 @@ func (l *SlogGormLogger) Trace(ctx context.Context, begin time.Time, fc func() (
 	sql, rows := fc()
 	duration := time.Since(begin)
 
-	l.logger.DebugContext(ctx, "SQLxw Query",
+	l.logger.DebugContext(ctx, "SQL Query",
 		"sql", sql,
 		"rows", rows,
 		"duration", duration,

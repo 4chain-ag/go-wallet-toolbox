@@ -52,7 +52,7 @@ func (l *Loader[T]) SetConfigFilePath(path string) error {
 // Load loads the configuration from the environment and the config file.
 // NOTE: The priority of the values is as follows:
 // 1. Environment variables
-// 2. Database file (supported types: "yaml", "yml", "json", "env", "dotenv")
+// 2. Config file (supported types: "yaml", "yml", "json", "env", "dotenv")
 // 3. Default values
 //
 // NOTE: The config file is optional.
@@ -111,7 +111,7 @@ func (l *Loader[T]) loadFromFile() error {
 	if l.configFilePath == DefaultConfigFilePath {
 		_, err := os.Stat(l.configFilePath)
 		if os.IsNotExist(err) {
-			// Database file not specified. Using defaults
+			// Config file not specified. Using defaults
 			return nil
 		}
 	}

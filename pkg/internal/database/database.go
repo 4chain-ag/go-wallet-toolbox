@@ -1,8 +1,8 @@
 package database
 
 import (
-	"errors"
 	"fmt"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"log/slog"
 	"strings"
 
@@ -22,19 +22,17 @@ type Database struct {
 func NewDatabase(cfg *defs.Database, logger *slog.Logger) (*Database, error) {
 	defaultConfig := defs.DefaultDBConfig()
 	if cfg == nil {
-		return newDatabaseInternal(defaultConfig, logger)
+		return newDatabaseInternal(&defaultConfig, logger)
 	}
 
-	mergedCfg := mergeConfig(defaultConfig, cfg)
+	mergedCfg := mergeConfig(&defaultConfig, cfg)
 	return newDatabaseInternal(mergedCfg, logger)
 }
 
 // newDatabaseInternal configures database with merged default and provided config
 func newDatabaseInternal(cfg *defs.Database, logger *slog.Logger) (*Database, error) {
-	var database *gorm.DB
-
 	if logger == nil {
-		logger = slog.Default()
+		logger = logging.Child(logger, "database")
 	}
 
 	gormLogger := &SlogGormLogger{
@@ -107,12 +105,13 @@ func createAndConfigureDatabaseConnection(dialector gorm.Dialector, cfg defs.Dat
 		logger,
 	))
 	if err != nil {
-		return nil, errors.Join(err, errors.New("failed to initialize GORM database connection"))
+		return nil, fmt.Errorf("failed to initialize GORM database connection: %w", err)
 	}
 
 	sqlDB, err := db.DB()
 	if err != nil {
-		return nil, errors.Join(err, errors.New("failed to retrieve underlying SQL database connection"))
+		return nil, fmt.Errorf("failed to retrieve underlying SQL database connection: %w", err)
+
 	}
 	sqlDB.SetMaxIdleConns(cfg.MaxIdleConnections)
 	sqlDB.SetMaxOpenConns(cfg.MaxOpenConnections)

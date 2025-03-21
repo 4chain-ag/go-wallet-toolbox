@@ -36,7 +36,7 @@ type LogConfig struct {
 func Defaults() Config {
 	return Config{
 		BSVNetwork: defs.NetworkMainnet,
-		DBConfig:   *defs.DefaultDBConfig(),
+		DBConfig:   defs.DefaultDBConfig(),
 		HTTPConfig: HTTPConfig{
 			Port: 8100,
 		},
