@@ -52,8 +52,7 @@ func NewServer(opts ...InitOption) (*Server, error) {
 		return nil, fmt.Errorf("failed to create storage identity key: %w", err)
 	}
 
-	// TODO: implement different storages based on the config
-	activeStorage, err := storage.NewSQLiteProvider(logger, cfg.BSVNetwork, "./local.db")
+	activeStorage, err := storage.NewGORMProvider(logger, cfg.DBConfig, cfg.BSVNetwork)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create storage provider: %w", err)
 	}

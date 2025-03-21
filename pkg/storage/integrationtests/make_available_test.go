@@ -22,8 +22,12 @@ func TestMakeAvailable(t *testing.T) {
 	storageIdentityKey, err := wdk.IdentityKey(testabilities.StorageIdentityKey)
 	require.NoError(t, err)
 
-	inMemoryConnectionString := "file:storage-test.db?mode=memory"
-	activeStorage, err := storage.NewSQLiteProvider(logger, defs.NetworkTestnet, inMemoryConnectionString)
+	dbConfig := defs.DefaultDBConfig()
+	dbConfig.SQLite.ConnectionString = "file:storage-test.db?mode=memory"
+	dbConfig.MaxIdleConnections = 1
+	dbConfig.MaxOpenConnections = 1
+
+	activeStorage, err := storage.NewGORMProvider(logger, dbConfig, defs.NetworkTestnet)
 	require.NoError(t, err)
 
 	_, err = activeStorage.Migrate("test", storageIdentityKey)

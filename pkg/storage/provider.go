@@ -22,16 +22,8 @@ type Provider struct {
 	repo     Repository
 }
 
-func NewSQLiteProvider(logger *slog.Logger, chain defs.BSVNetwork, connectionString string) (*Provider, error) {
-	db, err := database.NewDatabase(&database.Config{
-		Engine: defs.DBTypeSQLite,
-		SQLiteConfig: database.SQLiteConfig{
-			ConnectionString: connectionString,
-		},
-		// TODO: Do it differently after Damian's PR merged
-		MaxIdleConnections: 1,
-		MaxOpenConnections: 1,
-	}, logger)
+func NewGORMProvider(logger *slog.Logger, dbConfig defs.Database, chain defs.BSVNetwork) (*Provider, error) {
+	db, err := database.NewDatabase(dbConfig, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create database: %w", err)
 	}
