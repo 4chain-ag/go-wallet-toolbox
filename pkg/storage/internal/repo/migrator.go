@@ -2,6 +2,7 @@ package repo
 
 import (
 	"fmt"
+
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"gorm.io/gorm"
 )

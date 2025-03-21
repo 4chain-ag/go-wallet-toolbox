@@ -2,19 +2,22 @@ package storage
 
 import (
 	"fmt"
+	"log/slog"
+
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/repo"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
-	"log/slog"
 )
 
+// Repository is an interface for the actual storage repository.
 type Repository interface {
 	Migrate() error
 	ReadSettings() (*wdk.TableSettings, error)
 	SaveSettings(settings *wdk.TableSettings) error
 }
 
+// Provider is a storage provider.
 type Provider struct {
 	Chain defs.BSVNetwork
 
@@ -22,6 +25,7 @@ type Provider struct {
 	repo     Repository
 }
 
+// NewGORMProvider creates a new storage provider with GORM repository.
 func NewGORMProvider(logger *slog.Logger, dbConfig defs.Database, chain defs.BSVNetwork) (*Provider, error) {
 	db, err := database.NewDatabase(dbConfig, logger)
 	if err != nil {
@@ -34,6 +38,7 @@ func NewGORMProvider(logger *slog.Logger, dbConfig defs.Database, chain defs.BSV
 	}, nil
 }
 
+// Migrate migrates the storage and saves the settings.
 func (p *Provider) Migrate(storageName, storageIdentityKey string) (string, error) {
 	err := p.repo.Migrate()
 	if err != nil {
@@ -59,6 +64,7 @@ func (p *Provider) Migrate(storageName, storageIdentityKey string) (string, erro
 	return version, nil
 }
 
+// MakeAvailable reads the settings and makes them available.
 func (p *Provider) MakeAvailable() (*wdk.TableSettings, error) {
 	settings, err := p.repo.ReadSettings()
 	if err != nil {

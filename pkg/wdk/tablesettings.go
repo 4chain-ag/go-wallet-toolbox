@@ -1,8 +1,9 @@
 package wdk
 
 import (
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"time"
+
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 )
 
 // TableSettings is a struct that holds the settings of the whole DB

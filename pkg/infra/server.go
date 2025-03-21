@@ -2,9 +2,6 @@ package infra
 
 import (
 	"fmt"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/server"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"log/slog"
 	"net/http"
 	"os"
@@ -12,6 +9,9 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/config"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/server"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 )
 
 // Server is a struct that holds the "infra" server configuration
