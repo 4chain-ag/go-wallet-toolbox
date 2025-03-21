@@ -29,7 +29,7 @@ func (l *SlogGormLogger) Error(ctx context.Context, msg string, args ...any) {
 	l.logger.ErrorContext(ctx, fmt.Sprintf(msg, args...))
 }
 
-// Trace logs SQL queries with execution time
+// Trace logs SQLCommon queries with execution time
 func (l *SlogGormLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
 	sql, rows := fc()
 	duration := time.Since(begin)

@@ -1,13 +1,12 @@
 package database
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/database/sqlite3extended"
-	"gorm.io/driver/sqlite"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"gorm.io/gorm"
 	glogger "gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
@@ -20,26 +19,23 @@ type Database struct {
 }
 
 // NewDatabase will configure and return database based on provided config
-func NewDatabase(cfg *Config, logger *slog.Logger) (*Database, error) {
-	var database *gorm.DB
-
+func NewDatabase(cfg defs.Database, logger *slog.Logger) (*Database, error) {
 	if logger == nil {
-		logger = slog.Default()
+		logger = logging.Child(logger, "database")
 	}
 
-	//nolint:exhaustive
-	switch cfg.Engine {
-	case defs.DBTypeSQLite:
-		db, err := openSQLiteDatabase(cfg, &SlogGormLogger{
-			logger: logger,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to create gorm instance, caused by: %w", err)
-		}
+	gormLogger := &SlogGormLogger{
+		logger: logger,
+	}
 
-		database = db
-	default:
-		panic(fmt.Sprintf("Engine: %s is not supported", cfg.Engine))
+	dialector, ok := dialectors[cfg.Engine]
+	if !ok {
+		return nil, fmt.Errorf("dialector for engine %s not found", cfg.Engine)
+	}
+
+	database, err := createAndConfigureDatabaseConnection(dialector(cfg), cfg, gormLogger)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create gorm instance, caused by: %w", err)
 	}
 
 	return &Database{
@@ -48,51 +44,38 @@ func NewDatabase(cfg *Config, logger *slog.Logger) (*Database, error) {
 	}, nil
 }
 
-// openSQLiteDatabase will open a SQLite database connection
-func openSQLiteDatabase(cfg *Config, logger glogger.Interface) (*gorm.DB, error) {
-	dsn := cfg.SQLiteConfig.ConnectionString
-	if dsn == "" {
-		dsn = dsnDefault
-	}
-
-	dialector := sqlite.New(sqlite.Config{
-		Conn:       nil,
-		DriverName: sqlite3extended.NAME,
-		DSN:        dsn,
-	})
-
-	// create new connection
+func createAndConfigureDatabaseConnection(dialector gorm.Dialector, cfg defs.Database, logger glogger.Interface) (*gorm.DB, error) {
 	db, err := gorm.Open(dialector, createGormConfig(
 		logger,
 	))
 	if err != nil {
-		return nil, errors.Join(err, errors.New("failed to create new database connection with gorm"))
+		return nil, fmt.Errorf("failed to initialize GORM database connection: %w", err)
 	}
 
 	sqlDB, err := db.DB()
 	if err != nil {
-		return nil, errors.Join(err, errors.New("failed to connect to the database with gorm"))
+		return nil, fmt.Errorf("failed to retrieve underlying SQL database connection: %w", err)
+
 	}
 	sqlDB.SetMaxIdleConns(cfg.MaxIdleConnections)
 	sqlDB.SetMaxOpenConns(cfg.MaxOpenConnections)
 	sqlDB.SetConnMaxLifetime(cfg.MaxConnectionTime)
 	sqlDB.SetConnMaxIdleTime(cfg.MaxConnectionIdleTime)
 
-	// Return the connection
 	return db, nil
 }
 
 // createGormConfig returns valid gorm.Config for database connections
 func createGormConfig(logger glogger.Interface) *gorm.Config {
 	// Set the prefix
-	tablePrefix := defaultTablePrefix
+	tablePrefix := defs.DefaultTablePrefix
 
 	if logger == nil {
 		panic("Could not create gorm config. When creating database configuration you need to specify the logger to use")
 	}
 
 	// Create the configuration
-	config := &gorm.Config{
+	gormCfg := &gorm.Config{
 		AllowGlobalUpdate:                        false,
 		ClauseBuilders:                           nil,
 		ConnPool:                                 nil,
@@ -116,5 +99,11 @@ func createGormConfig(logger glogger.Interface) *gorm.Config {
 		TranslateError:         true,
 	}
 
-	return config
+	return gormCfg
+}
+
+// normalizeTimeZone changes every "/" in timezone to special char "%2F" for mysql to parse time location correctly
+// https://github.com/go-sql-driver/mysql?tab=readme-ov-file#loc
+func normalizeTimeZone(tz string) string {
+	return strings.Replace(tz, "/", "%2F", -1)
 }

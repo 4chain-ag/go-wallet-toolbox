@@ -10,7 +10,7 @@ import (
 // Config is the configuration for the "remote storage server" service (aka "infra")
 type Config struct {
 	BSVNetwork defs.BSVNetwork `mapstructure:"bsv_network"`
-	DBConfig   DBConfig        `mapstructure:"db"`
+	DBConfig   defs.Database   `mapstructure:"db"`
 	HTTPConfig HTTPConfig      `mapstructure:"http"`
 	Logging    LogConfig       `mapstructure:"logging"`
 }
@@ -36,9 +36,7 @@ type LogConfig struct {
 func Defaults() Config {
 	return Config{
 		BSVNetwork: defs.NetworkMainnet,
-		DBConfig: DBConfig{
-			Engine: defs.DBTypeSQLite,
-		},
+		DBConfig:   defs.DefaultDBConfig(),
 		HTTPConfig: HTTPConfig{
 			Port: 8100,
 		},
