@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/database/sqlite3extended"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/sqlite3extended"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
