@@ -7,6 +7,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Settings struct {
@@ -42,13 +43,15 @@ func (s *Settings) ReadSettings() (*wdk.TableSettings, error) {
 }
 
 func (s *Settings) SaveSettings(settings *wdk.TableSettings) error {
-	err := s.db.Create(&models.Settings{
-		StorageIdentityKey: settings.StorageIdentityKey,
-		StorageName:        settings.StorageName,
-		Chain:              string(settings.Chain),
-		MaxOutputScript:    settings.MaxOutputScript,
-		//DbType:             settings.DbType, //from-kt: DB type should be determined by the server side
-	}).Error
+	err := s.db.
+		Clauses(clause.OnConflict{DoNothing: true}).
+		Create(&models.Settings{
+			StorageIdentityKey: settings.StorageIdentityKey,
+			StorageName:        settings.StorageName,
+			Chain:              string(settings.Chain),
+			MaxOutputScript:    settings.MaxOutputScript,
+			//DbType:             settings.DbType, //from-kt: DB type should be determined by the server side
+		}).Error
 	if err != nil {
 		return fmt.Errorf("failed to save settings: %w", err)
 	}

@@ -57,8 +57,7 @@ func NewServer(opts ...InitOption) (*Server, error) {
 		return nil, fmt.Errorf("failed to create storage provider: %w", err)
 	}
 
-	// TODO: Get database name from somewhere
-	_, err = activeStorage.Migrate("local", storageIdentityKey)
+	_, err = activeStorage.Migrate(cfg.DBConfig.Name, storageIdentityKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to migrate storage: %w", err)
 	}
