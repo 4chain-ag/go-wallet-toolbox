@@ -1,69 +1,41 @@
 package integrationtests_test
 
 import (
-	"context"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/integrationtests/testabilities"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/server"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
-	"github.com/filecoin-project/go-jsonrpc"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 )
 
 func TestMakeAvailable(t *testing.T) {
+	given := testabilities.Given(t)
+
 	// given:
-	logger := logging.NewTestLogger(t)
+	activeStorage := given.GormProvider()
 
-	storageIdentityKey, err := wdk.IdentityKey(testabilities.StorageIdentityKey)
-	require.NoError(t, err)
+	// and:
+	cleanupSrv := given.StartedRPCServerFor(activeStorage)
+	defer cleanupSrv()
 
-	dbConfig := defs.DefaultDBConfig()
-	dbConfig.SQLite.ConnectionString = "file:storage-test.db?mode=memory"
-	dbConfig.MaxIdleConnections = 1
-	dbConfig.MaxOpenConnections = 1
-
-	activeStorage, err := storage.NewGORMProvider(logger, dbConfig, defs.NetworkTestnet)
-	require.NoError(t, err)
-
-	_, err = activeStorage.Migrate("test", storageIdentityKey)
-	require.NoError(t, err)
-
-	// given server:
-	rpcServer := server.NewRPCHandler(logger, "storage_server", activeStorage)
-
-	mux := http.NewServeMux()
-	rpcServer.Register(mux)
-
-	testSrv := httptest.NewServer(mux)
-	defer testSrv.Close()
-
-	// and client:
+	// and:
 	var client struct {
 		MakeAvailable func() (*wdk.TableSettings, error)
 	}
-	closer, err := jsonrpc.NewMergeClient(
-		context.Background(),
-		testSrv.URL,
-		"storage_server",
-		[]any{&client},
-		nil,
-		jsonrpc.WithMethodNamer(jsonrpc.NoNamespaceDecapitalizedMethodNamer),
-	)
-	require.NoError(t, err)
-	defer closer()
+
+	// and:
+	cleanupCli := given.RPCClient(&client)
+	defer cleanupCli()
 
 	// when:
 	tableSettings, err := client.MakeAvailable()
 
 	// then:
 	require.NoError(t, err)
-	require.Equal(t, "test", tableSettings.StorageName)
-	require.Equal(t, storageIdentityKey, tableSettings.StorageIdentityKey)
-	require.Equal(t, defs.NetworkTestnet, tableSettings.Chain)
-	require.Equal(t, 1024, tableSettings.MaxOutputScript)
+
+	assert.Equal(t, testabilities.StorageName, tableSettings.StorageName)
+	assert.Equal(t, "028f2daab7808b79368d99eef1ebc2d35cdafe3932cafe3d83cf17837af034ec29", tableSettings.StorageIdentityKey)
+	assert.Equal(t, defs.NetworkTestnet, tableSettings.Chain)
+	assert.Equal(t, 1024, tableSettings.MaxOutputScript)
 }
