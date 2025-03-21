@@ -19,8 +19,7 @@ func TestStorage(t *testing.T) {
 			StorageIdentityKey: storageID,
 			StorageName:        "test-name",
 			Chain:              "test",
-			DBType:             "SQLite",
-			MaxOutputs:         100,
+			MaxOutputScript:    100,
 		}
 
 		// and:

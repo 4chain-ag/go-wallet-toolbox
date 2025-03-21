@@ -3,6 +3,7 @@ module github.com/4chain-ag/go-wallet-toolbox
 go 1.24.0
 
 require (
+	github.com/bsv-blockchain/go-sdk v1.1.22
 	github.com/filecoin-project/go-jsonrpc v0.7.1
 	github.com/go-viper/mapstructure/v2 v2.2.1
 	github.com/mattn/go-sqlite3 v1.14.24
@@ -41,8 +42,8 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
+	golang.org/x/crypto v0.35.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
