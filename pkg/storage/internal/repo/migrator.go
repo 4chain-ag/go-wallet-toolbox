@@ -2,7 +2,7 @@ package repo
 
 import (
 	"fmt"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/database/models"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"gorm.io/gorm"
 )
 
@@ -19,6 +19,6 @@ func (m *Migrator) Migrate() error {
 	if err != nil {
 		return fmt.Errorf("failed to migrate settings: %w", err)
 	}
-	
+
 	return nil
 }
