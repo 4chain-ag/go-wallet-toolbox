@@ -19,18 +19,7 @@ type Database struct {
 }
 
 // NewDatabase will configure and return database based on provided config
-func NewDatabase(cfg *defs.Database, logger *slog.Logger) (*Database, error) {
-	defaultConfig := defs.DefaultDBConfig()
-	if cfg == nil {
-		return newDatabaseInternal(&defaultConfig, logger)
-	}
-
-	mergedCfg := mergeConfig(&defaultConfig, cfg)
-	return newDatabaseInternal(mergedCfg, logger)
-}
-
-// newDatabaseInternal configures database with merged default and provided config
-func newDatabaseInternal(cfg *defs.Database, logger *slog.Logger) (*Database, error) {
+func NewDatabase(cfg defs.Database, logger *slog.Logger) (*Database, error) {
 	if logger == nil {
 		logger = logging.Child(logger, "database")
 	}
@@ -44,7 +33,7 @@ func newDatabaseInternal(cfg *defs.Database, logger *slog.Logger) (*Database, er
 		return nil, fmt.Errorf("dialector for engine %s not found", cfg.Engine)
 	}
 
-	database, err := createAndConfigureDatabaseConnection(dialector(*cfg), *cfg, gormLogger)
+	database, err := createAndConfigureDatabaseConnection(dialector(cfg), cfg, gormLogger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gorm instance, caused by: %w", err)
 	}
@@ -53,51 +42,6 @@ func newDatabaseInternal(cfg *defs.Database, logger *slog.Logger) (*Database, er
 		DB:     database,
 		logger: logger,
 	}, nil
-}
-
-// mergeConfig merges the default configuration with the provided one
-func mergeConfig(defaultCfg *defs.Database, providedCfg *defs.Database) *defs.Database {
-	if providedCfg == nil {
-		return defaultCfg
-	}
-
-	mergedCfg := *defaultCfg
-
-	if providedCfg.Engine != "" {
-		mergedCfg.Engine = providedCfg.Engine
-	}
-
-	if providedCfg.SQLite.ConnectionString != "" {
-		mergedCfg.SQLite.ConnectionString = providedCfg.SQLite.ConnectionString
-	}
-
-	if providedCfg.MaxIdleConnections > 0 {
-		mergedCfg.MaxIdleConnections = providedCfg.MaxIdleConnections
-	}
-
-	if providedCfg.MaxConnectionIdleTime > 0 {
-		mergedCfg.MaxConnectionIdleTime = providedCfg.MaxConnectionIdleTime
-	}
-
-	if providedCfg.MaxConnectionTime > 0 {
-		mergedCfg.MaxConnectionTime = providedCfg.MaxConnectionTime
-	}
-
-	if providedCfg.MaxOpenConnections > 0 {
-		mergedCfg.MaxOpenConnections = providedCfg.MaxOpenConnections
-	}
-
-	if providedCfg.PostgreSQL.SslMode != "" {
-		mergedCfg.PostgreSQL.SslMode = providedCfg.PostgreSQL.SslMode
-	}
-
-	if providedCfg.MySQL.Protocol != "" {
-		mergedCfg.MySQL.Protocol = providedCfg.MySQL.Protocol
-	}
-
-	mergedCfg.SQLCommon = providedCfg.SQLCommon
-
-	return &mergedCfg
 }
 
 func createAndConfigureDatabaseConnection(dialector gorm.Dialector, cfg defs.Database, logger glogger.Interface) (*gorm.DB, error) {

@@ -1,12 +1,12 @@
 package database_test
 
 import (
-	"testing"
-
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/database/models"
 	"github.com/stretchr/testify/require"
+	"testing"
+	"time"
 )
 
 func TestStorage(t *testing.T) {
@@ -23,16 +23,21 @@ func TestStorage(t *testing.T) {
 		}
 
 		// and:
-		storageDB, err := database.NewDatabase(&defs.Database{
+		storageDB, err := database.NewDatabase(defs.Database{
 			SQLite: defs.SQLite{
 				ConnectionString: "file::memory:",
 			},
-			Engine: defs.DBTypeSQLite,
+			MaxConnectionTime:     5 * time.Second,
+			MaxIdleConnections:    1,
+			MaxConnectionIdleTime: 5 * time.Second,
+			MaxOpenConnections:    1,
+			Engine:                defs.DBTypeSQLite,
 		}, nil)
 		require.NoError(t, err)
 
 		// when:
-		_ = storageDB.DB.AutoMigrate(&models.Settings{})
+		err = storageDB.DB.AutoMigrate(&models.Settings{})
+		require.NoError(t, err)
 		storageDB.DB.Create(&settings)
 		res := storageDB.DB.Where("storage_identity_key = ?", storageID).First(&settingsFromDB)
 
