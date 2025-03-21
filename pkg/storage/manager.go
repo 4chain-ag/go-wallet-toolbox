@@ -2,8 +2,9 @@ package storage
 
 import (
 	"fmt"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"sync"
+
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 )
 
 type managedStorage struct {
