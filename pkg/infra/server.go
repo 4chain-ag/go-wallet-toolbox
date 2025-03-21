@@ -9,14 +9,17 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/config"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/server"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/server"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 )
 
 // Server is a struct that holds the "infra" server configuration
 type Server struct {
 	Config Config
 
-	logger *slog.Logger
+	logger  *slog.Logger
+	storage *storage.Provider
 }
 
 // NewServer creates a new server instance with given options, like config file path or a prefix for environment variables
@@ -44,16 +47,32 @@ func NewServer(opts ...InitOption) (*Server, error) {
 
 	logger := logging.Child(makeLogger(&cfg, &options), "infra")
 
+	storageIdentityKey, err := wdk.IdentityKey(cfg.ServerPrivateKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create storage identity key: %w", err)
+	}
+
+	activeStorage, err := storage.NewGORMProvider(logger, cfg.DBConfig, cfg.BSVNetwork)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create storage provider: %w", err)
+	}
+
+	_, err = activeStorage.Migrate(cfg.DBConfig.SQLCommon.DBName, storageIdentityKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to migrate storage: %w", err)
+	}
+
 	return &Server{
 		Config: cfg,
 
-		logger: logger,
+		logger:  logger,
+		storage: activeStorage,
 	}, nil
 }
 
 // ListenAndServe starts the JSON-RPC server
 func (s *Server) ListenAndServe() error {
-	rpcServer := server.NewRPCHandler(s.logger)
+	rpcServer := server.NewRPCHandler(s.logger, "remote_storage", s.storage)
 
 	mux := http.NewServeMux()
 	rpcServer.Register(mux)

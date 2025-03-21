@@ -1,3 +1,5 @@
+server_private_key: # <-you need to fill this in
+
 bsv_network: main
 db:
     engine: MySQL

@@ -8,20 +8,20 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/server"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/server"
 	"github.com/filecoin-project/go-jsonrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestTracer(t *testing.T) {
-	// TODO: Reorganize the tests when testabilities are introduced
 	// given:
 	testWriter := logging.TestWriter{}
 	logger := logging.New().WithLevel(defs.LogLevelDebug).WithHandler(defs.TextHandler, &testWriter).Logger()
 
 	// given server:
-	rpcServer := server.NewRPCHandler(logger)
+	handler := &mockHandler{}
+	rpcServer := server.NewRPCHandler(logger, "MockHandler", handler)
 
 	mux := http.NewServeMux()
 	rpcServer.Register(mux)
@@ -31,12 +31,12 @@ func TestTracer(t *testing.T) {
 
 	// and client:
 	var client struct {
-		MakeAvailable func() server.TableSettings
+		Get func() int
 	}
 	closer, err := jsonrpc.NewMergeClient(
 		context.Background(),
 		testSrv.URL,
-		"SimpleServerHandler",
+		"MockHandler",
 		[]any{&client},
 		nil,
 		jsonrpc.WithMethodNamer(jsonrpc.NoNamespaceDecapitalizedMethodNamer),
@@ -45,12 +45,20 @@ func TestTracer(t *testing.T) {
 	defer closer()
 
 	// when:
-	_ = client.MakeAvailable()
+	val := client.Get()
 
 	// then:
+	require.Equal(t, 10, val)
+
 	msg := testWriter.String()
 	assert.Contains(t, msg, "time=")
 	assert.Contains(t, msg, "level=INFO")
 	assert.Contains(t, msg, `msg="Handling RPC call"`)
-	assert.Contains(t, msg, `method=makeAvailable`)
+	assert.Contains(t, msg, `method=get`)
+}
+
+type mockHandler struct{}
+
+func (h *mockHandler) Get() int {
+	return 10
 }

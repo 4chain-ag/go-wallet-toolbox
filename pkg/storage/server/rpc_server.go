@@ -15,7 +15,7 @@ type RPCServer struct {
 }
 
 // NewRPCHandler creates a new RPCServer instance
-func NewRPCHandler(parentLogger *slog.Logger) *RPCServer {
+func NewRPCHandler(parentLogger *slog.Logger, name string, handler any) *RPCServer {
 	logger := logging.Child(parentLogger, "rpc_server")
 
 	rpcServer := jsonrpc.NewServer(
@@ -23,9 +23,7 @@ func NewRPCHandler(parentLogger *slog.Logger) *RPCServer {
 		jsonrpc.WithTracer(tracer(logger)),
 	)
 
-	// create a handler instance and register it
-	serverHandler := &Handler{}
-	rpcServer.Register("Handler", serverHandler)
+	rpcServer.Register(name, handler)
 
 	return &RPCServer{
 		Handler: rpcServer,
