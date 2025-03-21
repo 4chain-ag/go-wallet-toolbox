@@ -22,7 +22,7 @@ func TestMakeAvailable(t *testing.T) {
 
 	// and:
 	var client struct {
-		MakeAvailable func() (*wdk.TableSettings, error)
+		MakeAvailable func() (*wdk.SettingsDTO, error)
 	}
 
 	// and:

@@ -83,7 +83,22 @@ type ValidCreateActionArgs struct {
 	IsDelayed bool `json:"is_delayed,omitempty"`
 }
 
+type WalletStorageReader interface {
+	IsAvailable() bool
+}
+
 // WalletStorageWriter is an interface for writing to the wallet storage
 type WalletStorageWriter interface {
+	WalletStorageReader
 	CreateAction(auth AuthID, args ValidCreateActionArgs)
+	MakeAvailable() (*SettingsDTO, error)
+	Migrate() (string, error)
+}
+
+type WalletStorageSync interface {
+	WalletStorageWriter
+}
+
+type WalletStorageProvider interface {
+	WalletStorageSync
 }

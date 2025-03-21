@@ -13,15 +13,15 @@ import (
 // Repository is an interface for the actual storage repository.
 type Repository interface {
 	Migrate() error
-	ReadSettings() (*wdk.TableSettings, error)
-	SaveSettings(settings *wdk.TableSettings) error
+	ReadSettings() (*wdk.SettingsDTO, error)
+	SaveSettings(settings *wdk.SettingsDTO) error
 }
 
 // Provider is a storage provider.
 type Provider struct {
 	Chain defs.BSVNetwork
 
-	settings *wdk.TableSettings
+	settings *wdk.SettingsDTO
 	repo     Repository
 }
 
@@ -47,7 +47,7 @@ func (p *Provider) Migrate(storageName, storageIdentityKey string) (string, erro
 
 	// TODO: what if p.Chain != Chain from DB?
 
-	err = p.repo.SaveSettings(&wdk.TableSettings{
+	err = p.repo.SaveSettings(&wdk.SettingsDTO{
 		StorageIdentityKey: storageIdentityKey,
 		StorageName:        storageName,
 		Chain:              p.Chain,
@@ -65,7 +65,7 @@ func (p *Provider) Migrate(storageName, storageIdentityKey string) (string, erro
 }
 
 // MakeAvailable reads the settings and makes them available.
-func (p *Provider) MakeAvailable() (*wdk.TableSettings, error) {
+func (p *Provider) MakeAvailable() (*wdk.SettingsDTO, error) {
 	settings, err := p.repo.ReadSettings()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read settings: %w", err)

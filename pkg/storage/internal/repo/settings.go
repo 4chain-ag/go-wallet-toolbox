@@ -18,7 +18,7 @@ func NewSettings(db *gorm.DB) *Settings {
 	return &Settings{db: db}
 }
 
-func (s *Settings) ReadSettings() (*wdk.TableSettings, error) {
+func (s *Settings) ReadSettings() (*wdk.SettingsDTO, error) {
 	var settings models.Settings
 	err := s.db.First(&settings).Error
 	if err != nil {
@@ -30,7 +30,7 @@ func (s *Settings) ReadSettings() (*wdk.TableSettings, error) {
 		return nil, fmt.Errorf("failed to parse chain from settings: %w", err)
 	}
 
-	return &wdk.TableSettings{
+	return &wdk.SettingsDTO{
 		StorageIdentityKey: settings.StorageIdentityKey,
 		StorageName:        settings.StorageName,
 		CreatedAt:          settings.CreatedAt,
@@ -42,7 +42,7 @@ func (s *Settings) ReadSettings() (*wdk.TableSettings, error) {
 	}, nil
 }
 
-func (s *Settings) SaveSettings(settings *wdk.TableSettings) error {
+func (s *Settings) SaveSettings(settings *wdk.SettingsDTO) error {
 	err := s.db.
 		Clauses(clause.OnConflict{DoNothing: true}).
 		Create(&models.Settings{

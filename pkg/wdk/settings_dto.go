@@ -6,9 +6,9 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 )
 
-// TableSettings is a struct that holds the settings of the whole DB
+// SettingsDTO is a struct that holds the settings of the whole DB
 // from-kt: I suppose, better name would be StorageSettings, but I wanted to keep the original name
-type TableSettings struct {
+type SettingsDTO struct {
 	StorageIdentityKey string          `json:"storageIdentityKey"`
 	StorageName        string          `json:"storageName"`
 	CreatedAt          time.Time       `json:"created_at"`
