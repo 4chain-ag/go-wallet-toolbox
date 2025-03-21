@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/database/sqlite3extended"
 	"gorm.io/driver/mysql"
