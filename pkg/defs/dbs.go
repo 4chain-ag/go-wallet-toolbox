@@ -24,14 +24,10 @@ func ParseDBTypeStr(dbType string) (DBType, error) {
 const (
 	DSNDefault         = "file::memory:" // DSN for connection (file or memory, default is memory)
 	DefaultTablePrefix = "bsv_"
-	DefaultName        = "storage"
 )
 
 // Database is a struct that configures the database connection
 type Database struct {
-	// Name is stored in Settings table
-	Name string `mapstructure:"name"`
-
 	// Engine is the database engine (PostgreSQL, SQLite)
 	Engine DBType `mapstructure:"engine"`
 
@@ -93,7 +89,6 @@ type SQLCommon struct {
 // DefaultDBConfig sets default configuration for the database
 func DefaultDBConfig() Database {
 	return Database{
-		Name:                  DefaultName,
 		Engine:                DBTypeSQLite,
 		SQLite:                SQLite{ConnectionString: DSNDefault},
 		MaxIdleConnections:    5,
@@ -105,6 +100,9 @@ func DefaultDBConfig() Database {
 		},
 		MySQL: MySQL{
 			Protocol: "tcp",
+		},
+		SQLCommon: SQLCommon{
+			DBName: "storage",
 		},
 	}
 }
