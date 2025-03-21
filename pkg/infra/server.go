@@ -66,7 +66,8 @@ func NewServer(opts ...InitOption) (*Server, error) {
 	return &Server{
 		Config: cfg,
 
-		logger: logger,
+		logger:  logger,
+		storage: activeStorage,
 	}, nil
 }
 
