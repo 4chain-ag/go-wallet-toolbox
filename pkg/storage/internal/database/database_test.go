@@ -1,13 +1,13 @@
 package database_test
 
 import (
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/repo"
 	"testing"
 	"time"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/repo"
 	"github.com/stretchr/testify/require"
 )
 
