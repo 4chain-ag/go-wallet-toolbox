@@ -14,6 +14,7 @@ import (
 func TestStorage(t *testing.T) {
 	t.Run("Find or create user", func(t *testing.T) {
 		// given:
+		var users []*models.User
 		storageID := "12344666"
 		storageDB, err := database.NewDatabase(defs.Database{
 			SQLite: defs.SQLite{
@@ -28,7 +29,7 @@ func TestStorage(t *testing.T) {
 		require.NoError(t, err)
 
 		// and:
-		err = storageDB.DB.AutoMigrate(&models.Settings{}, &models.User{})
+		err = storageDB.DB.AutoMigrate(&models.Settings{}, &models.User{}, &models.OutputBaskets{})
 		require.NoError(t, err)
 
 		// and:
@@ -43,7 +44,7 @@ func TestStorage(t *testing.T) {
 		// and:
 		repository := repo.NewRepositories(storageDB.DB)
 
-		//when:
+		// when:
 		usr, err := repository.FindOrCreateUser("028f2daab7808b79368d99eef1ebc2d35cdafe3932cafe3d83cf17837af034ec29")
 		require.NoError(t, err)
 		require.Equal(t, usr.User.ActiveStorage, settings.StorageIdentityKey)
@@ -51,6 +52,10 @@ func TestStorage(t *testing.T) {
 		usr1, err1 := repository.FindOrCreateUser("028f2daab7808b79368d99eef1ebc2d35cdafe3932cafe3d83cf17837af034ec29")
 		require.NoError(t, err1)
 		require.Equal(t, usr1.User.ActiveStorage, settings.StorageIdentityKey)
+
+		err = storageDB.DB.Find(&users, "identity_key = ?", "028f2daab7808b79368d99eef1ebc2d35cdafe3932cafe3d83cf17837af034ec29").Error
+		require.NoError(t, err)
+		require.Equal(t, 1, len(users))
 	})
 
 	t.Run("Test database", func(t *testing.T) {
