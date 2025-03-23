@@ -78,7 +78,6 @@ func (p *Provider) MakeAvailable() (*wdk.TableSettings, error) {
 
 // FindOrInsertUser will find user by their identityKey or inserts a new one if not found
 func (p *Provider) FindOrInsertUser(identityKey string) (*wdk.TableUser, error) {
-	// TODO: check response its not right on js side
 	user, err := p.repo.FindOrCreateUser(identityKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find or insert user: %w", err)
