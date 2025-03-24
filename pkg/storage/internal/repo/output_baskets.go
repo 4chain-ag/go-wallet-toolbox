@@ -17,7 +17,6 @@ func NewOutputBaskets(db *gorm.DB) *OutputBaskets {
 }
 
 func (u *OutputBaskets) Create(outputBasket *wdk.TableOutputBasket) error {
-	// TODO: fix foreign key
 	outputBasketModel := &models.OutputBaskets{
 		BasketID:                outputBasket.BasketID,
 		IsDeleted:               outputBasket.IsDeleted,

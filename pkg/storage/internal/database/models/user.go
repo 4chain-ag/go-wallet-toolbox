@@ -10,4 +10,6 @@ type User struct {
 	UserID        int    `gorm:"primaryKey;not null"`
 	IdentityKey   string `gorm:"type:varchar(130);not null"`
 	ActiveStorage string `gorm:"type:varchar(255);not null"`
+
+	OutputBaskets []*OutputBaskets `gorm:"foreignKey:UserID"`
 }
