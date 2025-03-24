@@ -63,20 +63,6 @@ func (u *Users) CreateUser(identityKey string) (*wdk.TableUser, error) {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	//// Add default change basket for new user.
-	//outputBasket := &wdk.TableOutputBasket{
-	//	UserID:                  user.UserID,
-	//	Name:                    "default",
-	//	NumberOfDesiredUTXOs:    32,
-	//	MinimumDesiredUTXOValue: 1000,
-	//	IsDeleted:               false,
-	//}
-	//
-	//err = u.outputBaskets.Create(outputBasket)
-	//if err != nil {
-	//	return nil, fmt.Errorf("failed to create output basket for new user: %w", err)
-	//}
-
 	return &wdk.TableUser{
 		User: wdk.User{
 			UserID:        user.UserID,
