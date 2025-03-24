@@ -19,7 +19,6 @@ func NewOutputBaskets(db *gorm.DB) *OutputBaskets {
 func (u *OutputBaskets) Create(outputBasket *wdk.TableOutputBasket) error {
 	outputBasketModel := &models.OutputBaskets{
 		BasketID:                outputBasket.BasketID,
-		IsDeleted:               outputBasket.IsDeleted,
 		UserID:                  outputBasket.UserID,
 		MinimumDesiredUTXOValue: outputBasket.MinimumDesiredUTXOValue,
 		NumberOfDesiredUTXOs:    outputBasket.NumberOfDesiredUTXOs,

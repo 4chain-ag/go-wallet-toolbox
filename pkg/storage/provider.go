@@ -15,7 +15,8 @@ type Repository interface {
 	Migrate() error
 	ReadSettings() (*wdk.TableSettings, error)
 	SaveSettings(settings *wdk.TableSettings) error
-	FindOrCreateUser(identityKey string) (*wdk.TableUser, error)
+	FindUser(identityKey string) (*wdk.TableUser, error)
+	CreateUser(identityKey string) (*wdk.TableUser, error)
 }
 
 // Provider is a storage provider.
@@ -78,9 +79,16 @@ func (p *Provider) MakeAvailable() (*wdk.TableSettings, error) {
 
 // FindOrInsertUser will find user by their identityKey or inserts a new one if not found
 func (p *Provider) FindOrInsertUser(identityKey string) (*wdk.TableUser, error) {
-	user, err := p.repo.FindOrCreateUser(identityKey)
+	user, err := p.repo.FindUser(identityKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find or insert user: %w", err)
+		return nil, fmt.Errorf("failed to find user: %w", err)
+	}
+	if user != nil {
+		return user, nil
+	}
+	user, err = p.repo.CreateUser(identityKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert user: %w", err)
 	}
 
 	return user, nil
