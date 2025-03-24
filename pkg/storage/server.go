@@ -28,6 +28,7 @@ func NewServer(logger *slog.Logger, storage wdk.StorageProvider, opts ...ServerO
 	return &Server{
 		provider: storage,
 		logger:   logging.Child(logger, "storage_server"),
+		options:  options,
 	}
 }
 
