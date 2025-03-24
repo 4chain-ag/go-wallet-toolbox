@@ -53,6 +53,9 @@ func Defaults() Config {
 
 // Validate validates the whole configuration
 func (c *Config) Validate() (err error) {
+	if c.ServerPrivateKey == "" {
+		return fmt.Errorf("server private key is required")
+	}
 	if c.BSVNetwork, err = defs.ParseBSVNetworkStr(string(c.BSVNetwork)); err != nil {
 		return fmt.Errorf("invalid BSV network: %w", err)
 	}

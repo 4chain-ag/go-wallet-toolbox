@@ -37,8 +37,6 @@ func (s *Settings) ReadSettings() (*wdk.TableSettings, error) {
 		UpdatedAt:          settings.UpdatedAt,
 		Chain:              chain,
 		MaxOutputScript:    settings.MaxOutputScript,
-
-		//DbType:             settings.DbType, //from-kt: returning DB type what is used on the server side is a security risk
 	}, nil
 }
 
@@ -50,7 +48,6 @@ func (s *Settings) SaveSettings(settings *wdk.TableSettings) error {
 			StorageName:        settings.StorageName,
 			Chain:              string(settings.Chain),
 			MaxOutputScript:    settings.MaxOutputScript,
-			//DbType:             settings.DbType, //from-kt: DB type should be determined by the server side
 		}).Error
 	if err != nil {
 		return fmt.Errorf("failed to save settings: %w", err)

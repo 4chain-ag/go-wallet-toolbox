@@ -10,7 +10,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/server"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/server"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/filecoin-project/go-jsonrpc"
 	"github.com/stretchr/testify/require"
@@ -18,6 +18,7 @@ import (
 
 const (
 	StorageServerPrivKey = "8143f5ed6c5b41c3d084d39d49e161d8dde4b50b0685a4e4ac23959d3b8a319b"
+	StorageIdentityKey   = "028f2daab7808b79368d99eef1ebc2d35cdafe3932cafe3d83cf17837af034ec29" // that matches StorageServerPrivKey
 	StorageName          = "test-storage"
 	StorageHandlerName   = "storage_server"
 )
@@ -25,7 +26,7 @@ const (
 type StorageFixture interface {
 	GormProvider() *storage.Provider
 	StartedRPCServerFor(provider *storage.Provider) (cleanup func())
-	RPCClient(clientDefinition any) (cleanup func())
+	RPCClient() (*TestClient, func())
 }
 
 type storageFixture struct {
@@ -66,19 +67,20 @@ func (s *storageFixture) StartedRPCServerFor(provider *storage.Provider) (cleanu
 	return s.testServer.Close
 }
 
-func (s *storageFixture) RPCClient(clientDefinition any) (cleanup func()) {
+func (s *storageFixture) RPCClient() (client *TestClient, cleanup func()) {
 	s.t.Helper()
+	client = &TestClient{}
 	closer, err := jsonrpc.NewMergeClient(
 		context.Background(),
 		s.testServer.URL,
 		"storage_server",
-		[]any{clientDefinition},
+		[]any{client},
 		nil,
 		jsonrpc.WithHTTPClient(s.testServer.Client()),
 		jsonrpc.WithMethodNamer(jsonrpc.NoNamespaceDecapitalizedMethodNamer),
 	)
 	s.require.NoError(err)
-	return closer
+	return client, closer
 }
 
 func Given(t testing.TB) StorageFixture {

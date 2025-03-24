@@ -8,7 +8,7 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/server"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/server"
 	"github.com/filecoin-project/go-jsonrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,9 +30,7 @@ func TestTracer(t *testing.T) {
 	defer testSrv.Close()
 
 	// and client:
-	var client struct {
-		Get func() int
-	}
+	var client mockClient
 	closer, err := jsonrpc.NewMergeClient(
 		context.Background(),
 		testSrv.URL,
@@ -61,4 +59,9 @@ type mockHandler struct{}
 
 func (h *mockHandler) Get() int {
 	return 10
+}
+
+// mockClient matches the mockHandler (but on the client side)
+type mockClient struct {
+	Get func() int
 }
