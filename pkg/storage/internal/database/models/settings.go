@@ -11,6 +11,4 @@ type Settings struct {
 	StorageName        string `gorm:"type:varchar(128);not null"`
 	Chain              string `gorm:"type:varchar(10);not null"`
 	MaxOutputScript    int    `gorm:"not null"`
-
-	//DbType             string `gorm:"type:varchar(10);not null"` //from-kt: DB type should be determined by the server side
 }

@@ -30,9 +30,7 @@ func TestTracer(t *testing.T) {
 	defer testSrv.Close()
 
 	// and client:
-	var client struct {
-		Get func() int
-	}
+	var client mockClient
 	closer, err := jsonrpc.NewMergeClient(
 		context.Background(),
 		testSrv.URL,
@@ -61,4 +59,9 @@ type mockHandler struct{}
 
 func (h *mockHandler) Get() int {
 	return 10
+}
+
+// mockClient matches the mockHandler (but on the client side)
+type mockClient struct {
+	Get func() int
 }
