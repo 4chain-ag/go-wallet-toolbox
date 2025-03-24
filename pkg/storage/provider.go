@@ -6,6 +6,7 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/repo"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 )
@@ -16,7 +17,7 @@ type Repository interface {
 	ReadSettings() (*wdk.TableSettings, error)
 	SaveSettings(settings *wdk.TableSettings) error
 	FindUser(identityKey string) (*wdk.TableUser, error)
-	CreateUser(identityKey string) (*wdk.TableUser, error)
+	CreateUser(user *models.User) (*wdk.TableUser, error)
 }
 
 // Provider is a storage provider.
@@ -86,7 +87,24 @@ func (p *Provider) FindOrInsertUser(identityKey string) (*wdk.TableUser, error) 
 	if user != nil {
 		return user, nil
 	}
-	user, err = p.repo.CreateUser(identityKey)
+
+	newUser := &models.User{
+		OutputBaskets: []*models.OutputBaskets{{
+			Name:                    "default",
+			NumberOfDesiredUTXOs:    32,
+			MinimumDesiredUTXOValue: 1000,
+		}},
+	}
+	newUser.IdentityKey = identityKey
+
+	settings, err := p.repo.ReadSettings()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read settings: %w", err)
+	}
+
+	newUser.ActiveStorage = settings.StorageIdentityKey
+
+	user, err = p.repo.CreateUser(newUser)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert user: %w", err)
 	}

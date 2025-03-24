@@ -41,24 +41,8 @@ func (u *Users) FindUser(identityKey string) (*wdk.TableUser, error) {
 	}, nil
 }
 
-func (u *Users) CreateUser(identityKey string) (*wdk.TableUser, error) {
-	user := &models.User{
-		OutputBaskets: []*models.OutputBaskets{{
-			Name:                    "default",
-			NumberOfDesiredUTXOs:    32,
-			MinimumDesiredUTXOValue: 1000,
-		}},
-	}
-	user.IdentityKey = identityKey
-
-	settings, err := u.settings.ReadSettings()
-	if err != nil {
-		return nil, fmt.Errorf("failed to read settings: %w", err)
-	}
-
-	user.ActiveStorage = settings.StorageIdentityKey
-
-	err = u.db.Create(user).Error
+func (u *Users) CreateUser(user *models.User) (*wdk.TableUser, error) {
+	err := u.db.Create(user).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
