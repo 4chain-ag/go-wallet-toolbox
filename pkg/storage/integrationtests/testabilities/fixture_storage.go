@@ -2,7 +2,6 @@ package testabilities
 
 import (
 	"context"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/server"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +10,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/server"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/filecoin-project/go-jsonrpc"
 	"github.com/stretchr/testify/require"

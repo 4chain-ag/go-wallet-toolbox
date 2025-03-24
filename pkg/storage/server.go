@@ -2,20 +2,23 @@ package storage
 
 import (
 	"fmt"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/server"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/server"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 )
 
+// Server represents the storage server exposing JSON-RPC API
 type Server struct {
 	provider wdk.StorageProvider
 	logger   *slog.Logger
 	options  ServerOptions
 }
 
+// NewServer creates a new storage server instance with given storage provider and optional options
 func NewServer(logger *slog.Logger, storage wdk.StorageProvider, opts ...ServerOption) *Server {
 	options := defaultServerOptions()
 	for _, opt := range opts {

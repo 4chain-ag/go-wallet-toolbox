@@ -7,7 +7,6 @@ import (
 )
 
 // TableSettings is a struct that holds the settings of the whole DB
-// from-kt: I suppose, better name would be StorageSettings, but I wanted to keep the original name
 type TableSettings struct {
 	StorageIdentityKey string          `json:"storageIdentityKey"`
 	StorageName        string          `json:"storageName"`
