@@ -19,6 +19,23 @@ type rpc{{ .Name }} struct {
 	{{ end }}
 }
 
+func NewClient(ctx context.Context, addr, namespace string, options ...jsonrpc.Option) (*{{ $clientName}}, func(), error) {
+    client := &{{ $clientName}}{
+        client: &rpc{{ .Name }}{},
+    }
+
+    cleanup, err := jsonrpc.NewMergeClient(
+      ctx,
+      addr,
+      namespace,
+      []any{client.client},
+      nil,
+      options...
+    )
+
+    return client, cleanup, err
+  }
+
 {{ end }}
 
 // ===== TODO: REMOVE BELOW LINES FROM TEMPLATE =====

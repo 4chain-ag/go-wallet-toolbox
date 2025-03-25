@@ -2,6 +2,11 @@
 
 package wdk
 
+import (
+	"context"
+	"github.com/filecoin-project/go-jsonrpc"
+)
+
 type WalletStorageWriterClient struct {
 	client *rpcWalletStorageWriter
 }
@@ -30,6 +35,23 @@ type rpcWalletStorageWriter struct {
 	FindOrInsertUser func(string) (*TableUser, error)
 
 	CreateAction func(AuthID, ValidCreateActionArgs)
+}
+
+func NewClient(ctx context.Context, addr, namespace string, options ...jsonrpc.Option) (*WalletStorageWriterClient, func(), error) {
+	client := &WalletStorageWriterClient{
+		client: &rpcWalletStorageWriter{},
+	}
+
+	cleanup, err := jsonrpc.NewMergeClient(
+		ctx,
+		addr,
+		namespace,
+		[]any{client.client},
+		nil,
+		options...,
+	)
+
+	return client, cleanup, err
 }
 
 // ===== TODO: REMOVE BELOW LINES FROM TEMPLATE =====
