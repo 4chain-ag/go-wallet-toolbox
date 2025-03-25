@@ -6,11 +6,29 @@ type WalletStorageWriterClient struct {
 	client *rpcWalletStorageWriter
 }
 
+func (c *WalletStorageWriterClient) Migrate(storageName string, storageIdentityKey string) (string, error) {
+	return c.client.Migrate(storageName, storageIdentityKey)
+}
+
+func (c *WalletStorageWriterClient) MakeAvailable() (*TableSettings, error) {
+	return c.client.MakeAvailable()
+}
+
+func (c *WalletStorageWriterClient) FindOrInsertUser(identityKey string) (*TableUser, error) {
+	return c.client.FindOrInsertUser(identityKey)
+}
+
 func (c *WalletStorageWriterClient) CreateAction(auth AuthID, args ValidCreateActionArgs) {
 	c.client.CreateAction(auth, args)
 }
 
 type rpcWalletStorageWriter struct {
+	Migrate func(string, string) (string, error)
+
+	MakeAvailable func() (*TableSettings, error)
+
+	FindOrInsertUser func(string) (*TableUser, error)
+
 	CreateAction func(AuthID, ValidCreateActionArgs)
 }
 
@@ -44,6 +62,35 @@ var Interfaces = []InterfaceInfo{
 	{
 		Name: "WalletStorageWriter",
 		Methods: []MethodInfo{
+			{
+				Name: "Migrate",
+				Arguments: []ParamInfo{
+					{Name: "storageName", Type: "string"},
+					{Name: "storageIdentityKey", Type: "string"},
+				},
+				Results: []TypeInfo{
+					{Type: "string"},
+					{Type: "error"},
+				},
+			},
+			{
+				Name:      "MakeAvailable",
+				Arguments: []ParamInfo{},
+				Results: []TypeInfo{
+					{Type: "*TableSettings"},
+					{Type: "error"},
+				},
+			},
+			{
+				Name: "FindOrInsertUser",
+				Arguments: []ParamInfo{
+					{Name: "identityKey", Type: "string"},
+				},
+				Results: []TypeInfo{
+					{Type: "*TableUser"},
+					{Type: "error"},
+				},
+			},
 			{
 				Name: "CreateAction",
 				Arguments: []ParamInfo{
