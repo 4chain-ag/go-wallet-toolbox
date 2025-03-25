@@ -1,0 +1,27 @@
+bsv_network: main
+db:
+    engine: sqlite
+    max_connection_idle_time: 6m0s
+    max_connection_time: 1m0s
+    max_idle_connections: 5
+    max_open_connections: 5
+    mysql:
+        protocol: tcp
+    postgresql:
+        ssl_mode: disable
+    sql_common:
+        db_name: storage
+        host: ""
+        password: ""
+        port: ""
+        time_zone: ""
+        user: ""
+    sqlite:
+        connection_string: ./storage.sqlite
+http:
+    port: 8100
+logging:
+    enabled: true
+    handler: json
+    level: info
+server_private_key: ""

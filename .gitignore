@@ -34,6 +34,11 @@ go.work.sum
 # OSX
 .DS_Store
 
+# Local configs
 infra-config.yaml
 infra-config.*.yaml
-!config.example.yaml
+!infra-config.example.yaml
+
+# SQLite databases
+storage.sqlite
+storage.*.sqlite
