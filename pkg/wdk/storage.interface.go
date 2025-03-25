@@ -1,5 +1,7 @@
 package wdk
 
+//go:generate go run -tags gen ../../tools/client-gen/main.go -out ../internal/client_gen.go
+
 // ValidCreateActionInput represents the input for a transaction action
 type ValidCreateActionInput struct {
 	Outpoint              OutPoint

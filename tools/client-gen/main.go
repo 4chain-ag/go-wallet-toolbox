@@ -1,0 +1,121 @@
+// //go:build gen
+// TODO: uncomment the line above to disable compailing this into production codes.
+
+package main
+
+import (
+	"flag"
+	"go/parser"
+	"go/token"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/4chain-ag/go-wallet-toolbox/tools/client-gen/extractor"
+	"github.com/4chain-ag/go-wallet-toolbox/tools/client-gen/generator"
+)
+
+func main() {
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("Failed to get current directory: %v", err)
+	}
+
+	// Parse command line flags
+	outputFile := flag.String("out", "client_gen.go", "Output file (default: stdout)")
+
+	workingDir := flag.String("cwd", cwd, "Current working directory")
+	flag.Parse()
+
+	if *outputFile == "" {
+		log.Fatalf("-out cannot be empty")
+	}
+
+	dir := *workingDir
+	targetFile := filepath.Join(dir, *outputFile)
+
+	isTheSameDir := dir == filepath.Dir(targetFile)
+	// Get the file name from the environment (set by go:generate)
+	fileName := os.Getenv("GOFILE")
+	if fileName == "" {
+		log.Fatal("GOFILE environment variable not set. Are you running this through go:generate?")
+	}
+
+	packageName := os.Getenv("GOPACKAGE")
+	if packageName == "" {
+		log.Fatal("GOPACKAGE environment variable not set. Are you running this through go:generate?")
+	}
+
+	fullPackageName := getFullPackageName(dir)
+
+	// Combine the directory and file name
+	filePath := filepath.Join(dir, fileName)
+
+	// Parse the file
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
+	if err != nil {
+		log.Fatalf("Failed to parse file %s: %v", filePath, err)
+	}
+
+	// Extract interface information
+	interfaces := extractor.ExtractInterfaces(fset, file)
+
+	output := generator.Generate(packageName, fullPackageName, isTheSameDir, interfaces)
+
+	// Write the output
+	log.Println("Writing to", targetFile)
+	if err := os.WriteFile(targetFile, output, 0644); err != nil {
+		log.Fatalf("Failed to write output to file: %v", err)
+	}
+}
+
+func getFullPackageName(dir string) string {
+	// Walk up directories to find go.mod
+	modDir := dir
+	for {
+		if _, err := os.Stat(filepath.Join(modDir, "go.mod")); err == nil {
+			break
+		}
+		parent := filepath.Dir(modDir)
+		if parent == modDir {
+			log.Fatalf("go.mod not found")
+		}
+		modDir = parent
+	}
+
+	// Read go.mod to extract module path
+	modContent, err := os.ReadFile(filepath.Join(modDir, "go.mod"))
+	if err != nil {
+		log.Fatalf("failed to read go.mod: %v", err)
+	}
+
+	// Extract module name from go.mod
+	modLines := strings.Split(string(modContent), "\n")
+	var modulePath string
+	for _, line := range modLines {
+		if strings.HasPrefix(strings.TrimSpace(line), "module ") {
+			modulePath = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(line), "module "))
+			break
+		}
+	}
+
+	if modulePath == "" {
+		log.Fatalf("module path not found in go.mod")
+	}
+
+	// Get the relative path from the module root to the package directory
+	relPath, err := filepath.Rel(modDir, dir)
+	if err != nil {
+		log.Fatalf("failed to get relative path: %v", err)
+	}
+
+	// For root package, just return the module path
+	if relPath == "." {
+		return modulePath
+	}
+
+	// Otherwise, join the module path and the relative path
+	return filepath.Join(modulePath, relPath)
+}
