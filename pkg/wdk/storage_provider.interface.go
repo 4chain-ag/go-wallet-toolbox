@@ -4,4 +4,5 @@ package wdk
 type StorageProvider interface {
 	Migrate(storageName, storageIdentityKey string) (string, error)
 	MakeAvailable() (*TableSettings, error)
+	FindOrInsertUser(identityKey string) (*TableUser, error)
 }
