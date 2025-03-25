@@ -9,10 +9,11 @@ import (
 
 // Config is the configuration for the "remote storage server" service (aka "infra")
 type Config struct {
-	BSVNetwork defs.BSVNetwork `mapstructure:"bsv_network"`
-	DBConfig   defs.Database   `mapstructure:"db"`
-	HTTPConfig HTTPConfig      `mapstructure:"http"`
-	Logging    LogConfig       `mapstructure:"logging"`
+	ServerPrivateKey string          `mapstructure:"server_private_key"`
+	BSVNetwork       defs.BSVNetwork `mapstructure:"bsv_network"`
+	DBConfig         defs.Database   `mapstructure:"db"`
+	HTTPConfig       HTTPConfig      `mapstructure:"http"`
+	Logging          LogConfig       `mapstructure:"logging"`
 }
 
 // DBConfig is the configuration for the database
@@ -35,6 +36,8 @@ type LogConfig struct {
 // Defaults returns the default configuration
 func Defaults() Config {
 	return Config{
+		ServerPrivateKey: "", // it is not optional, user must provide it
+
 		BSVNetwork: defs.NetworkMainnet,
 		DBConfig:   defs.DefaultDBConfig(),
 		HTTPConfig: HTTPConfig{
@@ -50,6 +53,9 @@ func Defaults() Config {
 
 // Validate validates the whole configuration
 func (c *Config) Validate() (err error) {
+	if c.ServerPrivateKey == "" {
+		return fmt.Errorf("server private key is required")
+	}
 	if c.BSVNetwork, err = defs.ParseBSVNetworkStr(string(c.BSVNetwork)); err != nil {
 		return fmt.Errorf("invalid BSV network: %w", err)
 	}

@@ -9,13 +9,11 @@ import (
 	"github.com/filecoin-project/go-jsonrpc"
 )
 
-// RPCServer is a JSON-RPC server
 type RPCServer struct {
 	Handler *jsonrpc.RPCServer
 }
 
-// NewRPCHandler creates a new RPCServer instance
-func NewRPCHandler(parentLogger *slog.Logger) *RPCServer {
+func NewRPCHandler(parentLogger *slog.Logger, name string, handler any) *RPCServer {
 	logger := logging.Child(parentLogger, "rpc_server")
 
 	rpcServer := jsonrpc.NewServer(
@@ -23,16 +21,13 @@ func NewRPCHandler(parentLogger *slog.Logger) *RPCServer {
 		jsonrpc.WithTracer(tracer(logger)),
 	)
 
-	// create a handler instance and register it
-	serverHandler := &Handler{}
-	rpcServer.Register("Handler", serverHandler)
+	rpcServer.Register(name, handler)
 
 	return &RPCServer{
 		Handler: rpcServer,
 	}
 }
 
-// Register registers the RPCServer with the provided ServeMux
 func (s *RPCServer) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /{$}", s.Handler.ServeHTTP)
 	mux.HandleFunc("POST /.well-known/auth", s.handleAuth) //fixme: this is a workaround to pass the client to the next step, it will be handled by the auth middleware

@@ -13,7 +13,15 @@ const (
 	DBTypeMySQL    DBType = "mysql"
 	DBTypeSQLite   DBType = "sqlite"
 	DBTypePostgres DBType = "postgres"
+)
 
+// ParseDBTypeStr parses a string to a DBType or returns an error
+func ParseDBTypeStr(dbType string) (DBType, error) {
+	return parseEnumCaseInsensitive(dbType, DBTypeMySQL, DBTypeSQLite, DBTypePostgres)
+}
+
+// Defaults for database configuration
+const (
 	DSNDefault         = "file::memory:" // DSN for connection (file or memory, default is memory)
 	DefaultTablePrefix = "bsv_"
 )
@@ -78,11 +86,6 @@ type SQLCommon struct {
 	User     string `mapstructure:"user"`
 }
 
-// ParseDBTypeStr parses a string to a DBType or returns an error
-func ParseDBTypeStr(dbType string) (DBType, error) {
-	return parseEnumCaseInsensitive(dbType, DBTypeMySQL, DBTypeSQLite, DBTypePostgres)
-}
-
 // DefaultDBConfig sets default configuration for the database
 func DefaultDBConfig() Database {
 	return Database{
@@ -97,6 +100,9 @@ func DefaultDBConfig() Database {
 		},
 		MySQL: MySQL{
 			Protocol: "tcp",
+		},
+		SQLCommon: SQLCommon{
+			DBName: "storage",
 		},
 	}
 }

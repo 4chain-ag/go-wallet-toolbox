@@ -5,11 +5,13 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/infra"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/integrationtests/testabilities"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCaseInsensitiveEnums(t *testing.T) {
 	// given:
+	t.Setenv("TEST_SERVER_PRIVATE_KEY", testabilities.StorageServerPrivKey)
 	t.Setenv("TEST_DB_ENGINE", "SQLite")
 	t.Setenv("TEST_BSV_NETWORK", "MAIN")
 	t.Setenv("TEST_LOGGING_LEVEL", "DeBug")
@@ -49,6 +51,7 @@ func TestEnums(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			// given:
+			t.Setenv("TEST_SERVER_PRIVATE_KEY", testabilities.StorageServerPrivKey)
 			t.Setenv(test.envKey, "wrong")
 
 			// when:
