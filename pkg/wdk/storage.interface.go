@@ -5,5 +5,5 @@ type WalletStorageWriter interface {
 	Migrate(storageName, storageIdentityKey string) (string, error)
 	MakeAvailable() (*TableSettings, error)
 	FindOrInsertUser(identityKey string) (*TableUser, error)
-	CreateAction(auth AuthID, args ValidCreateActionArgs)
+	CreateAction(auth AuthID, args ValidCreateActionArgs) (*StorageCreateActionResult, error)
 }
