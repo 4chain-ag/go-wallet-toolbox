@@ -76,17 +76,16 @@ func createGormConfig(logger glogger.Interface) *gorm.Config {
 
 	// Create the configuration
 	gormCfg := &gorm.Config{
-		AllowGlobalUpdate:                        false,
-		ClauseBuilders:                           nil,
-		ConnPool:                                 nil,
-		CreateBatchSize:                          0,
-		Dialector:                                nil,
-		DisableAutomaticPing:                     false,
-		DisableForeignKeyConstraintWhenMigrating: true,
-		DisableNestedTransaction:                 false,
-		DryRun:                                   false, // toggle for extreme debugging
-		FullSaveAssociations:                     false,
-		Logger:                                   logger,
+		AllowGlobalUpdate:        false,
+		ClauseBuilders:           nil,
+		ConnPool:                 nil,
+		CreateBatchSize:          0,
+		Dialector:                nil,
+		DisableAutomaticPing:     false,
+		DisableNestedTransaction: false,
+		DryRun:                   false, // toggle for extreme debugging
+		FullSaveAssociations:     false,
+		Logger:                   logger,
 		NamingStrategy: schema.NamingStrategy{
 			TablePrefix:   tablePrefix, // table name prefix, table for `User` would be `t_users`
 			SingularTable: false,       // use singular table name, table for `User` would be `user` with this option enabled
