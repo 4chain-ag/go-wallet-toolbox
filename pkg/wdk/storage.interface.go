@@ -86,4 +86,7 @@ type ValidCreateActionArgs struct {
 // WalletStorageWriter is an interface for writing to the wallet storage
 type WalletStorageWriter interface {
 	CreateAction(auth AuthID, args ValidCreateActionArgs)
+	Migrate(storageName, storageIdentityKey string) (string, error)
+	MakeAvailable() (*TableSettings, error)
+	FindOrInsertUser(identityKey string) (*TableUser, error)
 }

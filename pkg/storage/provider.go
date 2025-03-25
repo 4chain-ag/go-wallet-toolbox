@@ -111,3 +111,7 @@ func (p *Provider) FindOrInsertUser(identityKey string) (*wdk.TableUser, error) 
 
 	return user, nil
 }
+
+// CreateAction will createAction // TODO: implement and fix comment
+func (p *Provider) CreateAction(auth wdk.AuthID, args wdk.ValidCreateActionArgs) {
+}
