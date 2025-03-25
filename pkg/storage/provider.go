@@ -113,6 +113,6 @@ func (p *Provider) FindOrInsertUser(identityKey string) (*wdk.TableUser, error) 
 }
 
 // CreateAction Storage level processing for wallet `createAction`.
-func (p *Provider) CreateAction(auth wdk.AuthID, args wdk.ValidCreateActionArgs) {
+func (p *Provider) CreateAction(auth wdk.AuthID, args wdk.ValidCreateActionArgs) (*wdk.StorageCreateActionResult, error) {
 	panic("not implemented yet")
 }
