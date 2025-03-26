@@ -23,8 +23,8 @@ func (c *WalletStorageWriterClient) FindOrInsertUser(identityKey string) (*Table
 	return c.client.FindOrInsertUser(identityKey)
 }
 
-func (c *WalletStorageWriterClient) CreateAction(auth AuthID, args ValidCreateActionArgs) {
-	c.client.CreateAction(auth, args)
+func (c *WalletStorageWriterClient) CreateAction(auth AuthID, args ValidCreateActionArgs) (*StorageCreateActionResult, error) {
+	return c.client.CreateAction(auth, args)
 }
 
 type rpcWalletStorageWriter struct {
@@ -34,7 +34,7 @@ type rpcWalletStorageWriter struct {
 
 	FindOrInsertUser func(string) (*TableUser, error)
 
-	CreateAction func(AuthID, ValidCreateActionArgs)
+	CreateAction func(AuthID, ValidCreateActionArgs) (*StorageCreateActionResult, error)
 }
 
 func NewClient(addr string, overrideOptions ...InternalOverrides) (*WalletStorageWriterClient, func(), error) {
@@ -124,7 +124,10 @@ var Interfaces = []InterfaceInfo{
 					{Name: "auth", Type: "AuthID"},
 					{Name: "args", Type: "ValidCreateActionArgs"},
 				},
-				Results: []TypeInfo{},
+				Results: []TypeInfo{
+					{Type: "*StorageCreateActionResult"},
+					{Type: "error"},
+				},
 			},
 		},
 	},
