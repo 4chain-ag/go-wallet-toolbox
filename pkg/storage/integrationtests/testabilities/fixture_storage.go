@@ -27,8 +27,6 @@ type StorageFixture interface {
 	GormProvider() *storage.Provider
 	StartedRPCServerFor(provider *storage.Provider) (cleanup func())
 	RPCClient() (*TestClient, func())
-
-	ServerURL() string
 }
 
 type storageFixture struct {
@@ -83,10 +81,6 @@ func (s *storageFixture) RPCClient() (client *TestClient, cleanup func()) {
 	)
 	s.require.NoError(err)
 	return client, closer
-}
-
-func (s *storageFixture) ServerURL() string {
-	return s.testServer.URL
 }
 
 func Given(t testing.TB) StorageFixture {

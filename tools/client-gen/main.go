@@ -1,5 +1,4 @@
-// //go:build gen
-// TODO: uncomment the line above to disable compailing this into production codes.
+//go:build gen
 
 package main
 

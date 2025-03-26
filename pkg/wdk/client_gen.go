@@ -37,7 +37,7 @@ type rpcWalletStorageWriter struct {
 	CreateAction func(AuthID, ValidCreateActionArgs) (*StorageCreateActionResult, error)
 }
 
-func NewClient(addr string, overrideOptions ...InternalOverrides) (*WalletStorageWriterClient, func(), error) {
+func NewClient(addr string, overrideOptions ...StorageClientOverrides) (*WalletStorageWriterClient, func(), error) {
 	opts := defaultClientOptions()
 	client := &WalletStorageWriterClient{
 		client: &rpcWalletStorageWriter{},
@@ -57,78 +57,4 @@ func NewClient(addr string, overrideOptions ...InternalOverrides) (*WalletStorag
 	)
 
 	return client, cleanup, err
-}
-
-// ===== TODO: REMOVE BELOW LINES FROM TEMPLATE =====
-// ===== THIS IS JUST FOR SHOWING THE MODEL =====
-
-// github.com/4chain-ag/go-wallet-toolbox/pkg/wdk
-// Is in the same package: true
-
-type InterfaceInfo struct {
-	Name    string
-	Methods []MethodInfo
-}
-
-type MethodInfo struct {
-	Name      string
-	Arguments []ParamInfo
-	Results   []TypeInfo
-}
-
-type ParamInfo struct {
-	Name string
-	Type string
-}
-
-type TypeInfo struct {
-	Type string
-}
-
-var Interfaces = []InterfaceInfo{
-	{
-		Name: "WalletStorageWriter",
-		Methods: []MethodInfo{
-			{
-				Name: "Migrate",
-				Arguments: []ParamInfo{
-					{Name: "storageName", Type: "string"},
-					{Name: "storageIdentityKey", Type: "string"},
-				},
-				Results: []TypeInfo{
-					{Type: "string"},
-					{Type: "error"},
-				},
-			},
-			{
-				Name:      "MakeAvailable",
-				Arguments: []ParamInfo{},
-				Results: []TypeInfo{
-					{Type: "*TableSettings"},
-					{Type: "error"},
-				},
-			},
-			{
-				Name: "FindOrInsertUser",
-				Arguments: []ParamInfo{
-					{Name: "identityKey", Type: "string"},
-				},
-				Results: []TypeInfo{
-					{Type: "*TableUser"},
-					{Type: "error"},
-				},
-			},
-			{
-				Name: "CreateAction",
-				Arguments: []ParamInfo{
-					{Name: "auth", Type: "AuthID"},
-					{Name: "args", Type: "ValidCreateActionArgs"},
-				},
-				Results: []TypeInfo{
-					{Type: "*StorageCreateActionResult"},
-					{Type: "error"},
-				},
-			},
-		},
-	},
 }

@@ -25,7 +25,7 @@ type rpc{{ .Name }} struct {
 }
 
 
-func NewClient(addr string, overrideOptions ...InternalOverrides) (*{{ $clientName}}, func(), error) {
+func NewClient(addr string, overrideOptions ...StorageClientOverrides) (*{{ $clientName}}, func(), error) {
     opts := defaultClientOptions()
     client := &{{ $clientName}}{
         client: &rpc{{ .Name }}{},
@@ -49,45 +49,3 @@ func NewClient(addr string, overrideOptions ...InternalOverrides) (*{{ $clientNa
 
 {{ end }}
 
-// ===== TODO: REMOVE BELOW LINES FROM TEMPLATE =====
-// ===== THIS IS JUST FOR SHOWING THE MODEL =====
-
-// {{ .FullPackage }}
-// Is in the same package: {{ .IsSamePackage }}
-
-type InterfaceInfo struct {
-	Name    string
-	Methods []MethodInfo
-}
-
-type MethodInfo struct {
-	Name      string
-	Arguments []ParamInfo
-	Results   []TypeInfo
-}
-
-type ParamInfo struct {
-	Name string
-	Type string
-}
-
-type TypeInfo struct {
-	Type string
-}
-
-var Interfaces = []InterfaceInfo{
-{{ range .Interfaces }}	{
-		Name: "{{ .Name }}",
-		Methods: []MethodInfo{
-		{{ range .Methods }}	{
-				Name: "{{ .Name }}",
-				Arguments: []ParamInfo{
-				{{ range .Arguments }}	{Name: "{{ .Name }}", Type: "{{ .Type }}"},
-				{{ end }}},
-				Results: []TypeInfo{
-				{{ range .Results }}	{Type: "{{ .Type }}"},
-				{{ end }}},
-			},
-		{{ end }}},
-	},
-{{ end }}}
