@@ -8,8 +8,8 @@ type Actions struct {
 	*create
 }
 
-func New(logger *slog.Logger) *Actions {
+func New(logger *slog.Logger, funder Funder) *Actions {
 	return &Actions{
-		create: newCreateAction(logger),
+		create: newCreateAction(logger, funder),
 	}
 }
