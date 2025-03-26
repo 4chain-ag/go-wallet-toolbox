@@ -2,6 +2,11 @@
 
 package wdk
 
+import (
+	"context"
+	"github.com/filecoin-project/go-jsonrpc"
+)
+
 type WalletStorageWriterClient struct {
 	client *rpcWalletStorageWriter
 }

@@ -1,5 +1,10 @@
 package {{ .Package }}
 
+import (
+	"context"
+	"github.com/filecoin-project/go-jsonrpc"
+)
+
 {{ range .Interfaces }}
 {{ $clientName := printf "%sClient" .Name }}
 
