@@ -14,7 +14,7 @@ func (c *WalletStorageWriterClient) MakeAvailable() (*TableSettings, error) {
 	return c.client.MakeAvailable()
 }
 
-func (c *WalletStorageWriterClient) FindOrInsertUser(identityKey string) (*TableUser, error) {
+func (c *WalletStorageWriterClient) FindOrInsertUser(identityKey string) (*FindOrInsertUserResponse, error) {
 	return c.client.FindOrInsertUser(identityKey)
 }
 
@@ -27,7 +27,7 @@ type rpcWalletStorageWriter struct {
 
 	MakeAvailable func() (*TableSettings, error)
 
-	FindOrInsertUser func(string) (*TableUser, error)
+	FindOrInsertUser func(string) (*FindOrInsertUserResponse, error)
 
 	CreateAction func(AuthID, ValidCreateActionArgs) (*StorageCreateActionResult, error)
 }
