@@ -1,11 +1,11 @@
 package infra_test
 
 import (
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/testabilities"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/infra"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/testabilities"
 	"github.com/stretchr/testify/require"
 )
 
