@@ -41,9 +41,12 @@ func (m *MockWalletStorageWriter) EXPECT() *MockWalletStorageWriterMockRecorder 
 }
 
 // CreateAction mocks base method.
-func (m *MockWalletStorageWriter) CreateAction(auth wdk.AuthID, args wdk.ValidCreateActionArgs) {
+func (m *MockWalletStorageWriter) CreateAction(auth wdk.AuthID, args wdk.ValidCreateActionArgs) (*wdk.StorageCreateActionResult, error) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "CreateAction", auth, args)
+	ret := m.ctrl.Call(m, "CreateAction", auth, args)
+	ret0, _ := ret[0].(*wdk.StorageCreateActionResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CreateAction indicates an expected call of CreateAction.
