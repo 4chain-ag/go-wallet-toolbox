@@ -1,9 +1,9 @@
 package integrationtests_test
 
 import (
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/testabilities"
 	"testing"
 
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/integrationtests/testabilities"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
