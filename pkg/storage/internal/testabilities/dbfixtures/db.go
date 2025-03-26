@@ -2,7 +2,7 @@ package dbfixtures
 
 import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/testabilities/testmode"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testmode"
 )
 
 func DBConfigForTests() defs.Database {
