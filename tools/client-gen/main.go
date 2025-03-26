@@ -87,7 +87,7 @@ func getFullPackageName(dir string) string {
 	}
 
 	// Read go.mod to extract module path
-	// nolint:gosec
+	//nolint:gosec
 	modContent, err := os.ReadFile(filepath.Join(modDir, "go.mod"))
 	if err != nil {
 		log.Fatalf("failed to read go.mod: %v", err)
