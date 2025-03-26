@@ -45,7 +45,7 @@ func (s *storageFixture) GormProvider() *storage.Provider {
 	s.require.NoError(err)
 
 	dbConfig := defs.DefaultDBConfig()
-	dbConfig.SQLite.ConnectionString = "file:storage-test.db?mode=memory"
+	dbConfig.SQLite.ConnectionString = "file:storage.test.sqlite?mode=memory"
 	dbConfig.MaxIdleConnections = 1
 	dbConfig.MaxOpenConnections = 1
 
