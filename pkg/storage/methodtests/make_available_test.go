@@ -1,4 +1,4 @@
-package integrationtests_test
+package methodtests_test
 
 import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/testabilities"
@@ -15,16 +15,8 @@ func TestMakeAvailable(t *testing.T) {
 	// given:
 	activeStorage := given.GormProvider()
 
-	// and:
-	cleanupSrv := given.StartedRPCServerFor(activeStorage)
-	defer cleanupSrv()
-
-	// and:
-	client, cleanupCli := given.RPCClient()
-	defer cleanupCli()
-
 	// when:
-	tableSettings, err := client.MakeAvailable()
+	tableSettings, err := activeStorage.MakeAvailable()
 
 	// then:
 	require.NoError(t, err)

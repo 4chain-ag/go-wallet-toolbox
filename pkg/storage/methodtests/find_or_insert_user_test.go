@@ -1,4 +1,4 @@
-package integrationtests_test
+package methodtests_test
 
 import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/testabilities"
@@ -17,16 +17,8 @@ func TestFindOrInsertUser(t *testing.T) {
 	// and:
 	activeStorage := given.GormProvider()
 
-	// and:
-	cleanupSrv := given.StartedRPCServerFor(activeStorage)
-	defer cleanupSrv()
-
-	// and:
-	client, cleanupCli := given.RPCClient()
-	defer cleanupCli()
-
 	// when:
-	tableUser, err := client.FindOrInsertUser(userIdentityKey)
+	tableUser, err := activeStorage.FindOrInsertUser(userIdentityKey)
 
 	// then:
 	require.NoError(t, err)
@@ -35,7 +27,7 @@ func TestFindOrInsertUser(t *testing.T) {
 	assert.Equal(t, userIdentityKey, tableUser.User.IdentityKey)
 
 	// and when:
-	tableUser, err = client.FindOrInsertUser(userIdentityKey)
+	tableUser, err = activeStorage.FindOrInsertUser(userIdentityKey)
 
 	// then:
 	require.NoError(t, err)
