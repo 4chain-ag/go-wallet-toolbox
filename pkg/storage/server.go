@@ -19,16 +19,11 @@ type Server struct {
 }
 
 // NewServer creates a new storage server instance with given storage provider and optional options
-func NewServer(logger *slog.Logger, storage wdk.WalletStorageWriter, opts ...ServerOption) *Server {
-	options := defaultServerOptions()
-	for _, opt := range opts {
-		opt(&options)
-	}
-
+func NewServer(logger *slog.Logger, storage wdk.WalletStorageWriter, opts ServerOptions) *Server {
 	return &Server{
 		provider: storage,
 		logger:   logging.Child(logger, "storage_server"),
-		options:  options,
+		options:  opts,
 	}
 }
 
