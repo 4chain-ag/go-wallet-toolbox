@@ -5,6 +5,8 @@ import (
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/repo"
@@ -26,6 +28,7 @@ type Provider struct {
 
 	settings *wdk.TableSettings
 	repo     Repository
+	actions  *actions.Actions
 }
 
 // NewGORMProvider creates a new storage provider with GORM repository.
@@ -36,8 +39,9 @@ func NewGORMProvider(logger *slog.Logger, dbConfig defs.Database, chain defs.BSV
 	}
 
 	return &Provider{
-		Chain: chain,
-		repo:  repo.NewRepositories(db.DB),
+		Chain:   chain,
+		repo:    repo.NewRepositories(db.DB),
+		actions: actions.New(logger, funder.NewSQL(logger, db.DB)),
 	}, nil
 }
 
@@ -113,6 +117,10 @@ func (p *Provider) FindOrInsertUser(identityKey string) (*wdk.TableUser, error) 
 }
 
 // CreateAction Storage level processing for wallet `createAction`.
-func (p *Provider) CreateAction(auth wdk.AuthID, args wdk.ValidCreateActionArgs) {
-	panic("not implemented yet")
+func (p *Provider) CreateAction(auth wdk.AuthID, args wdk.ValidCreateActionArgs) (*wdk.StorageCreateActionResult, error) {
+	res, err := p.actions.Create(auth, args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create action: %w", err)
+	}
+	return res, nil
 }
