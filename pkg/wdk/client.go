@@ -7,7 +7,7 @@ import (
 	"github.com/filecoin-project/go-jsonrpc"
 )
 
-// NewClient returns WalletStorageWriterClient and allows connection to rpc server
+// NewClient returns WalletStorageWriterClient that allows connection to rpc server
 func NewClient(addr string, overrideOptions ...StorageClientOverrides) (*WalletStorageWriterClient, func(), error) {
 	opts := defaultClientOptions()
 	client := &WalletStorageWriterClient{
