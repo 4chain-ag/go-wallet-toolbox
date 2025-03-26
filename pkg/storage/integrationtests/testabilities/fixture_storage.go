@@ -9,6 +9,7 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/testabilities/dbfixtures"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/server"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
@@ -42,10 +43,7 @@ func (s *storageFixture) GormProvider() *storage.Provider {
 	storageIdentityKey, err := wdk.IdentityKey(StorageServerPrivKey)
 	s.require.NoError(err)
 
-	dbConfig := defs.DefaultDBConfig()
-	dbConfig.SQLite.ConnectionString = "file:storage.test.sqlite?mode=memory"
-	dbConfig.MaxIdleConnections = 1
-	dbConfig.MaxOpenConnections = 1
+	dbConfig := dbfixtures.DBConfigForTests()
 
 	activeStorage, err := storage.NewGORMProvider(s.logger, dbConfig, defs.NetworkTestnet)
 	s.require.NoError(err)
