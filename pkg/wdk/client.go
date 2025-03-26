@@ -8,14 +8,21 @@ import (
 )
 
 // NewClient returns WalletStorageWriterClient that allows connection to rpc server
-func NewClient(addr string, overrideOptions ...StorageClientOverrides) (*WalletStorageWriterClient, func(), error) {
+func NewClient(addr string, overrideOptions ...StorageClientOption) (*WalletStorageWriterClient, func(), error) {
 	opts := defaultClientOptions()
+	for _, opt := range overrideOptions {
+		opt(&opts)
+	}
+
 	client := &WalletStorageWriterClient{
 		client: &rpcWalletStorageWriter{},
 	}
 
-	for _, opt := range overrideOptions {
-		opt(&opts)
+	rpcClientOptions := []jsonrpc.Option{
+		jsonrpc.WithMethodNamer(jsonrpc.NoNamespaceDecapitalizedMethodNamer),
+	}
+	if opts.httpClient != nil {
+		rpcClientOptions = append(rpcClientOptions, jsonrpc.WithHTTPClient(opts.httpClient))
 	}
 
 	cleanup, err := jsonrpc.NewMergeClient(
@@ -24,7 +31,7 @@ func NewClient(addr string, overrideOptions ...StorageClientOverrides) (*WalletS
 		"remote_storage",
 		[]any{client.client},
 		nil,
-		opts.options...,
+		rpcClientOptions...,
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to initialize new RPC client: %w", err)
