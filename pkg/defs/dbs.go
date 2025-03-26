@@ -22,7 +22,7 @@ func ParseDBTypeStr(dbType string) (DBType, error) {
 
 // Defaults for database configuration
 const (
-	DSNDefault         = "file::memory:" // DSN for connection (file or memory, default is memory)
+	DSNDefault         = "./storage.sqlite" // DSN for connection (file or memory, default is memory)
 	DefaultTablePrefix = "bsv_"
 )
 
