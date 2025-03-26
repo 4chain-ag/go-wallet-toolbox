@@ -9,6 +9,8 @@ import (
 
 // Config is the configuration for the "remote storage server" service (aka "infra")
 type Config struct {
+	// Name is the human-readable name of this storage server
+	Name             string          `mapstructure:"name"`
 	ServerPrivateKey string          `mapstructure:"server_private_key"`
 	BSVNetwork       defs.BSVNetwork `mapstructure:"bsv_network"`
 	DBConfig         defs.Database   `mapstructure:"db"`
@@ -36,6 +38,7 @@ type LogConfig struct {
 // Defaults returns the default configuration
 func Defaults() Config {
 	return Config{
+		Name:             "go-storage-server",
 		ServerPrivateKey: "", // it is not optional, user must provide it
 
 		BSVNetwork: defs.NetworkMainnet,

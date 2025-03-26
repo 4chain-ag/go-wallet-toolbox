@@ -6,16 +6,21 @@ db:
     max_idle_connections: 5
     max_open_connections: 5
     mysql:
-        protocol: tcp
-    postgresql:
-        ssl_mode: disable
-    sql_common:
         db_name: storage
-        host: ""
+        host: localhost
         password: ""
-        port: ""
-        time_zone: ""
-        user: ""
+        port: "3306"
+        protocol: tcp
+        time_zone: UTC
+        user: root
+    postgresql:
+        db_name: storage
+        host: localhost
+        password: postgres
+        port: "5432"
+        ssl_mode: disable
+        time_zone: UTC
+        user: postgres
     sqlite:
         connection_string: ./storage.sqlite
 http:
@@ -24,4 +29,5 @@ logging:
     enabled: true
     handler: json
     level: info
+name: go-storage-server
 server_private_key: ""

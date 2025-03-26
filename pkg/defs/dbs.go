@@ -34,9 +34,6 @@ type Database struct {
 	// SQLite is configuration struct for SQLite database
 	SQLite SQLite `mapstructure:"sqlite"`
 
-	// SQLCommon is configuration for SQLCommon databases such as postgres or mysql
-	SQLCommon SQLCommon `mapstructure:"sql_common"`
-
 	// PostgreSQL is configuration for PostgreSQL databases
 	PostgreSQL PostgreSQL `mapstructure:"postgresql"`
 
@@ -66,12 +63,14 @@ type SQLite struct {
 
 // PostgreSQL is configuration struct for PostgreSQL database
 type PostgreSQL struct {
+	SQLCommon `mapstructure:",squash"`
 	// ssl mode  [disable|allow|prefer|require|verify-ca|verify-full]. Will default to disable if not provided
 	SslMode string `mapstructure:"ssl_mode"`
 }
 
 // MySQL is configuration struct for MySQL database
 type MySQL struct {
+	SQLCommon `mapstructure:",squash"`
 	// protocol for database connection [tcp|socket|pipe|memory]. Will default to tcp if not provided
 	Protocol string `mapstructure:"protocol"`
 }
@@ -97,12 +96,25 @@ func DefaultDBConfig() Database {
 		MaxOpenConnections:    5,
 		PostgreSQL: PostgreSQL{
 			SslMode: "disable",
+			SQLCommon: SQLCommon{
+				Host:     "localhost",
+				DBName:   "storage",
+				User:     "postgres",
+				Password: "postgres",
+				Port:     "5432",
+				TimeZone: "UTC",
+			},
 		},
 		MySQL: MySQL{
 			Protocol: "tcp",
-		},
-		SQLCommon: SQLCommon{
-			DBName: "storage",
+			SQLCommon: SQLCommon{
+				Host:     "localhost",
+				DBName:   "storage",
+				User:     "root",
+				Password: "",
+				Port:     "3306",
+				TimeZone: "UTC",
+			},
 		},
 	}
 }
