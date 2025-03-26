@@ -5,7 +5,6 @@ import (
 )
 
 // StorageClientOption is a function that can be used to override internal dependencies.
-// This is meant to be used for testing purposes.
 type StorageClientOption = func(*ClientOptions)
 
 // ClientOptions represents configurable options for the client
@@ -20,7 +19,6 @@ func defaultClientOptions() ClientOptions {
 }
 
 // WithHttpClient is a function that can be used to override the http.Client used by the client.
-// This is meant to be used for testing purposes.
 func WithHttpClient(httpClient *http.Client) StorageClientOption {
 	return func(o *ClientOptions) {
 		o.httpClient = httpClient
