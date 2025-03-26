@@ -6,10 +6,8 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/repo"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 )
 
@@ -40,8 +38,8 @@ func NewGORMProvider(logger *slog.Logger, dbConfig defs.Database, chain defs.BSV
 
 	return &Provider{
 		Chain:   chain,
-		repo:    repo.NewRepositories(db.DB),
-		actions: actions.New(logger, funder.NewSQL(logger, db.DB)),
+		repo:    db.CreateRepositories(),
+		actions: actions.New(logger, db.CreateFunder()),
 	}, nil
 }
 
