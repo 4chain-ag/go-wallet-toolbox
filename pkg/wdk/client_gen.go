@@ -2,6 +2,11 @@
 
 package wdk
 
+import (
+	"context"
+	"github.com/filecoin-project/go-jsonrpc"
+)
+
 type WalletStorageWriterClient struct {
 	client *rpcWalletStorageWriter
 }
@@ -32,18 +37,23 @@ type rpcWalletStorageWriter struct {
 	CreateAction func(AuthID, ValidCreateActionArgs)
 }
 
-func NewClient(ctx context.Context, addr, namespace string, options ...jsonrpc.Option) (*WalletStorageWriterClient, func(), error) {
+func NewClient(addr string, overrideOptions ...InternalOverrides) (*WalletStorageWriterClient, func(), error) {
+	opts := defaultClientOptions()
 	client := &WalletStorageWriterClient{
 		client: &rpcWalletStorageWriter{},
 	}
 
+	for _, opt := range overrideOptions {
+		opt(&opts)
+	}
+
 	cleanup, err := jsonrpc.NewMergeClient(
-		ctx,
+		context.Background(),
 		addr,
-		namespace,
+		"remote_storage",
 		[]any{client.client},
 		nil,
-		options...,
+		opts.options...,
 	)
 
 	return client, cleanup, err

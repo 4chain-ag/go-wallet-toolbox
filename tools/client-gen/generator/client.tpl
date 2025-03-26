@@ -19,22 +19,28 @@ type rpc{{ .Name }} struct {
 	{{ end }}
 }
 
-func NewClient(ctx context.Context, addr, namespace string, options ...jsonrpc.Option) (*{{ $clientName}}, func(), error) {
+
+func NewClient(addr string, overrideOptions ...InternalOverrides) (*{{ $clientName}}, func(), error) {
+    opts := defaultClientOptions()
     client := &{{ $clientName}}{
         client: &rpc{{ .Name }}{},
     }
 
+    for _, opt := range overrideOptions {
+      opt(&opts)
+    }
+
     cleanup, err := jsonrpc.NewMergeClient(
-      ctx,
+      context.Background(),
       addr,
-      namespace,
+      "remote_storage",
       []any{client.client},
       nil,
-      options...
+      opts.options...
     )
 
     return client, cleanup, err
-  }
+}
 
 {{ end }}
 
