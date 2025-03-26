@@ -9,11 +9,13 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/mocks"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/server"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/filecoin-project/go-jsonrpc"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 const (
@@ -25,8 +27,9 @@ const (
 
 type StorageFixture interface {
 	GormProvider() *storage.Provider
-	StartedRPCServerFor(provider *storage.Provider) (cleanup func())
+	StartedRPCServerFor(provider wdk.WalletStorageWriter) (cleanup func())
 	RPCClient() (*TestClient, func())
+	MockProvider() *mocks.MockWalletStorageWriter
 }
 
 type storageFixture struct {
@@ -56,7 +59,7 @@ func (s *storageFixture) GormProvider() *storage.Provider {
 	return activeStorage
 }
 
-func (s *storageFixture) StartedRPCServerFor(provider *storage.Provider) (cleanup func()) {
+func (s *storageFixture) StartedRPCServerFor(provider wdk.WalletStorageWriter) (cleanup func()) {
 	s.t.Helper()
 	rpcServer := server.NewRPCHandler(s.logger, StorageHandlerName, provider)
 
@@ -81,6 +84,13 @@ func (s *storageFixture) RPCClient() (client *TestClient, cleanup func()) {
 	)
 	s.require.NoError(err)
 	return client, closer
+}
+
+func (s *storageFixture) MockProvider() *mocks.MockWalletStorageWriter {
+	s.t.Helper()
+	ctrl := gomock.NewController(s.t)
+
+	return mocks.NewMockWalletStorageWriter(ctrl)
 }
 
 func Given(t testing.TB) StorageFixture {
