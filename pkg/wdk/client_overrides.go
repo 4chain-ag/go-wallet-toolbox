@@ -1,8 +1,9 @@
 package wdk
 
 import (
-	"github.com/filecoin-project/go-jsonrpc"
 	"net/http"
+
+	"github.com/filecoin-project/go-jsonrpc"
 )
 
 // InternalOverrides is a function that can be used to override internal dependencies.
