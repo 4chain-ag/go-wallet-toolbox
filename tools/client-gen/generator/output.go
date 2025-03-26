@@ -13,6 +13,7 @@ import (
 //go:embed client.tpl
 var goCodeTemplate string
 
+// Generate will generate client code and embed client.tpl file with it
 func Generate(packageName string, fullPackageName string, isSamePackage bool, interfaces []extractor.InterfaceInfo) []byte {
 	// Generate Go code using the template
 	tmpl, err := template.New("gocode").Parse(goCodeTemplate)

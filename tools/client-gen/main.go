@@ -66,6 +66,7 @@ func main() {
 
 	// Write the output
 	log.Println("Writing to", targetFile)
+	//nolint:gosec
 	if err := os.WriteFile(targetFile, output, 0644); err != nil {
 		log.Fatalf("Failed to write output to file: %v", err)
 	}
@@ -86,6 +87,7 @@ func getFullPackageName(dir string) string {
 	}
 
 	// Read go.mod to extract module path
+	// nolint:gosec
 	modContent, err := os.ReadFile(filepath.Join(modDir, "go.mod"))
 	if err != nil {
 		log.Fatalf("failed to read go.mod: %v", err)
