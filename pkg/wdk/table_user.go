@@ -4,8 +4,8 @@ import (
 	"time"
 )
 
-// User is a struct that defines the user from the DB
-type User struct {
+// TableUser is a struct that defines the user from the DB
+type TableUser struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	UserID    int       `json:"userId"`
@@ -16,8 +16,8 @@ type User struct {
 	ActiveStorage string `json:"activeStorage"`
 }
 
-// TableUser is a struct that holds information about the user and if it's new
-type TableUser struct {
-	User  User `json:"user"`
-	IsNew bool `json:"isNew"`
+// FindOrInsertUserResponse is a struct that holds information about the user and if it's new
+type FindOrInsertUserResponse struct {
+	User  TableUser `json:"user"`
+	IsNew bool      `json:"isNew"`
 }

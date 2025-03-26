@@ -81,13 +81,16 @@ func (p *Provider) MakeAvailable() (*wdk.TableSettings, error) {
 }
 
 // FindOrInsertUser will find user by their identityKey or inserts a new one if not found
-func (p *Provider) FindOrInsertUser(identityKey string) (*wdk.TableUser, error) {
+func (p *Provider) FindOrInsertUser(identityKey string) (*wdk.FindOrInsertUserResponse, error) {
 	user, err := p.repo.FindUser(identityKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find user: %w", err)
 	}
 	if user != nil {
-		return user, nil
+		return &wdk.FindOrInsertUserResponse{
+			User:  *user,
+			IsNew: false,
+		}, nil
 	}
 
 	newUser := &models.User{
@@ -111,7 +114,10 @@ func (p *Provider) FindOrInsertUser(identityKey string) (*wdk.TableUser, error) 
 		return nil, fmt.Errorf("failed to insert user: %w", err)
 	}
 
-	return user, nil
+	return &wdk.FindOrInsertUserResponse{
+		User:  *user,
+		IsNew: true,
+	}, nil
 }
 
 // CreateAction Storage level processing for wallet `createAction`.

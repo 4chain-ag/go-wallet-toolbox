@@ -30,14 +30,11 @@ func (u *Users) FindUser(identityKey string) (*wdk.TableUser, error) {
 	}
 
 	return &wdk.TableUser{
-		User: wdk.User{
-			UserID:        user.UserID,
-			IdentityKey:   user.IdentityKey,
-			ActiveStorage: user.ActiveStorage,
-			CreatedAt:     user.CreatedAt,
-			UpdatedAt:     user.UpdatedAt,
-		},
-		IsNew: false,
+		UserID:        user.UserID,
+		IdentityKey:   user.IdentityKey,
+		ActiveStorage: user.ActiveStorage,
+		CreatedAt:     user.CreatedAt,
+		UpdatedAt:     user.UpdatedAt,
 	}, nil
 }
 
@@ -48,13 +45,10 @@ func (u *Users) CreateUser(user *models.User) (*wdk.TableUser, error) {
 	}
 
 	return &wdk.TableUser{
-		User: wdk.User{
-			UserID:        user.UserID,
-			IdentityKey:   user.IdentityKey,
-			ActiveStorage: user.ActiveStorage,
-			CreatedAt:     user.CreatedAt,
-			UpdatedAt:     user.UpdatedAt,
-		},
-		IsNew: true,
+		UserID:        user.UserID,
+		IdentityKey:   user.IdentityKey,
+		ActiveStorage: user.ActiveStorage,
+		CreatedAt:     user.CreatedAt,
+		UpdatedAt:     user.UpdatedAt,
 	}, nil
 }

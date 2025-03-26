@@ -5,7 +5,7 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/infra"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/integrationtests/testabilities"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/testabilities"
 	"github.com/stretchr/testify/require"
 )
 
