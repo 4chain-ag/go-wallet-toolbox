@@ -1,5 +1,6 @@
 package wdk
 
+//go:generate go run -tags gen ../../tools/client-gen/main.go -out client_gen.go
 //go:generate go tool mockgen -destination=../internal/mocks/mock_wallet_storage_writer.go -package=mocks github.com/4chain-ag/go-wallet-toolbox/pkg/wdk WalletStorageWriter
 
 // WalletStorageWriter is an interface for writing to the wallet storage
