@@ -7,7 +7,6 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
-	sdk "github.com/bsv-blockchain/go-sdk/transaction"
 )
 
 type UTXO struct {
@@ -24,7 +23,13 @@ type FundingResult struct {
 }
 
 type Funder interface {
-	Fund(ctx context.Context, tx *sdk.Transaction, userID int) (*FundingResult, error)
+	// Fund
+	// @param targetSat - the target amount of satoshis to fund (total inputs - total outputs)
+	// @param currentTxSize - the current size of the transaction in bytes (size of tx + current inputs + current outputs)
+	// @param numberOfDesiredUTXOs - the number of UTXOs in basket #TakeFromBasket
+	// @param minimumDesiredUTXOValue - the minimum value of UTXO in basket #TakeFromBasket
+	// @param userID - the user ID
+	Fund(ctx context.Context, targetSat int64, currentTxSize int64, numberOfDesiredUTXOs int, minimumDesiredUTXOValue uint64, userID int) (*FundingResult, error)
 }
 
 type create struct {
@@ -41,7 +46,7 @@ func newCreateAction(logger *slog.Logger, funder Funder) *create {
 }
 
 func (c *create) Create(auth wdk.AuthID, args wdk.ValidCreateActionArgs) (*wdk.StorageCreateActionResult, error) {
-	result, err := c.funder.Fund(context.Background(), nil, *auth.UserID)
+	result, err := c.funder.Fund(context.Background(), 0, 0, 0, 0, *auth.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("funding failed: %w", err)
 	}
