@@ -65,7 +65,7 @@ func NewServer(opts ...InitOption) (*Server, error) {
 
 		logger:        logger,
 		storage:       activeStorage,
-		storageServer: storage.NewServer(logger, activeStorage, storage.WithPort(cfg.HTTPConfig.Port)),
+		storageServer: storage.NewServer(logger, activeStorage, storage.ServerOptions{Port: cfg.HTTPConfig.Port}),
 	}, nil
 }
 
