@@ -41,6 +41,12 @@ func newCreateAction(logger *slog.Logger, funder Funder) *create {
 }
 
 func (c *create) Create(auth wdk.AuthID, args wdk.ValidCreateActionArgs) (*wdk.StorageCreateActionResult, error) {
+	if auth.UserID == nil {
+		return nil, fmt.Errorf("missing user ID")
+	}
+	if err := c.validateArgs(&args); err != nil {
+		return nil, err
+	}
 
 	result, err := c.funder.Fund(context.Background(), nil, *auth.UserID)
 	if err != nil {
@@ -63,6 +69,10 @@ func (c *create) validateArgs(args *wdk.ValidCreateActionArgs) error {
 	deducedIsNewTx := args.IsRemixChange || len(args.Inputs) > 0 || len(args.Outputs) > 0
 	if args.IsNewTx != deducedIsNewTx {
 		return fmt.Errorf("inconsistent IsNewTx with IsRemixChange and Inputs and Outputs")
+	}
+
+	if !args.IsNewTx {
+		return fmt.Errorf("create action is meant to create a new transaction")
 	}
 
 	deducedIsSignAction := args.IsNewTx && !args.Options.SignAndProcess && containsNilUnlockingScript(args.Inputs)
