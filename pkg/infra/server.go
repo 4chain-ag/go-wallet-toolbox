@@ -55,7 +55,7 @@ func NewServer(opts ...InitOption) (*Server, error) {
 		return nil, fmt.Errorf("failed to create storage provider: %w", err)
 	}
 
-	_, err = activeStorage.Migrate(cfg.DBConfig.SQLCommon.DBName, storageIdentityKey)
+	_, err = activeStorage.Migrate(cfg.Name, storageIdentityKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to migrate storage: %w", err)
 	}
@@ -65,7 +65,7 @@ func NewServer(opts ...InitOption) (*Server, error) {
 
 		logger:        logger,
 		storage:       activeStorage,
-		storageServer: storage.NewServer(logger, activeStorage, storage.WithPort(cfg.HTTPConfig.Port)),
+		storageServer: storage.NewServer(logger, activeStorage, storage.ServerOptions{Port: cfg.HTTPConfig.Port}),
 	}, nil
 }
 

@@ -1,7 +1,6 @@
 package testabilities
 
 import (
-	"context"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -12,8 +11,8 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/mocks"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/server"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/dbfixtures"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
-	"github.com/filecoin-project/go-jsonrpc"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -28,7 +27,7 @@ const (
 type StorageFixture interface {
 	GormProvider() *storage.Provider
 	StartedRPCServerFor(provider wdk.WalletStorageWriter) (cleanup func())
-	RPCClient() (*TestClient, func())
+	RPCClient() (*wdk.WalletStorageWriterClient, func())
 	MockProvider() *mocks.MockWalletStorageWriter
 }
 
@@ -45,10 +44,7 @@ func (s *storageFixture) GormProvider() *storage.Provider {
 	storageIdentityKey, err := wdk.IdentityKey(StorageServerPrivKey)
 	s.require.NoError(err)
 
-	dbConfig := defs.DefaultDBConfig()
-	dbConfig.SQLite.ConnectionString = "file:storage.test.sqlite?mode=memory"
-	dbConfig.MaxIdleConnections = 1
-	dbConfig.MaxOpenConnections = 1
+	dbConfig := dbfixtures.DBConfigForTests()
 
 	activeStorage, err := storage.NewGORMProvider(s.logger, dbConfig, defs.NetworkTestnet)
 	s.require.NoError(err)
@@ -70,20 +66,11 @@ func (s *storageFixture) StartedRPCServerFor(provider wdk.WalletStorageWriter) (
 	return s.testServer.Close
 }
 
-func (s *storageFixture) RPCClient() (client *TestClient, cleanup func()) {
+func (s *storageFixture) RPCClient() (client *wdk.WalletStorageWriterClient, cleanup func()) {
 	s.t.Helper()
-	client = &TestClient{}
-	closer, err := jsonrpc.NewMergeClient(
-		context.Background(),
-		s.testServer.URL,
-		"storage_server",
-		[]any{client},
-		nil,
-		jsonrpc.WithHTTPClient(s.testServer.Client()),
-		jsonrpc.WithMethodNamer(jsonrpc.NoNamespaceDecapitalizedMethodNamer),
-	)
+	client, cleanup, err := wdk.NewClient(s.testServer.URL, wdk.WithHttpClient(s.testServer.Client()))
 	s.require.NoError(err)
-	return client, closer
+	return client, cleanup
 }
 
 func (s *storageFixture) MockProvider() *mocks.MockWalletStorageWriter {

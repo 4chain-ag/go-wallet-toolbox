@@ -7,6 +7,9 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/repo"
 	"gorm.io/gorm"
 	glogger "gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
@@ -14,15 +17,14 @@ import (
 
 // Database is a struct that holds logger for database connection and the connection itself
 type Database struct {
-	DB     *gorm.DB
-	logger *slog.Logger
+	DB         *gorm.DB
+	baseLogger *slog.Logger
+	logger     *slog.Logger
 }
 
 // NewDatabase will configure and return database based on provided config
-func NewDatabase(cfg defs.Database, logger *slog.Logger) (*Database, error) {
-	if logger == nil {
-		logger = logging.Child(logger, "database")
-	}
+func NewDatabase(cfg defs.Database, baseLogger *slog.Logger) (*Database, error) {
+	logger := logging.Child(baseLogger, "database")
 
 	gormLogger := &SlogGormLogger{
 		logger: logger,
@@ -39,9 +41,18 @@ func NewDatabase(cfg defs.Database, logger *slog.Logger) (*Database, error) {
 	}
 
 	return &Database{
-		DB:     database,
-		logger: logger,
+		DB:         database,
+		logger:     logger,
+		baseLogger: baseLogger,
 	}, nil
+}
+
+func (d *Database) CreateRepositories() *repo.Repositories {
+	return repo.NewSQLRepositories(d.DB)
+}
+
+func (d *Database) CreateFunder() actions.Funder {
+	return funder.NewSQL(d.baseLogger, d.DB)
 }
 
 func createAndConfigureDatabaseConnection(dialector gorm.Dialector, cfg defs.Database, logger glogger.Interface) (*gorm.DB, error) {

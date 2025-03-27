@@ -9,7 +9,7 @@ type Repositories struct {
 	*OutputBaskets
 }
 
-func NewRepositories(db *gorm.DB) *Repositories {
+func NewSQLRepositories(db *gorm.DB) *Repositories {
 	repositories := &Repositories{
 		Migrator:      NewMigrator(db),
 		Settings:      NewSettings(db),
