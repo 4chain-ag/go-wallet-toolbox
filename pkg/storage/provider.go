@@ -4,16 +4,15 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/repo"
-
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/lox"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/repo"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
-	"gorm.io/gorm"
 	"github.com/samber/lo"
+	"gorm.io/gorm"
 )
 
 // Repository is an interface for the actual storage repository.
