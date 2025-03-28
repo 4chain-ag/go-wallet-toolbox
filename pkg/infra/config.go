@@ -13,6 +13,7 @@ type Config struct {
 	Name             string          `mapstructure:"name"`
 	ServerPrivateKey string          `mapstructure:"server_private_key"`
 	BSVNetwork       defs.BSVNetwork `mapstructure:"bsv_network"`
+	FeeModel         defs.FeeModel   `mapstructure:"fee_model"`
 	DBConfig         defs.Database   `mapstructure:"db"`
 	HTTPConfig       HTTPConfig      `mapstructure:"http"`
 	Logging          LogConfig       `mapstructure:"logging"`
@@ -46,6 +47,7 @@ func Defaults() Config {
 		HTTPConfig: HTTPConfig{
 			Port: 8100,
 		},
+		FeeModel: defs.DefaultFeeModel(),
 		Logging: LogConfig{
 			Enabled: true,
 			Level:   defs.LogLevelInfo,
@@ -61,6 +63,10 @@ func (c *Config) Validate() (err error) {
 	}
 	if c.BSVNetwork, err = defs.ParseBSVNetworkStr(string(c.BSVNetwork)); err != nil {
 		return fmt.Errorf("invalid BSV network: %w", err)
+	}
+
+	if err = c.FeeModel.Validate(); err != nil {
+		return fmt.Errorf("invalid fee model: %w", err)
 	}
 
 	if err = c.DBConfig.Validate(); err != nil {

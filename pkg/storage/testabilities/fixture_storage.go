@@ -1,12 +1,12 @@
 package testabilities
 
 import (
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/mocks"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage"
@@ -46,7 +46,11 @@ func (s *storageFixture) GormProvider() *storage.Provider {
 
 	dbConfig := dbfixtures.DBConfigForTests()
 
-	activeStorage, err := storage.NewGORMProvider(s.logger, dbConfig, defs.NetworkTestnet)
+	activeStorage, err := storage.NewGORMProvider(s.logger, storage.GORMProviderConfig{
+		DB:       dbConfig,
+		Chain:    defs.NetworkTestnet,
+		FeeModel: defs.DefaultFeeModel(),
+	})
 	s.require.NoError(err)
 
 	_, err = activeStorage.Migrate(StorageName, storageIdentityKey)
