@@ -47,6 +47,9 @@ func TestEnums(t *testing.T) {
 		"Logging handler": {
 			envKey: "TEST_LOGGING_HANDLER",
 		},
+		"Fee model": {
+			envKey: "TEST_FEE_MODEL_TYPE",
+		},
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {

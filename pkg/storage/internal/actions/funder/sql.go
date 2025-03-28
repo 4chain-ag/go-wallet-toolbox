@@ -4,21 +4,24 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions"
 	"gorm.io/gorm"
 )
 
 type SQL struct {
-	logger *slog.Logger
-	db     *gorm.DB
+	logger   *slog.Logger
+	db       *gorm.DB
+	feeModel defs.FeeModel
 }
 
-func NewSQL(logger *slog.Logger, db *gorm.DB) *SQL {
+func NewSQL(logger *slog.Logger, db *gorm.DB, feeModel defs.FeeModel) *SQL {
 	logger = logging.Child(logger, "funderSQL")
 	return &SQL{
-		logger: logger,
-		db:     db,
+		logger:   logger,
+		db:       db,
+		feeModel: feeModel,
 	}
 }
 

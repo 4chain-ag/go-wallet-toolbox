@@ -56,8 +56,8 @@ func (d *Database) CreateRepositories() *repo.Repositories {
 	return repo.NewSQLRepositories(d.DB)
 }
 
-func (d *Database) CreateFunder() actions.Funder {
-	return funder.NewSQL(d.baseLogger, d.DB)
+func (d *Database) CreateFunder(feeModel defs.FeeModel) actions.Funder {
+	return funder.NewSQL(d.baseLogger, d.DB, feeModel)
 }
 
 func createAndConfigureDatabaseConnection(dialector gorm.Dialector, cfg defs.Database, logger glogger.Interface) (*gorm.DB, error) {
