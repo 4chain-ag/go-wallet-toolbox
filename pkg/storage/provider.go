@@ -9,6 +9,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"gorm.io/gorm"
 )
 
 // Repository is an interface for the actual storage repository.
@@ -20,6 +21,18 @@ type Repository interface {
 	CreateUser(user *models.User) (*wdk.TableUser, error)
 }
 
+type ProviderOpts func(*providerOptions)
+
+type providerOptions struct {
+	gormDB *gorm.DB
+}
+
+func WithGORM(gormDB *gorm.DB) ProviderOpts {
+	return func(o *providerOptions) {
+		o.gormDB = gormDB
+	}
+}
+
 // Provider is a storage provider.
 type Provider struct {
 	Chain defs.BSVNetwork
@@ -27,20 +40,48 @@ type Provider struct {
 	settings *wdk.TableSettings
 	repo     Repository
 	actions  *actions.Actions
+	database *database.Database
 }
 
 // NewGORMProvider creates a new storage provider with GORM repository.
-func NewGORMProvider(logger *slog.Logger, dbConfig defs.Database, chain defs.BSVNetwork) (*Provider, error) {
+func NewGORMProvider(logger *slog.Logger, dbConfig defs.Database, chain defs.BSVNetwork, opts ...ProviderOpts) (*Provider, error) {
+	options := toOptions(opts)
+
+	db, err := configureDatabase(logger, dbConfig, options)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Provider{
+		Chain:    chain,
+		repo:     db.CreateRepositories(),
+		actions:  actions.New(logger, db.CreateFunder()),
+		database: db,
+	}, nil
+}
+
+func configureDatabase(logger *slog.Logger, dbConfig defs.Database, options *providerOptions) (*database.Database, error) {
+	if options.gormDB != nil {
+		return database.NewWithGorm(options.gormDB, logger), nil
+	}
+
 	db, err := database.NewDatabase(dbConfig, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create database: %w", err)
 	}
+	return db, nil
+}
 
-	return &Provider{
-		Chain:   chain,
-		repo:    db.CreateRepositories(),
-		actions: actions.New(logger, db.CreateFunder()),
-	}, nil
+func toOptions(opts []ProviderOpts) *providerOptions {
+	options := &providerOptions{}
+	for _, opt := range opts {
+		opt(options)
+	}
+	return options
+}
+
+func (p *Provider) Database() *database.Database {
+	return p.database
 }
 
 // Migrate migrates the storage and saves the settings.

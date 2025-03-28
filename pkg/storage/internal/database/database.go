@@ -25,7 +25,6 @@ type Database struct {
 // NewDatabase will configure and return database based on provided config
 func NewDatabase(cfg defs.Database, baseLogger *slog.Logger) (*Database, error) {
 	logger := logging.Child(baseLogger, "database")
-
 	gormLogger := &SlogGormLogger{
 		logger: logger,
 	}
@@ -40,11 +39,17 @@ func NewDatabase(cfg defs.Database, baseLogger *slog.Logger) (*Database, error) 
 		return nil, fmt.Errorf("failed to create gorm instance, caused by: %w", err)
 	}
 
+	return NewWithGorm(database, logger), nil
+}
+
+func NewWithGorm(db *gorm.DB, baseLogger *slog.Logger) *Database {
+	logger := logging.Child(baseLogger, "database")
+
 	return &Database{
-		DB:         database,
-		logger:     logger,
+		DB:         db,
 		baseLogger: baseLogger,
-	}, nil
+		logger:     logger,
+	}
 }
 
 func (d *Database) CreateRepositories() *repo.Repositories {
