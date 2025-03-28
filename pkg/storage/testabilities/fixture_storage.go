@@ -12,6 +12,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/server"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/dbfixtures"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -29,6 +30,8 @@ type StorageFixture interface {
 	StartedRPCServerFor(provider wdk.WalletStorageWriter) (cleanup func())
 	RPCClient() (*wdk.WalletStorageWriterClient, func())
 	MockProvider() *mocks.MockWalletStorageWriter
+
+	GormProviderWithUsers() *storage.Provider
 }
 
 type storageFixture struct {
@@ -36,6 +39,18 @@ type storageFixture struct {
 	require    *require.Assertions
 	logger     *slog.Logger
 	testServer *httptest.Server
+}
+
+func (s *storageFixture) GormProviderWithUsers() *storage.Provider {
+	activeStorage := s.GormProvider()
+
+	_, err := activeStorage.FindOrInsertUser(testusers.Alice.PrivKey)
+	s.require.NoError(err)
+
+	_, err = activeStorage.FindOrInsertUser(testusers.Bob.PrivKey)
+	s.require.NoError(err)
+
+	return activeStorage
 }
 
 func (s *storageFixture) GormProvider() *storage.Provider {
