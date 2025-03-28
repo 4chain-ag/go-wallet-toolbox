@@ -10,6 +10,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"gorm.io/gorm"
 )
 
 // Repository is an interface for the actual storage repository.
@@ -19,6 +20,20 @@ type Repository interface {
 	SaveSettings(settings *wdk.TableSettings) error
 	FindUser(identityKey string) (*wdk.TableUser, error)
 	CreateUser(user *models.User) (*wdk.TableUser, error)
+}
+
+// ProviderOption is function for additional setup of Provider itself.
+type ProviderOption func(*providerOptions)
+
+type providerOptions struct {
+	gormDB *gorm.DB
+}
+
+// WithGORM sets the GORM database for the provider.
+func WithGORM(gormDB *gorm.DB) ProviderOption {
+	return func(o *providerOptions) {
+		o.gormDB = gormDB
+	}
 }
 
 // Provider is a storage provider.
@@ -31,10 +46,12 @@ type Provider struct {
 }
 
 // NewGORMProvider creates a new storage provider with GORM repository.
-func NewGORMProvider(logger *slog.Logger, dbConfig defs.Database, chain defs.BSVNetwork) (*Provider, error) {
-	db, err := database.NewDatabase(dbConfig, logger)
+func NewGORMProvider(logger *slog.Logger, dbConfig defs.Database, chain defs.BSVNetwork, opts ...ProviderOption) (*Provider, error) {
+	options := toOptions(opts)
+
+	db, err := configureDatabase(logger, dbConfig, options)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create database: %w", err)
+		return nil, err
 	}
 
 	return &Provider{
@@ -42,6 +59,26 @@ func NewGORMProvider(logger *slog.Logger, dbConfig defs.Database, chain defs.BSV
 		repo:    db.CreateRepositories(),
 		actions: actions.New(logger, db.CreateFunder()),
 	}, nil
+}
+
+func configureDatabase(logger *slog.Logger, dbConfig defs.Database, options *providerOptions) (*database.Database, error) {
+	if options.gormDB != nil {
+		return database.NewWithGorm(options.gormDB, logger), nil
+	}
+
+	db, err := database.NewDatabase(dbConfig, logger)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create database: %w", err)
+	}
+	return db, nil
+}
+
+func toOptions(opts []ProviderOption) *providerOptions {
+	options := &providerOptions{}
+	for _, opt := range opts {
+		opt(options)
+	}
+	return options
 }
 
 // Migrate migrates the storage and saves the settings.
