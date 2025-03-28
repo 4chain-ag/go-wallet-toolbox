@@ -83,21 +83,21 @@ func TestWrongCreateActionArgs(t *testing.T) {
 		"Description too long": {
 			args: func() wdk.ValidCreateActionArgs {
 				args := fixtures.DefaultValidCreateActionArgs()
-				args.Description = wdk.DescriptionString5to2000Bytes(bytes.Repeat([]byte{'a'}, 2001))
+				args.Description = wdk.String5to2000Bytes(bytes.Repeat([]byte{'a'}, 2001))
 				return args
 			}(),
 		},
 		"Label empty": {
 			args: func() wdk.ValidCreateActionArgs {
 				args := fixtures.DefaultValidCreateActionArgs()
-				args.Labels = []string{""}
+				args.Labels = []wdk.IdentifierStringUnder300{""}
 				return args
 			}(),
 		},
 		"Label too long": {
 			args: func() wdk.ValidCreateActionArgs {
 				args := fixtures.DefaultValidCreateActionArgs()
-				args.Labels = []string{string(bytes.Repeat([]byte{'a'}, 301))}
+				args.Labels = []wdk.IdentifierStringUnder300{wdk.IdentifierStringUnder300(bytes.Repeat([]byte{'a'}, 301))}
 				return args
 			}(),
 		},
@@ -125,35 +125,35 @@ func TestWrongCreateActionArgs(t *testing.T) {
 		"Output's description too long": {
 			args: func() wdk.ValidCreateActionArgs {
 				args := fixtures.DefaultValidCreateActionArgs()
-				args.Outputs[0].OutputDescription = wdk.DescriptionString5to2000Bytes(bytes.Repeat([]byte{'a'}, 2001))
+				args.Outputs[0].OutputDescription = wdk.String5to2000Bytes(bytes.Repeat([]byte{'a'}, 2001))
 				return args
 			}(),
 		},
 		"Output's basket too long": {
 			args: func() wdk.ValidCreateActionArgs {
 				args := fixtures.DefaultValidCreateActionArgs()
-				args.Outputs[0].Basket = utils.Ptr(wdk.BasketStringUnder300Bytes(bytes.Repeat([]byte{'a'}, 301)))
+				args.Outputs[0].Basket = utils.Ptr(wdk.IdentifierStringUnder300(bytes.Repeat([]byte{'a'}, 301)))
 				return args
 			}(),
 		},
 		"Output's basket empty": {
 			args: func() wdk.ValidCreateActionArgs {
 				args := fixtures.DefaultValidCreateActionArgs()
-				args.Outputs[0].Basket = utils.Ptr(wdk.BasketStringUnder300Bytes(""))
+				args.Outputs[0].Basket = utils.Ptr(wdk.IdentifierStringUnder300(""))
 				return args
 			}(),
 		},
 		"Output's tag too long": {
 			args: func() wdk.ValidCreateActionArgs {
 				args := fixtures.DefaultValidCreateActionArgs()
-				args.Outputs[0].Tags = []wdk.BasketStringUnder300Bytes{wdk.BasketStringUnder300Bytes(bytes.Repeat([]byte{'a'}, 301))}
+				args.Outputs[0].Tags = []wdk.IdentifierStringUnder300{wdk.IdentifierStringUnder300(bytes.Repeat([]byte{'a'}, 301))}
 				return args
 			}(),
 		},
 		"Output's tag empty": {
 			args: func() wdk.ValidCreateActionArgs {
 				args := fixtures.DefaultValidCreateActionArgs()
-				args.Outputs[0].Tags = []wdk.BasketStringUnder300Bytes{wdk.BasketStringUnder300Bytes("")}
+				args.Outputs[0].Tags = []wdk.IdentifierStringUnder300{wdk.IdentifierStringUnder300("")}
 				return args
 			}(),
 		},
@@ -198,7 +198,7 @@ func TestWrongCreateActionArgs(t *testing.T) {
 				args := fixtures.DefaultValidCreateActionArgs()
 				args.Inputs = []wdk.ValidCreateActionInput{{
 					UnlockingScript:  utils.Ptr(wdk.HexString("00")),
-					InputDescription: wdk.DescriptionString5to2000Bytes(bytes.Repeat([]byte{'a'}, 2001)),
+					InputDescription: wdk.String5to2000Bytes(bytes.Repeat([]byte{'a'}, 2001)),
 				}}
 				return args
 			}(),

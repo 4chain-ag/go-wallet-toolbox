@@ -2,21 +2,21 @@ package wdk
 
 // ValidCreateActionInput represents the input for a transaction action
 type ValidCreateActionInput struct {
-	Outpoint              OutPoint                      `json:"outpoint,omitempty"`
-	InputDescription      DescriptionString5to2000Bytes `json:"inputDescription,omitempty"`
-	SequenceNumber        PositiveIntegerOrZero         `json:"sequenceNumber,omitempty"`
-	UnlockingScript       *HexString                    `json:"unlockingScript,omitempty"`
-	UnlockingScriptLength *PositiveInteger              `json:"unlockingScriptLength,omitempty"`
+	Outpoint              OutPoint              `json:"outpoint,omitempty"`
+	InputDescription      String5to2000Bytes    `json:"inputDescription,omitempty"`
+	SequenceNumber        PositiveIntegerOrZero `json:"sequenceNumber,omitempty"`
+	UnlockingScript       *HexString            `json:"unlockingScript,omitempty"`
+	UnlockingScriptLength *PositiveInteger      `json:"unlockingScriptLength,omitempty"`
 }
 
 // ValidCreateActionOutput represents the output for a transaction action
 type ValidCreateActionOutput struct {
-	LockingScript      HexString                     `json:"lockingScript,omitempty"`
-	Satoshis           SatoshiValue                  `json:"satoshis,omitempty"`
-	OutputDescription  DescriptionString5to2000Bytes `json:"outputDescription,omitempty"`
-	Basket             *BasketStringUnder300Bytes    `json:"basket,omitempty"`
-	CustomInstructions *string                       `json:"customInstructions,omitempty"`
-	Tags               []BasketStringUnder300Bytes   `json:"tags,omitempty"`
+	LockingScript      HexString                  `json:"lockingScript,omitempty"`
+	Satoshis           SatoshiValue               `json:"satoshis,omitempty"`
+	OutputDescription  String5to2000Bytes         `json:"outputDescription,omitempty"`
+	Basket             *IdentifierStringUnder300  `json:"basket,omitempty"`
+	CustomInstructions *string                    `json:"customInstructions,omitempty"`
+	Tags               []IdentifierStringUnder300 `json:"tags,omitempty"`
 }
 
 // ValidProcessActionOptions represents options for processing an action
@@ -57,16 +57,16 @@ type ValidProcessActionArgs struct {
 
 // ValidCreateActionArgs represents the arguments for creating a transaction action
 type ValidCreateActionArgs struct {
-	Description                  DescriptionString5to2000Bytes `json:"description,omitempty"`
-	InputBEEF                    BEEF                          `json:"inputBEEF,omitempty"`
-	Inputs                       []ValidCreateActionInput      `json:"inputs,omitempty"`
-	Outputs                      []ValidCreateActionOutput     `json:"outputs,omitempty"`
-	LockTime                     int                           `json:"lockTime,omitempty"`
-	Version                      int                           `json:"version,omitempty"`
-	Labels                       []string                      `json:"labels,omitempty"`
-	IsSignAction                 bool                          `json:"isSignAction,omitempty"`
-	RandomVals                   *[]int                        `json:"randomVals,omitempty"`
-	IncludeAllSourceTransactions bool                          `json:"includeAllSourceTransactions,omitempty"`
+	Description                  String5to2000Bytes         `json:"description,omitempty"`
+	InputBEEF                    BEEF                       `json:"inputBEEF,omitempty"`
+	Inputs                       []ValidCreateActionInput   `json:"inputs,omitempty"`
+	Outputs                      []ValidCreateActionOutput  `json:"outputs,omitempty"`
+	LockTime                     int                        `json:"lockTime,omitempty"`
+	Version                      int                        `json:"version,omitempty"`
+	Labels                       []IdentifierStringUnder300 `json:"labels,omitempty"`
+	IsSignAction                 bool                       `json:"isSignAction,omitempty"`
+	RandomVals                   *[]int                     `json:"randomVals,omitempty"`
+	IncludeAllSourceTransactions bool                       `json:"includeAllSourceTransactions,omitempty"`
 
 	Options ValidCreateActionOptions `json:"options,omitempty"`
 

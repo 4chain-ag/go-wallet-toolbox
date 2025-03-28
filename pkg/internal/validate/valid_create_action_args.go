@@ -6,13 +6,6 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 )
 
-const (
-	DescriptionMinLength = 5
-	DescriptionMaxLength = 2000
-	IdentifierMinLength  = 1
-	IdentifierMaxLength  = 300
-)
-
 func ValidCreateActionArgs(args *wdk.ValidCreateActionArgs) error {
 	deducedIsSendWith := len(args.Options.SendWith) > 0
 	if args.IsSendWith != deducedIsSendWith {
@@ -48,12 +41,12 @@ func ValidCreateActionArgs(args *wdk.ValidCreateActionArgs) error {
 		return fmt.Errorf("inconsistent IsNoSend with Options.NoSend")
 	}
 
-	if err := checkStrLength(args.Description, DescriptionMinLength, DescriptionMaxLength); err != nil {
+	if err := args.Description.Validate(); err != nil {
 		return fmt.Errorf("the description parameter must be %w", err)
 	}
 
 	for i, label := range args.Labels {
-		if err := checkStrLength(label, IdentifierMinLength, IdentifierMaxLength); err != nil {
+		if err := label.Validate(); err != nil {
 			return fmt.Errorf("label as %d must be %w", i, err)
 		}
 	}
@@ -79,7 +72,7 @@ func validateCreateActionInput(input *wdk.ValidCreateActionInput) error {
 	}
 
 	if input.UnlockingScript != nil {
-		if err := checkHexString(*input.UnlockingScript); err != nil {
+		if err := input.UnlockingScript.Validate(); err != nil {
 			return fmt.Errorf("unlockingScript must be %w", err)
 		}
 
@@ -88,7 +81,7 @@ func validateCreateActionInput(input *wdk.ValidCreateActionInput) error {
 		}
 	}
 
-	if err := checkStrLength(input.InputDescription, DescriptionMinLength, DescriptionMaxLength); err != nil {
+	if err := input.InputDescription.Validate(); err != nil {
 		return fmt.Errorf("inputDescription must be %w", err)
 	}
 
@@ -96,26 +89,26 @@ func validateCreateActionInput(input *wdk.ValidCreateActionInput) error {
 }
 
 func validateCreateActionOutput(output *wdk.ValidCreateActionOutput) error {
-	if err := checkHexString(output.LockingScript); err != nil {
+	if err := output.LockingScript.Validate(); err != nil {
 		return fmt.Errorf("lockingScript must be %w", err)
 	}
 
-	if err := checkSatoshis(output.Satoshis); err != nil {
+	if err := output.Satoshis.Validate(); err != nil {
 		return fmt.Errorf("satoshis must be %w", err)
 	}
 
-	if err := checkStrLength(output.OutputDescription, DescriptionMinLength, DescriptionMaxLength); err != nil {
+	if err := output.OutputDescription.Validate(); err != nil {
 		return fmt.Errorf("outputDescription must be %w", err)
 	}
 
 	if output.Basket != nil {
-		if err := checkStrLength(*output.Basket, IdentifierMinLength, IdentifierMaxLength); err != nil {
+		if err := output.Basket.Validate(); err != nil {
 			return fmt.Errorf("basket must be %w", err)
 		}
 	}
 
 	for _, tag := range output.Tags {
-		if err := checkStrLength(tag, IdentifierMinLength, IdentifierMaxLength); err != nil {
+		if err := tag.Validate(); err != nil {
 			return fmt.Errorf("tag must be %w", err)
 		}
 	}
