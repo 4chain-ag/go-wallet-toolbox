@@ -9,6 +9,7 @@ import (
 // with a length between 5 and 2000 characters.
 type String5to2000Bytes string
 
+// Validate checks if the string is between 5 and 2000 characters long
 func (d String5to2000Bytes) Validate() error {
 	if len(d) < 5 {
 		return fmt.Errorf("at least 5 length")
@@ -27,6 +28,7 @@ type HexString string
 
 var hexRegex = regexp.MustCompile("^[0-9a-fA-F]+$")
 
+// Validate checks if the string is a valid hexadecimal string
 func (h HexString) Validate() error {
 	if len(h)%2 != 0 {
 		return fmt.Errorf("even length, not %d", len(h))
@@ -52,8 +54,10 @@ type PositiveInteger uint
 // @maximum 2100000000000000
 type SatoshiValue uint
 
+// MaxSatoshis is the maximum number of Satoshis in the Bitcoin supply
 const MaxSatoshis = 2100000000000000
 
+// Validate checks if the value is less than the maximum number of Satoshis
 func (s SatoshiValue) Validate() error {
 	if s > MaxSatoshis {
 		return fmt.Errorf("less than %d", MaxSatoshis)
@@ -67,6 +71,7 @@ type PositiveIntegerOrZero uint
 // IdentifierStringUnder300 is a string used for basket names, with a length under 300 bytes
 type IdentifierStringUnder300 string
 
+// Validate checks if the string is under 300 bytes long and not empty
 func (b IdentifierStringUnder300) Validate() error {
 	if len(b) > 300 {
 		return fmt.Errorf("no more than 300 length")
