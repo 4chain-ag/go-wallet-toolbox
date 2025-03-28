@@ -27,12 +27,12 @@ func NewCertificates(db *gorm.DB) *Certificates {
 	return &Certificates{db: db}
 }
 
-func (c *Certificates) CreateCertificate(certificate *models.Certificate) (int, error) {
+func (c *Certificates) CreateCertificate(certificate *models.Certificate) (uint, error) {
 	err := c.db.Create(certificate).Error
 	if err != nil {
-		return -1, fmt.Errorf("failed to create certificate model: %w", err)
+		return 0, fmt.Errorf("failed to create certificate model: %w", err)
 	}
-	return int(certificate.ID), nil
+	return certificate.ID, nil
 }
 
 func (c *Certificates) DeleteCertificate(userID int, args wdk.RelinquishCertificateArgs) error {
@@ -75,8 +75,11 @@ func (c *Certificates) ListAndCountCertificates(userID int, opts ListCertificate
 
 	// Apply pagination
 	if opts.Limit > 0 {
+		// limit is maxed 10000 so shouldn't overflow
+		//nolint:gosec
 		query = query.Limit(int(opts.Limit))
 	}
+	//nolint:gosec
 	query = query.Offset(int(opts.Offset))
 
 	err := query.Find(&certificates).Error

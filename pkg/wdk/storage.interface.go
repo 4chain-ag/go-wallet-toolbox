@@ -10,7 +10,7 @@ type WalletStorageWriter interface {
 	FindOrInsertUser(identityKey string) (*FindOrInsertUserResponse, error)
 	CreateAction(auth AuthID, args ValidCreateActionArgs) (*StorageCreateActionResult, error)
 
-	InsertCertificateAuth(auth AuthID, certificate *TableCertificateX) (int, error)
+	InsertCertificateAuth(auth AuthID, certificate *TableCertificateX) (uint, error)
 	RelinquishCertificate(auth AuthID, args RelinquishCertificateArgs) error
 	ListCertificates(auth AuthID, args ListCertificatesArgs) (*ListCertificatesResult, error)
 }

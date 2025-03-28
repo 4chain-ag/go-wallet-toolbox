@@ -71,10 +71,10 @@ func (mr *MockWalletStorageWriterMockRecorder) FindOrInsertUser(identityKey any)
 }
 
 // InsertCertificateAuth mocks base method.
-func (m *MockWalletStorageWriter) InsertCertificateAuth(auth wdk.AuthID, certificate *wdk.TableCertificateX) (int, error) {
+func (m *MockWalletStorageWriter) InsertCertificateAuth(auth wdk.AuthID, certificate *wdk.TableCertificateX) (uint, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InsertCertificateAuth", auth, certificate)
-	ret0, _ := ret[0].(int)
+	ret0, _ := ret[0].(uint)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

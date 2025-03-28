@@ -22,7 +22,7 @@ func (c *WalletStorageWriterClient) CreateAction(auth AuthID, args ValidCreateAc
 	return c.client.CreateAction(auth, args)
 }
 
-func (c *WalletStorageWriterClient) InsertCertificateAuth(auth AuthID, certificate *TableCertificateX) (int, error) {
+func (c *WalletStorageWriterClient) InsertCertificateAuth(auth AuthID, certificate *TableCertificateX) (uint, error) {
 	return c.client.InsertCertificateAuth(auth, certificate)
 }
 
@@ -43,7 +43,7 @@ type rpcWalletStorageWriter struct {
 
 	CreateAction func(AuthID, ValidCreateActionArgs) (*StorageCreateActionResult, error)
 
-	InsertCertificateAuth func(AuthID, *TableCertificateX) (int, error)
+	InsertCertificateAuth func(AuthID, *TableCertificateX) (uint, error)
 
 	RelinquishCertificate func(AuthID, RelinquishCertificateArgs) error
 

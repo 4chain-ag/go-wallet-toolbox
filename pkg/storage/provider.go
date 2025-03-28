@@ -25,7 +25,7 @@ type Repository interface {
 	FindUser(identityKey string) (*wdk.TableUser, error)
 	CreateUser(user *models.User) (*wdk.TableUser, error)
 
-	CreateCertificate(certificate *models.Certificate) (int, error)
+	CreateCertificate(certificate *models.Certificate) (uint, error)
 	DeleteCertificate(userID int, args wdk.RelinquishCertificateArgs) error
 	ListAndCountCertificates(userID int, opts repo.ListCertificatesOptions) ([]*models.Certificate, int64, error)
 }
@@ -126,9 +126,10 @@ func (p *Provider) MakeAvailable() (*wdk.TableSettings, error) {
 	return settings, nil
 }
 
-func (p *Provider) InsertCertificateAuth(auth wdk.AuthID, certificate *wdk.TableCertificateX) (int, error) {
+// InsertCertificateAuth inserts certificate to the database for authenticated user
+func (p *Provider) InsertCertificateAuth(auth wdk.AuthID, certificate *wdk.TableCertificateX) (uint, error) {
 	if auth.UserID == nil || certificate.UserID != *auth.UserID {
-		return -1, fmt.Errorf("access is denied due to an authorization error")
+		return 0, fmt.Errorf("access is denied due to an authorization error")
 	}
 
 	// TODO: validate arguments?
@@ -149,7 +150,12 @@ func (p *Provider) InsertCertificateAuth(auth wdk.AuthID, certificate *wdk.Table
 		certModel.Verifier = string(*certificate.Verifier)
 	}
 
-	return p.repo.CreateCertificate(certModel)
+	id, err := p.repo.CreateCertificate(certModel)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create certificate: %w", err)
+	}
+
+	return id, nil
 }
 
 // RelinquishCertificate will relinquish existing certificate
@@ -160,7 +166,12 @@ func (p *Provider) RelinquishCertificate(auth wdk.AuthID, args wdk.RelinquishCer
 	}
 	// TODO: validate args
 
-	return p.repo.DeleteCertificate(*auth.UserID, args)
+	err := p.repo.DeleteCertificate(*auth.UserID, args)
+	if err != nil {
+		return fmt.Errorf("failed to relinquish certificate: %w", err)
+	}
+
+	return nil
 }
 
 // ListCertificates will list certificates with provided args
@@ -180,6 +191,7 @@ func (p *Provider) ListCertificates(auth wdk.AuthID, args wdk.ListCertificatesAr
 	}
 
 	result := &wdk.ListCertificatesResult{
+		//nolint:gosec
 		TotalCertificates: wdk.PositiveIntegerOrZero(totalCount),
 		Certificates:      lo.Map(certModels, lox.MappingFn(certModelToResult)),
 	}
