@@ -17,17 +17,17 @@ func ParseFeeModelType(str string) (FeeModelType, error) {
 
 // FeeModel represents a fee model with its value.
 type FeeModel struct {
-	Model FeeModelType `mapstructure:"model"`
+	Type  FeeModelType `mapstructure:"type"`
 	Value int64        `mapstructure:"value"`
 }
 
-// Validate double checks if under the Model is a valid enum, and checks if the value is valid.
+// Validate double checks if under the Type is a valid enum, and checks if the value is valid.
 func (f *FeeModel) Validate() error {
 	var err error
-	if f.Model, err = ParseFeeModelType(string(f.Model)); err != nil {
-		return fmt.Errorf("invalid fee model: %s", f.Model)
+	if f.Type, err = ParseFeeModelType(string(f.Type)); err != nil {
+		return fmt.Errorf("invalid fee model: %s", f.Type)
 	}
-	if f.Model == SatPerKB && f.Value < 0 {
+	if f.Type == SatPerKB && f.Value < 0 {
 		return fmt.Errorf("invalid fee value: %d", f.Value)
 	}
 	return nil
@@ -36,7 +36,7 @@ func (f *FeeModel) Validate() error {
 // DefaultFeeModel returns minimal fee model.
 func DefaultFeeModel() FeeModel {
 	return FeeModel{
-		Model: SatPerKB,
+		Type:  SatPerKB,
 		Value: 1,
 	}
 }

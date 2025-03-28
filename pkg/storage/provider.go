@@ -42,6 +42,9 @@ func NewGORMProvider(logger *slog.Logger, config GORMProviderConfig, opts ...Pro
 	if err := config.FeeModel.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid fee model: %w", err)
 	}
+	if config.FeeModel.Value == 0 {
+		logger.Warn("fee model value is 0")
+	}
 
 	options := toOptions(opts)
 
