@@ -22,6 +22,18 @@ func (c *WalletStorageWriterClient) CreateAction(auth AuthID, args ValidCreateAc
 	return c.client.CreateAction(auth, args)
 }
 
+func (c *WalletStorageWriterClient) InsertCertificateAuth(auth AuthID, certificate *TableCertificateX) (int, error) {
+	return c.client.InsertCertificateAuth(auth, certificate)
+}
+
+func (c *WalletStorageWriterClient) RelinquishCertificate(auth AuthID, args RelinquishCertificateArgs) error {
+	return c.client.RelinquishCertificate(auth, args)
+}
+
+func (c *WalletStorageWriterClient) ListCertificates(auth AuthID, args ListCertificatesArgs) (*ListCertificatesResult, error) {
+	return c.client.ListCertificates(auth, args)
+}
+
 type rpcWalletStorageWriter struct {
 	Migrate func(string, string) (string, error)
 
@@ -30,4 +42,10 @@ type rpcWalletStorageWriter struct {
 	FindOrInsertUser func(string) (*FindOrInsertUserResponse, error)
 
 	CreateAction func(AuthID, ValidCreateActionArgs) (*StorageCreateActionResult, error)
+
+	InsertCertificateAuth func(AuthID, *TableCertificateX) (int, error)
+
+	RelinquishCertificate func(AuthID, RelinquishCertificateArgs) error
+
+	ListCertificates func(AuthID, ListCertificatesArgs) (*ListCertificatesResult, error)
 }

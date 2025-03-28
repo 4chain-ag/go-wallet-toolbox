@@ -4,21 +4,31 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/repo"
+
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/lox"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"gorm.io/gorm"
+	"github.com/samber/lo"
 )
 
 // Repository is an interface for the actual storage repository.
 type Repository interface {
 	Migrate() error
+
 	ReadSettings() (*wdk.TableSettings, error)
 	SaveSettings(settings *wdk.TableSettings) error
+
 	FindUser(identityKey string) (*wdk.TableUser, error)
 	CreateUser(user *models.User) (*wdk.TableUser, error)
+
+	CreateCertificate(certificate *models.Certificate) (int, error)
+	DeleteCertificate(userID int, args wdk.RelinquishCertificateArgs) error
+	ListAndCountCertificates(userID int, opts repo.ListCertificatesOptions) ([]*models.Certificate, int64, error)
 }
 
 // ProviderOption is function for additional setup of Provider itself.
@@ -115,6 +125,67 @@ func (p *Provider) MakeAvailable() (*wdk.TableSettings, error) {
 
 	p.settings = settings
 	return settings, nil
+}
+
+func (p *Provider) InsertCertificateAuth(auth wdk.AuthID, certificate *wdk.TableCertificateX) (int, error) {
+	if auth.UserID == nil || certificate.UserID != *auth.UserID {
+		return -1, fmt.Errorf("access is denied due to an authorization error")
+	}
+
+	// TODO: validate arguments?
+
+	certModel := &models.Certificate{
+		Type:               string(certificate.Type),
+		SerialNumber:       string(certificate.SerialNumber),
+		Certifier:          string(certificate.Certifier),
+		Subject:            string(certificate.Subject),
+		RevocationOutpoint: string(certificate.RevocationOutpoint),
+		Signature:          string(certificate.Signature),
+
+		UserID:            *auth.UserID,
+		CertificateFields: lo.Map(certificate.Fields, lox.MappingFn(tableCertificateXFieldsToModelFields(*auth.UserID))),
+	}
+
+	if certificate.Verifier != nil {
+		certModel.Verifier = string(*certificate.Verifier)
+	}
+
+	return p.repo.CreateCertificate(certModel)
+}
+
+// RelinquishCertificate will relinquish existing certificate
+// TODO: Add options to NewGormProvider to apply db already, and add function to seed database with users
+func (p *Provider) RelinquishCertificate(auth wdk.AuthID, args wdk.RelinquishCertificateArgs) error {
+	if auth.UserID == nil {
+		return fmt.Errorf("access is denied due to an authorization error")
+	}
+	// TODO: validate args
+
+	return p.repo.DeleteCertificate(*auth.UserID, args)
+}
+
+// ListCertificates will list certificates with provided args
+func (p *Provider) ListCertificates(auth wdk.AuthID, args wdk.ListCertificatesArgs) (*wdk.ListCertificatesResult, error) {
+	if auth.UserID == nil {
+		return nil, fmt.Errorf("access is denied due to an authorization error")
+	}
+	// TODO: validate args
+
+	// prepare arguments
+	filterOptions := listCertificatesArgsToOptions(args)
+
+	// use repo to findCertificates with prepared args and also return them with fields
+	certModels, totalCount, err := p.repo.ListAndCountCertificates(*auth.UserID, filterOptions)
+	if err != nil {
+		return nil, fmt.Errorf("error during listing certificates action: %w", err)
+	}
+
+	result := &wdk.ListCertificatesResult{
+		TotalCertificates: wdk.PositiveIntegerOrZero(totalCount),
+		Certificates:      lo.Map(certModels, lox.MappingFn(certModelToResult)),
+	}
+
+	return result, nil
 }
 
 // FindOrInsertUser will find user by their identityKey or inserts a new one if not found
