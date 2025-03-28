@@ -1,15 +1,28 @@
 package validate_test
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/utils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/validate"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/stretchr/testify/require"
 )
 
-func TestInconsistentValidCreateActionArgs(t *testing.T) {
+func TestForDefaultValidCreateActionArgs(t *testing.T) {
+	// given:
+	args := fixtures.DefaultValidCreateActionArgs()
+
+	// when:
+	err := validate.ValidCreateActionArgs(&args)
+
+	// then:
+	require.NoError(t, err)
+}
+
+func TestWrongCreateActionArgs(t *testing.T) {
 	tests := map[string]struct {
 		args wdk.ValidCreateActionArgs
 	}{
@@ -57,6 +70,136 @@ func TestInconsistentValidCreateActionArgs(t *testing.T) {
 				args := fixtures.DefaultValidCreateActionArgs()
 				args.IsNoSend = true
 				args.Options.NoSend = false
+				return args
+			}(),
+		},
+		"Description too short": {
+			args: func() wdk.ValidCreateActionArgs {
+				args := fixtures.DefaultValidCreateActionArgs()
+				args.Description = "sh"
+				return args
+			}(),
+		},
+		"Description too long": {
+			args: func() wdk.ValidCreateActionArgs {
+				args := fixtures.DefaultValidCreateActionArgs()
+				args.Description = wdk.DescriptionString5to2000Bytes(bytes.Repeat([]byte{'a'}, 2001))
+				return args
+			}(),
+		},
+		"Label empty": {
+			args: func() wdk.ValidCreateActionArgs {
+				args := fixtures.DefaultValidCreateActionArgs()
+				args.Labels = []string{""}
+				return args
+			}(),
+		},
+		"Label too long": {
+			args: func() wdk.ValidCreateActionArgs {
+				args := fixtures.DefaultValidCreateActionArgs()
+				args.Labels = []string{string(bytes.Repeat([]byte{'a'}, 301))}
+				return args
+			}(),
+		},
+		"Output's locking script not in hex format": {
+			args: func() wdk.ValidCreateActionArgs {
+				args := fixtures.DefaultValidCreateActionArgs()
+				args.Outputs[0].LockingScript = "not-hex"
+				return args
+			}(),
+		},
+		"Output's Satoshis value too high": {
+			args: func() wdk.ValidCreateActionArgs {
+				args := fixtures.DefaultValidCreateActionArgs()
+				args.Outputs[0].Satoshis = 2100000000000001
+				return args
+			}(),
+		},
+		"Output's description too short": {
+			args: func() wdk.ValidCreateActionArgs {
+				args := fixtures.DefaultValidCreateActionArgs()
+				args.Outputs[0].OutputDescription = "sh"
+				return args
+			}(),
+		},
+		"Output's description too long": {
+			args: func() wdk.ValidCreateActionArgs {
+				args := fixtures.DefaultValidCreateActionArgs()
+				args.Outputs[0].OutputDescription = wdk.DescriptionString5to2000Bytes(bytes.Repeat([]byte{'a'}, 2001))
+				return args
+			}(),
+		},
+		"Output's basket too long": {
+			args: func() wdk.ValidCreateActionArgs {
+				args := fixtures.DefaultValidCreateActionArgs()
+				args.Outputs[0].Basket = utils.Ptr(wdk.BasketStringUnder300Bytes(bytes.Repeat([]byte{'a'}, 301)))
+				return args
+			}(),
+		},
+		"Output's basket empty": {
+			args: func() wdk.ValidCreateActionArgs {
+				args := fixtures.DefaultValidCreateActionArgs()
+				args.Outputs[0].Basket = utils.Ptr(wdk.BasketStringUnder300Bytes(""))
+				return args
+			}(),
+		},
+		"Output's tag too long": {
+			args: func() wdk.ValidCreateActionArgs {
+				args := fixtures.DefaultValidCreateActionArgs()
+				args.Outputs[0].Tags = []wdk.BasketStringUnder300Bytes{wdk.BasketStringUnder300Bytes(bytes.Repeat([]byte{'a'}, 301))}
+				return args
+			}(),
+		},
+		"Output's tag empty": {
+			args: func() wdk.ValidCreateActionArgs {
+				args := fixtures.DefaultValidCreateActionArgs()
+				args.Outputs[0].Tags = []wdk.BasketStringUnder300Bytes{wdk.BasketStringUnder300Bytes("")}
+				return args
+			}(),
+		},
+		"Input's unlockingScript & unlockingScriptLength not provided": {
+			args: func() wdk.ValidCreateActionArgs {
+				args := fixtures.DefaultValidCreateActionArgs()
+				args.Inputs = []wdk.ValidCreateActionInput{{}}
+				return args
+			}(),
+		},
+		"Input's unlockingScript not in hex format": {
+			args: func() wdk.ValidCreateActionArgs {
+				args := fixtures.DefaultValidCreateActionArgs()
+				args.Inputs = []wdk.ValidCreateActionInput{{
+					UnlockingScript: utils.Ptr(wdk.HexString("not-hex")),
+				}}
+				return args
+			}(),
+		},
+		"Input's unlockingScript length doesn't match unlockingScriptLength": {
+			args: func() wdk.ValidCreateActionArgs {
+				args := fixtures.DefaultValidCreateActionArgs()
+				args.Inputs = []wdk.ValidCreateActionInput{{
+					UnlockingScript:       utils.Ptr(wdk.HexString("00")),
+					UnlockingScriptLength: utils.Ptr(wdk.PositiveInteger(2)),
+				}}
+				return args
+			}(),
+		},
+		"Input's description too short": {
+			args: func() wdk.ValidCreateActionArgs {
+				args := fixtures.DefaultValidCreateActionArgs()
+				args.Inputs = []wdk.ValidCreateActionInput{{
+					UnlockingScript:  utils.Ptr(wdk.HexString("00")),
+					InputDescription: "sh",
+				}}
+				return args
+			}(),
+		},
+		"Input's description too long": {
+			args: func() wdk.ValidCreateActionArgs {
+				args := fixtures.DefaultValidCreateActionArgs()
+				args.Inputs = []wdk.ValidCreateActionInput{{
+					UnlockingScript:  utils.Ptr(wdk.HexString("00")),
+					InputDescription: wdk.DescriptionString5to2000Bytes(bytes.Repeat([]byte{'a'}, 2001)),
+				}}
 				return args
 			}(),
 		},

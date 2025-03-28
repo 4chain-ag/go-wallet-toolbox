@@ -6,7 +6,7 @@ type ValidCreateActionInput struct {
 	InputDescription      DescriptionString5to2000Bytes `json:"inputDescription,omitempty"`
 	SequenceNumber        PositiveIntegerOrZero         `json:"sequenceNumber,omitempty"`
 	UnlockingScript       *HexString                    `json:"unlockingScript,omitempty"`
-	UnlockingScriptLength PositiveInteger               `json:"unlockingScriptLength,omitempty"`
+	UnlockingScriptLength *PositiveInteger              `json:"unlockingScriptLength,omitempty"`
 }
 
 // ValidCreateActionOutput represents the output for a transaction action
