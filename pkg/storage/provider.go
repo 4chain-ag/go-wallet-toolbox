@@ -27,7 +27,6 @@ type Provider struct {
 	settings *wdk.TableSettings
 	repo     Repository
 	actions  *actions.Actions
-	feeModel defs.FeeModel
 }
 
 // GORMProviderConfig is a configuration for GORM storage provider.
@@ -56,7 +55,7 @@ func NewGORMProvider(logger *slog.Logger, config GORMProviderConfig, opts ...Pro
 	return &Provider{
 		Chain:   config.Chain,
 		repo:    db.CreateRepositories(),
-		actions: actions.New(logger, db.CreateFunder()),
+		actions: actions.New(logger, db.CreateFunder(config.FeeModel)),
 	}, nil
 }
 
