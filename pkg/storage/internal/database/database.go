@@ -42,11 +42,11 @@ func NewDatabase(cfg defs.Database, baseLogger *slog.Logger) (*Database, error) 
 	return NewWithGorm(database, logger), nil
 }
 
-func NewWithGorm(db *gorm.DB, baseLogger *slog.Logger) *Database {
+func NewWithGorm(database *gorm.DB, baseLogger *slog.Logger) *Database {
 	logger := logging.Child(baseLogger, "database")
 
 	return &Database{
-		DB:         db,
+		DB:         database,
 		baseLogger: baseLogger,
 		logger:     logger,
 	}
