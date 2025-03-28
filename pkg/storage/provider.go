@@ -21,12 +21,14 @@ type Repository interface {
 	CreateUser(user *models.User) (*wdk.TableUser, error)
 }
 
+// ProviderOpts is function for additional setup of Provider itself.
 type ProviderOpts func(*providerOptions)
 
 type providerOptions struct {
 	gormDB *gorm.DB
 }
 
+// WithGORM sets the GORM database for the provider.
 func WithGORM(gormDB *gorm.DB) ProviderOpts {
 	return func(o *providerOptions) {
 		o.gormDB = gormDB
@@ -40,7 +42,6 @@ type Provider struct {
 	settings *wdk.TableSettings
 	repo     Repository
 	actions  *actions.Actions
-	database *database.Database
 }
 
 // NewGORMProvider creates a new storage provider with GORM repository.
@@ -53,10 +54,9 @@ func NewGORMProvider(logger *slog.Logger, dbConfig defs.Database, chain defs.BSV
 	}
 
 	return &Provider{
-		Chain:    chain,
-		repo:     db.CreateRepositories(),
-		actions:  actions.New(logger, db.CreateFunder()),
-		database: db,
+		Chain:   chain,
+		repo:    db.CreateRepositories(),
+		actions: actions.New(logger, db.CreateFunder()),
 	}, nil
 }
 
@@ -78,10 +78,6 @@ func toOptions(opts []ProviderOpts) *providerOptions {
 		opt(options)
 	}
 	return options
-}
-
-func (p *Provider) Database() *database.Database {
-	return p.database
 }
 
 // Migrate migrates the storage and saves the settings.
