@@ -1,8 +1,13 @@
 package dbfixtures
 
 import (
+	"testing"
+
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testmode"
+	"github.com/stretchr/testify/require"
 )
 
 func DBConfigForTests() defs.Database {
@@ -29,4 +34,16 @@ func DBConfigForTests() defs.Database {
 		}
 	}
 	return dbConfig
+}
+
+// TestDatabase creates a new database component, migrates database to make it ready for tests.
+func TestDatabase(t testing.TB) (db *database.Database, cleanup func()) {
+	dbConfig := DBConfigForTests()
+	logger := logging.NewTestLogger(t)
+	db, err := database.NewDatabase(dbConfig, logger)
+	require.NoError(t, err)
+	repos := db.CreateRepositories()
+	err = repos.Migrate()
+	require.NoError(t, err)
+	return db, func() {}
 }
