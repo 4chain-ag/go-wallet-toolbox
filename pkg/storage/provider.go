@@ -120,7 +120,7 @@ func (p *Provider) FindOrInsertUser(identityKey string) (*wdk.FindOrInsertUserRe
 	}
 
 	newUser := &models.User{
-		OutputBaskets: []*models.OutputBaskets{{
+		OutputBaskets: []*models.OutputBasket{{
 			Name:                    "default",
 			NumberOfDesiredUTXOs:    32,
 			MinimumDesiredUTXOValue: 1000,

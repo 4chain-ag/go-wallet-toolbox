@@ -6,8 +6,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// OutputBaskets is the database model of the output baskets
-type OutputBaskets struct {
+// OutputBasket is the database model of the output baskets
+type OutputBasket struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`

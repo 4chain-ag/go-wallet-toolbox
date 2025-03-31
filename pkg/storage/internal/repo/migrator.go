@@ -16,7 +16,7 @@ func NewMigrator(db *gorm.DB) *Migrator {
 }
 
 func (m *Migrator) Migrate() error {
-	err := m.db.AutoMigrate(&models.Settings{}, &models.User{}, &models.OutputBaskets{})
+	err := m.db.AutoMigrate(&models.Setting{}, &models.User{}, &models.OutputBasket{})
 	if err != nil {
 		return fmt.Errorf("failed to migrate settings: %w", err)
 	}

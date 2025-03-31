@@ -19,7 +19,7 @@ func NewSettings(db *gorm.DB) *Settings {
 }
 
 func (s *Settings) ReadSettings() (*wdk.TableSettings, error) {
-	var settings models.Settings
+	var settings models.Setting
 	err := s.db.First(&settings).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to read settings: %w", err)
@@ -43,7 +43,7 @@ func (s *Settings) ReadSettings() (*wdk.TableSettings, error) {
 func (s *Settings) SaveSettings(settings *wdk.TableSettings) error {
 	err := s.db.
 		Clauses(clause.OnConflict{DoNothing: true}).
-		Create(&models.Settings{
+		Create(&models.Setting{
 			StorageIdentityKey: settings.StorageIdentityKey,
 			StorageName:        settings.StorageName,
 			Chain:              string(settings.Chain),
