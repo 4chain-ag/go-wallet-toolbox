@@ -138,7 +138,7 @@ func ExampleUInt64() {
 
 func ExampleFloat64FromInteger() {
 	// Converting to float64
-	val, err := to.Float64FromInteger(42)
+	val, err := to.Float64(42)
 	fmt.Printf("%T(%.1f), Error: %v\n", val, val, err)
 
 	// Output:
