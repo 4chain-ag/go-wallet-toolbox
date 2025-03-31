@@ -27,7 +27,7 @@ func (f *FeeModel) Validate() error {
 	if f.Type, err = ParseFeeModelType(string(f.Type)); err != nil {
 		return fmt.Errorf("invalid fee model: %s", f.Type)
 	}
-	if f.Type == SatPerKB && f.Value < 0 {
+	if f.Type == SatPerKB && f.Value <= 0 {
 		return fmt.Errorf("invalid fee value: %d", f.Value)
 	}
 	return nil
