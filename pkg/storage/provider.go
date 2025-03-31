@@ -6,6 +6,7 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/lox"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/utils/to"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/validate"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
@@ -177,9 +178,13 @@ func (p *Provider) ListCertificates(auth wdk.AuthID, args wdk.ListCertificatesAr
 		return nil, fmt.Errorf("error during listing certificates action: %w", err)
 	}
 
+	tc, err := to.UInt(totalCount)
+	if err != nil {
+		return nil, fmt.Errorf("error during parsing total count of certificates: %w", err)
+	}
+
 	result := &wdk.ListCertificatesResult{
-		//nolint:gosec
-		TotalCertificates: wdk.PositiveIntegerOrZero(totalCount),
+		TotalCertificates: wdk.PositiveIntegerOrZero(tc),
 		Certificates:      lo.Map(certModels, lox.MappingFn(certModelToResult)),
 	}
 

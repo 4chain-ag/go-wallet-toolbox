@@ -3,7 +3,10 @@ package repo
 import (
 	"fmt"
 
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/utils/to"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/scopes"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/paging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"gorm.io/gorm"
 )
@@ -51,41 +54,68 @@ func (c *Certificates) ListAndCountCertificates(userID int, opts ListCertificate
 	var certificates []*models.Certificate
 	var totalRows int64
 
-	query := c.db.Preload("CertificateFields").Where("user_id = ?", userID)
+	err := c.db.Transaction(func(tx *gorm.DB) error {
+		page := &paging.Page{}
 
-	// Add optional filters based on provided options
-	if opts.SerialNumber != nil {
-		query = query.Where("serial_number = ?", opts.SerialNumber)
-	}
-	if opts.Subject != nil {
-		query = query.Where("subject = ?", opts.Subject)
-	}
-	if opts.RevocationOutpoint != nil {
-		query = query.Where("revocation_outpoint = ?", opts.RevocationOutpoint)
-	}
-	if opts.Signature != nil {
-		query = query.Where("signature = ?", opts.Signature)
-	}
-	if len(opts.Certifiers) > 0 {
-		query = query.Where("certifier IN ?", opts.Certifiers)
-	}
-	if len(opts.Types) > 0 {
-		query = query.Where("type IN ?", opts.Types)
-	}
+		// parse offset and limit
+		if opts.Limit > 0 {
+			limit, err := to.IntFromUnsigned(opts.Limit)
+			if err != nil {
+				return fmt.Errorf("error during parsing limit: %w", err)
+			}
+			page.Size = limit
+		}
 
-	// First count results
-	query.Model(&models.Certificate{}).Count(&totalRows)
+		if opts.Offset > 0 {
+			ofs, err := to.IntFromUnsigned(opts.Offset)
+			if err != nil {
+				return fmt.Errorf("error during parsing offset: %w", err)
+			}
+			// TODO: check if it can be like this or do we need to calculate the
+			// page number with page size and provided offset
+			page.Number = ofs
+		}
 
-	// Apply pagination
-	if opts.Limit > 0 {
-		// limit is maxed 10000 so shouldn't overflow
-		//nolint:gosec
-		query = query.Limit(int(opts.Limit))
-	}
-	//nolint:gosec
-	query = query.Offset(int(opts.Offset))
+		// prepare query
+		query := tx.Model(&models.Certificate{}).Scopes(
+			scopes.UserID(userID),
+			scopes.Preload("CertificateFields"),
+			scopes.Paginate(page),
+		)
 
-	err := query.Find(&certificates).Error
+		if opts.SerialNumber != nil {
+			query = query.Where("serial_number = ?", opts.SerialNumber)
+		}
+		if opts.Subject != nil {
+			query = query.Where("subject = ?", opts.Subject)
+		}
+		if opts.RevocationOutpoint != nil {
+			query = query.Where("revocation_outpoint = ?", opts.RevocationOutpoint)
+		}
+		if opts.Signature != nil {
+			query = query.Where("signature = ?", opts.Signature)
+		}
+		if len(opts.Certifiers) > 0 {
+			query = query.Where("certifier IN ?", opts.Certifiers)
+		}
+		if len(opts.Types) > 0 {
+			query = query.Where("type IN ?", opts.Types)
+		}
+
+		// First count all certificates
+		err := query.Model(&models.Certificate{}).Count(&totalRows).Error
+		if err != nil {
+			return fmt.Errorf("error during counting certificates: %w", err)
+		}
+
+		// then find certificates with applied filters
+		err = query.Find(&certificates).Error
+		if err != nil {
+			return fmt.Errorf("error during finding certificates: %w", err)
+		}
+
+		return nil
+	})
 	if err != nil {
 		return nil, -1, fmt.Errorf("failed to list certificates: %w", err)
 	}

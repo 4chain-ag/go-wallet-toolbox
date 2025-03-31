@@ -16,6 +16,12 @@ func TestInsertCertificateAuth(t *testing.T) {
 	// and:
 	activeStorage := given.GormProvider()
 
+	// and:
+	expectedResult := &wdk.ListCertificatesResult{
+		Certificates:      make([]*wdk.CertificateResult, 0),
+		TotalCertificates: wdk.PositiveIntegerOrZero(0),
+	}
+
 	t.Run("should insert a certificate for Alice", func(t *testing.T) {
 		// and:
 		certToInsert := &wdk.TableCertificateX{
@@ -37,24 +43,39 @@ func TestInsertCertificateAuth(t *testing.T) {
 				},
 			},
 		}
-		// when:
-		_, err := activeStorage.InsertCertificateAuth(wdk.AuthID{
-			UserID: &testusers.Alice.ID,
-		}, certToInsert)
+
+		// and:
+		expectedResult.TotalCertificates = wdk.PositiveIntegerOrZero(1)
+		expectedResult.Certificates = []*wdk.CertificateResult{{
+			Verifier: "",
+			WalletCertificate: wdk.WalletCertificate{
+				Type:               "exampleType",
+				Subject:            "subjectPubKey",
+				SerialNumber:       "exampleSerialNumber",
+				Certifier:          "certifierPubKey",
+				RevocationOutpoint: "outpointString",
+				Signature:          "signatureHex",
+				Fields: map[wdk.CertificateFieldNameUnder50Bytes]string{
+					"exampleField": "exampleValue",
+				},
+			},
+			Keyring: map[wdk.CertificateFieldNameUnder50Bytes]wdk.Base64String{
+				"exampleField": "exampleValue",
+			},
+		}}
+
+		// when: insert certificate for Alice
+		_, err := activeStorage.InsertCertificateAuth(testusers.Alice.AuthID(), certToInsert)
 
 		// then:
 		require.NoError(t, err)
 
-		// check if id exists there
-		certs, err := activeStorage.ListCertificates(wdk.AuthID{
-			UserID: &testusers.Alice.ID,
-		}, wdk.ListCertificatesArgs{})
+		// when: listing certificates
+		certs, err := activeStorage.ListCertificates(testusers.Alice.AuthID(), wdk.ListCertificatesArgs{})
+
+		// then:
 		require.NoError(t, err)
-		require.Equal(t, wdk.PositiveIntegerOrZero(1), certs.TotalCertificates)
-		require.Equal(t, 1, len(certs.Certificates[0].Fields))
-		require.Equal(t, 1, len(certs.Certificates[0].Keyring))
-		require.Equal(t, wdk.Base64String(certToInsert.Fields[0].FieldValue), certs.Certificates[0].Keyring["exampleField"])
-		require.Equal(t, certToInsert.TableCertificate.Type, certs.Certificates[0].Type)
+		require.Equal(t, expectedResult, certs)
 	})
 
 	t.Run("should insert a certificate for Bob", func(t *testing.T) {
@@ -78,58 +99,102 @@ func TestInsertCertificateAuth(t *testing.T) {
 				},
 			},
 		}
-		// when:
-		_, err := activeStorage.InsertCertificateAuth(wdk.AuthID{
-			UserID: &testusers.Bob.ID,
-		}, certToInsert)
+
+		// and:
+		expectedResult.TotalCertificates = wdk.PositiveIntegerOrZero(2)
+		expectedResult.Certificates = []*wdk.CertificateResult{{
+			Verifier: "",
+			WalletCertificate: wdk.WalletCertificate{
+				Type:               "exampleType2",
+				Subject:            "subjectPubKey",
+				SerialNumber:       "exampleSerialNumber",
+				Certifier:          "certifierPubKey",
+				RevocationOutpoint: "outpointString",
+				Signature:          "signatureHex",
+				Fields: map[wdk.CertificateFieldNameUnder50Bytes]string{
+					"exampleField": "exampleValue",
+				},
+			},
+			Keyring: map[wdk.CertificateFieldNameUnder50Bytes]wdk.Base64String{
+				"exampleField": "exampleValue",
+			},
+		}, {
+			Verifier: "",
+			WalletCertificate: wdk.WalletCertificate{
+				Type:               "exampleType",
+				Subject:            "subjectPubKey",
+				SerialNumber:       "exampleSerialNumber",
+				Certifier:          "certifierPubKey",
+				RevocationOutpoint: "outpointString",
+				Signature:          "signatureHex",
+				Fields: map[wdk.CertificateFieldNameUnder50Bytes]string{
+					"exampleField": "exampleValue",
+				},
+			},
+			Keyring: map[wdk.CertificateFieldNameUnder50Bytes]wdk.Base64String{
+				"exampleField": "exampleValue",
+			},
+		}}
+
+		// when: insert certificate for Bob
+		_, err := activeStorage.InsertCertificateAuth(testusers.Bob.AuthID(), certToInsert)
 
 		// then:
 		require.NoError(t, err)
 
 		// when:
 		certToInsert.Type = "exampleType2"
-		_, err = activeStorage.InsertCertificateAuth(wdk.AuthID{
-			UserID: &testusers.Bob.ID,
-		}, certToInsert)
+		_, err = activeStorage.InsertCertificateAuth(testusers.Bob.AuthID(), certToInsert)
 
 		// then:
 		require.NoError(t, err)
 
-		certs, err := activeStorage.ListCertificates(wdk.AuthID{
-			UserID: &testusers.Bob.ID,
-		}, wdk.ListCertificatesArgs{})
+		// when: listing certificates
+		certs, err := activeStorage.ListCertificates(testusers.Bob.AuthID(), wdk.ListCertificatesArgs{})
+
+		// then:
 		require.NoError(t, err)
-		require.Equal(t, wdk.PositiveIntegerOrZero(2), certs.TotalCertificates)
-		require.Equal(t, 1, len(certs.Certificates[0].Fields))
-		require.Equal(t, 1, len(certs.Certificates[1].Keyring))
-		require.Equal(t, wdk.Base64String("exampleType"), certs.Certificates[0].Type)
-		require.Equal(t, wdk.Base64String("exampleType2"), certs.Certificates[1].Type)
+		require.Equal(t, expectedResult, certs)
 	})
 
 	t.Run("should delete a certificate for Bob", func(t *testing.T) {
 		// given:
-		certs, err := activeStorage.ListCertificates(wdk.AuthID{
-			UserID: &testusers.Bob.ID,
-		}, wdk.ListCertificatesArgs{})
+		certs, err := activeStorage.ListCertificates(testusers.Bob.AuthID(), wdk.ListCertificatesArgs{})
 		require.NoError(t, err)
 		require.Equal(t, wdk.PositiveIntegerOrZero(2), certs.TotalCertificates)
 
+		// and:
+		expectedResult.TotalCertificates = wdk.PositiveIntegerOrZero(1)
+		expectedResult.Certificates = []*wdk.CertificateResult{{
+			Verifier: "",
+			WalletCertificate: wdk.WalletCertificate{
+				Type:               "exampleType",
+				Subject:            "subjectPubKey",
+				SerialNumber:       "exampleSerialNumber",
+				Certifier:          "certifierPubKey",
+				RevocationOutpoint: "outpointString",
+				Signature:          "signatureHex",
+				Fields: map[wdk.CertificateFieldNameUnder50Bytes]string{
+					"exampleField": "exampleValue",
+				},
+			},
+			Keyring: map[wdk.CertificateFieldNameUnder50Bytes]wdk.Base64String{
+				"exampleField": "exampleValue",
+			},
+		}}
+
 		// when:
-		err = activeStorage.RelinquishCertificate(wdk.AuthID{
-			UserID: &testusers.Bob.ID,
-		}, wdk.RelinquishCertificateArgs{
-			Type:         certs.Certificates[0].Type,
-			SerialNumber: certs.Certificates[0].SerialNumber,
-			Certifier:    certs.Certificates[0].Certifier,
+		err = activeStorage.RelinquishCertificate(testusers.Bob.AuthID(), wdk.RelinquishCertificateArgs{
+			Type:         "exampleType2",
+			SerialNumber: "exampleSerialNumber",
+			Certifier:    "certifierPubKey",
 		})
 
 		// then:
 		require.NoError(t, err)
-		certs, err = activeStorage.ListCertificates(wdk.AuthID{
-			UserID: &testusers.Bob.ID,
-		}, wdk.ListCertificatesArgs{})
+		certs, err = activeStorage.ListCertificates(testusers.Bob.AuthID(), wdk.ListCertificatesArgs{})
 		require.NoError(t, err)
-		require.Equal(t, wdk.PositiveIntegerOrZero(1), certs.TotalCertificates)
+		require.Equal(t, expectedResult, certs)
 	})
 }
 
@@ -148,7 +213,7 @@ func TestInsertCertificateAuthFailure(t *testing.T) {
 		require.ErrorContains(t, err, "access is denied due to an authorization error")
 
 		// and when:
-		_, err = activeStorage.InsertCertificateAuth(wdk.AuthID{UserID: &testusers.Alice.ID}, &wdk.TableCertificateX{
+		_, err = activeStorage.InsertCertificateAuth(testusers.Alice.AuthID(), &wdk.TableCertificateX{
 			TableCertificate: wdk.TableCertificate{
 				UserID: testusers.Bob.ID,
 			},
@@ -176,13 +241,13 @@ func TestInsertCertificateAuthFailure(t *testing.T) {
 
 	t.Run("should fail to delete certificate when no cert is found", func(t *testing.T) {
 		// when:
-		err := activeStorage.RelinquishCertificate(wdk.AuthID{
-			UserID: &testusers.Alice.ID,
-		}, wdk.RelinquishCertificateArgs{
-			Type:         "not-type",
-			SerialNumber: "not-serial",
-			Certifier:    "not-certifier",
-		})
+		err := activeStorage.RelinquishCertificate(
+			testusers.Alice.AuthID(),
+			wdk.RelinquishCertificateArgs{
+				Type:         "not-type",
+				SerialNumber: "not-serial",
+				Certifier:    "not-certifier",
+			})
 
 		// then:
 		require.ErrorContains(t, err, "failed to delete certificate model: certificate not found")
