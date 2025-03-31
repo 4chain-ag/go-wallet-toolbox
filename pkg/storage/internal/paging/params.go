@@ -26,3 +26,7 @@ func (p *Page) ApplyDefaults() {
 		p.Sort = "DESC"
 	}
 }
+
+func (p *Page) Next() {
+	p.Offset += p.Limit
+}

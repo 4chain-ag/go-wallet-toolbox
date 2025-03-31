@@ -135,12 +135,3 @@ func ExampleUInt64() {
 	// uint64(42), Error: <nil>
 	// uint64(0), Error: true
 }
-
-func ExampleFloat64FromInteger() {
-	// Converting to float64
-	val, err := to.Float64FromInteger(42)
-	fmt.Printf("%T(%.1f), Error: %v\n", val, val, err)
-
-	// Output:
-	// float64(42.0), Error: <nil>
-}

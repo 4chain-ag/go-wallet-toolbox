@@ -22,6 +22,7 @@ func (m *Migrator) Migrate() error {
 		&models.OutputBasket{},
 		&models.CertificateField{},
 		&models.Certificate{},
+		&models.UserUTXO{},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to migrate settings: %w", err)
