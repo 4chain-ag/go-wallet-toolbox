@@ -46,7 +46,11 @@ func (s *storageFixture) GormProvider() *storage.Provider {
 
 	dbConfig := dbfixtures.DBConfigForTests()
 
-	activeStorage, err := storage.NewGORMProvider(s.logger, dbConfig, defs.NetworkTestnet)
+	activeStorage, err := storage.NewGORMProvider(s.logger, storage.GORMProviderConfig{
+		DB:       dbConfig,
+		Chain:    defs.NetworkTestnet,
+		FeeModel: defs.DefaultFeeModel(),
+	})
 	s.require.NoError(err)
 
 	_, err = activeStorage.Migrate(StorageName, storageIdentityKey)

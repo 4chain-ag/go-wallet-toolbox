@@ -28,6 +28,17 @@ func TestCaseInsensitiveEnums(t *testing.T) {
 	require.Equal(t, defs.TextHandler, infraSrv.Config.Logging.Handler)
 }
 
+func TestFeeZero(t *testing.T) {
+	// given:
+	t.Setenv("TEST_FEE_MODEL_VALUE", "0")
+
+	// when:
+	_, err := infra.NewServer(infra.WithEnvPrefix("TEST"))
+
+	// then:
+	require.Error(t, err)
+}
+
 func TestEnums(t *testing.T) {
 	tests := map[string]struct {
 		envKey string
@@ -46,6 +57,9 @@ func TestEnums(t *testing.T) {
 		},
 		"Logging handler": {
 			envKey: "TEST_LOGGING_HANDLER",
+		},
+		"Fee model": {
+			envKey: "TEST_FEE_MODEL_TYPE",
 		},
 	}
 	for name, test := range tests {
