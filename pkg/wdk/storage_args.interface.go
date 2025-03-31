@@ -2,83 +2,85 @@ package wdk
 
 // ValidCreateActionInput represents the input for a transaction action
 type ValidCreateActionInput struct {
-	Outpoint              OutPoint
-	InputDescription      DescriptionString5to2000Bytes
-	SequenceNumber        PositiveIntegerOrZero
-	UnlockingScript       *HexString
-	UnlockingScriptLength PositiveInteger
+	Outpoint              OutPoint              `json:"outpoint,omitempty"`
+	InputDescription      String5to2000Bytes    `json:"inputDescription,omitempty"`
+	SequenceNumber        PositiveIntegerOrZero `json:"sequenceNumber,omitempty"`
+	UnlockingScript       *HexString            `json:"unlockingScript,omitempty"`
+	UnlockingScriptLength *PositiveInteger      `json:"unlockingScriptLength,omitempty"`
 }
 
 // ValidCreateActionOutput represents the output for a transaction action
 type ValidCreateActionOutput struct {
-	LockingScript      HexString
-	Satoshis           SatoshiValue
-	OutputDescription  DescriptionString5to2000Bytes
-	Basket             *BasketStringUnder300Bytes
-	CustomInstructions *string
-	Tags               []BasketStringUnder300Bytes
+	LockingScript      HexString                  `json:"lockingScript,omitempty"`
+	Satoshis           SatoshiValue               `json:"satoshis,omitempty"`
+	OutputDescription  String5to2000Bytes         `json:"outputDescription,omitempty"`
+	Basket             *IdentifierStringUnder300  `json:"basket,omitempty"`
+	CustomInstructions *string                    `json:"customInstructions,omitempty"`
+	Tags               []IdentifierStringUnder300 `json:"tags,omitempty"`
 }
 
 // ValidProcessActionOptions represents options for processing an action
 type ValidProcessActionOptions struct {
-	AcceptDelayedBroadcast BooleanDefaultTrue
-	ReturnTXIDOnly         BooleanDefaultFalse
-	NoSend                 BooleanDefaultFalse
-	SendWith               []TXIDHexString
+	AcceptDelayedBroadcast *BooleanDefaultTrue  `json:"acceptDelayedBroadcast,omitempty"`
+	ReturnTXIDOnly         *BooleanDefaultFalse `json:"returnTXIDOnly,omitempty"`
+	NoSend                 *BooleanDefaultFalse `json:"noSend,omitempty"`
+	SendWith               []TXIDHexString      `json:"sendWith,omitempty"`
 }
 
 // ValidCreateActionOptions extends ValidProcessActionOptions with additional options
 type ValidCreateActionOptions struct {
-	ValidProcessActionOptions
-	SignAndProcess   bool
-	TrustSelf        *string
-	KnownTxids       []TXIDHexString
-	NoSendChange     []OutPoint
-	RandomizeOutputs bool
+	ValidProcessActionOptions `json:",inline"`
+	SignAndProcess            bool            `json:"signAndProcess,omitempty"`
+	TrustSelf                 *string         `json:"trustSelf,omitempty"`
+	KnownTxids                []TXIDHexString `json:"knownTxids,omitempty"`
+	NoSendChange              []OutPoint      `json:"noSendChange,omitempty"`
+	RandomizeOutputs          bool            `json:"randomizeOutputs,omitempty"`
 }
 
 // ValidProcessActionArgs represents arguments for processing an action.
 // It contains the core parameters needed to process a transaction.
 type ValidProcessActionArgs struct {
 	// Options contains configuration settings for how the action should be processed
-	Options ValidProcessActionOptions
+	Options ValidProcessActionOptions `json:"options,omitempty"`
 	// IsSendWith is true if a batch of transactions is included for processing
-	IsSendWith bool
+	IsSendWith bool `json:"isSendWith,omitempty"`
 	// IsNewTx is true if there is a new transaction (not no inputs and no outputs)
-	IsNewTx bool
+	IsNewTx bool `json:"isNewTx,omitempty"`
 	// IsRemixChange is true if this is a request to remix change
 	// When true, IsNewTx will also be true and IsSendWith must be false
-	IsRemixChange bool
+	IsRemixChange bool `json:"isRemixChange,omitempty"`
 	// IsNoSend is true if any new transaction should NOT be sent to the network
-	IsNoSend bool
+	IsNoSend bool `json:"isNoSend,omitempty"`
 	// IsDelayed is true if options.AcceptDelayedBroadcast is true
-	IsDelayed bool
+	IsDelayed bool `json:"isDelayed,omitempty"`
 }
 
 // ValidCreateActionArgs represents the arguments for creating a transaction action
 type ValidCreateActionArgs struct {
-	Description                  DescriptionString5to2000Bytes `json:"description,omitempty"`
-	InputBEEF                    BEEF                          `json:"input_beef,omitempty"`
-	Inputs                       []ValidCreateActionInput      `json:"inputs,omitempty"`
-	Outputs                      []ValidCreateActionOutput     `json:"outputs,omitempty"`
-	LockTime                     int                           `json:"lock_time,omitempty"`
-	Version                      int                           `json:"version,omitempty"`
-	Labels                       []string                      `json:"labels,omitempty"`
-	IsSignAction                 bool                          `json:"is_sign_action,omitempty"`
-	RandomVals                   *[]int                        `json:"random_vals,omitempty"`
-	IncludeAllSourceTransactions bool                          `json:"include_all_source_transactions,omitempty"`
+	Description                  String5to2000Bytes         `json:"description,omitempty"`
+	InputBEEF                    BEEF                       `json:"inputBEEF,omitempty"`
+	Inputs                       []ValidCreateActionInput   `json:"inputs,omitempty"`
+	Outputs                      []ValidCreateActionOutput  `json:"outputs,omitempty"`
+	LockTime                     int                        `json:"lockTime,omitempty"`
+	Version                      int                        `json:"version,omitempty"`
+	Labels                       []IdentifierStringUnder300 `json:"labels,omitempty"`
+	IsSignAction                 bool                       `json:"isSignAction,omitempty"`
+	RandomVals                   *[]int                     `json:"randomVals,omitempty"`
+	IncludeAllSourceTransactions bool                       `json:"includeAllSourceTransactions,omitempty"`
+
+	Options ValidCreateActionOptions `json:"options,omitempty"`
 
 	// Below are args from ValidProcessActionArgs
 
 	// IsSendWith is true if a batch of transactions is included for processing
-	IsSendWith bool `json:"is_send_with,omitempty"`
+	IsSendWith bool `json:"isSendWith,omitempty"`
 	// IsNewTx is true if there is a new transaction (not no inputs and no outputs)
-	IsNewTx bool `json:"is_new_tx,omitempty"`
+	IsNewTx bool `json:"isNewTx,omitempty"`
 	// IsRemixChange is true if this is a request to remix change
 	// When true, IsNewTx will also be true and IsSendWith must be false
-	IsRemixChange bool `json:"is_remix_change,omitempty"`
+	IsRemixChange bool `json:"isRemixChange,omitempty"`
 	// IsNoSend is true if any new transaction should NOT be sent to the network
-	IsNoSend bool `json:"is_no_send,omitempty"`
+	IsNoSend bool `json:"isNoSend,omitempty"`
 	// IsDelayed is true if options.AcceptDelayedBroadcast is true
-	IsDelayed bool `json:"is_delayed,omitempty"`
+	IsDelayed bool `json:"isDelayed,omitempty"`
 }

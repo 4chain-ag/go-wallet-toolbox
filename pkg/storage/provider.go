@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/validate"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
@@ -147,7 +148,14 @@ func (p *Provider) FindOrInsertUser(identityKey string) (*wdk.FindOrInsertUserRe
 
 // CreateAction Storage level processing for wallet `createAction`.
 func (p *Provider) CreateAction(auth wdk.AuthID, args wdk.ValidCreateActionArgs) (*wdk.StorageCreateActionResult, error) {
-	res, err := p.actions.Create(auth, args)
+	if auth.UserID == nil {
+		return nil, fmt.Errorf("missing user ID")
+	}
+	if err := validate.ValidCreateActionArgs(&args); err != nil {
+		return nil, fmt.Errorf("invalid createAction args: %w", err)
+	}
+
+	res, err := p.actions.Create(auth, actions.FromValidCreateActionArgs(&args))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create action: %w", err)
 	}
