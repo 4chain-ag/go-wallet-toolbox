@@ -9,7 +9,6 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
-	"gorm.io/gorm"
 )
 
 // Repository is an interface for the actual storage repository.
@@ -21,20 +20,6 @@ type Repository interface {
 	CreateUser(user *models.User) (*wdk.TableUser, error)
 }
 
-// ProviderOption is function for additional setup of Provider itself.
-type ProviderOption func(*providerOptions)
-
-type providerOptions struct {
-	gormDB *gorm.DB
-}
-
-// WithGORM sets the GORM database for the provider.
-func WithGORM(gormDB *gorm.DB) ProviderOption {
-	return func(o *providerOptions) {
-		o.gormDB = gormDB
-	}
-}
-
 // Provider is a storage provider.
 type Provider struct {
 	Chain defs.BSVNetwork
@@ -44,19 +29,30 @@ type Provider struct {
 	actions  *actions.Actions
 }
 
+// GORMProviderConfig is a configuration for GORM storage provider.
+type GORMProviderConfig struct {
+	DB       defs.Database
+	Chain    defs.BSVNetwork
+	FeeModel defs.FeeModel
+}
+
 // NewGORMProvider creates a new storage provider with GORM repository.
-func NewGORMProvider(logger *slog.Logger, dbConfig defs.Database, chain defs.BSVNetwork, opts ...ProviderOption) (*Provider, error) {
+func NewGORMProvider(logger *slog.Logger, config GORMProviderConfig, opts ...ProviderOption) (*Provider, error) {
+	if err := config.FeeModel.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid fee model: %w", err)
+	}
+
 	options := toOptions(opts)
 
-	db, err := configureDatabase(logger, dbConfig, options)
+	db, err := configureDatabase(logger, config.DB, options)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Provider{
-		Chain:   chain,
+		Chain:   config.Chain,
 		repo:    db.CreateRepositories(),
-		actions: actions.New(logger, db.CreateFunder()),
+		actions: actions.New(logger, db.CreateFunder(config.FeeModel)),
 	}, nil
 }
 
@@ -70,14 +66,6 @@ func configureDatabase(logger *slog.Logger, dbConfig defs.Database, options *pro
 		return nil, fmt.Errorf("failed to create database: %w", err)
 	}
 	return db, nil
-}
-
-func toOptions(opts []ProviderOption) *providerOptions {
-	options := &providerOptions{}
-	for _, opt := range opts {
-		opt(options)
-	}
-	return options
 }
 
 // Migrate migrates the storage and saves the settings.
