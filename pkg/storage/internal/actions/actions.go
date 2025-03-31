@@ -1,8 +1,9 @@
 package actions
 
 import (
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/repo"
 	"log/slog"
+
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/repo"
 )
 
 type Actions struct {
