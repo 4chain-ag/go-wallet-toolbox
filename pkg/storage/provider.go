@@ -50,10 +50,19 @@ func NewGORMProvider(logger *slog.Logger, config GORMProviderConfig, opts ...Pro
 		return nil, err
 	}
 
+	repos := db.CreateRepositories()
+
+	var funder actions.Funder
+	if options.funder != nil {
+		funder = options.funder
+	} else {
+		funder = db.CreateFunder(config.FeeModel)
+	}
+
 	return &Provider{
 		Chain:   config.Chain,
-		repo:    db.CreateRepositories(),
-		actions: actions.New(logger, db.CreateFunder(config.FeeModel)),
+		repo:    repos,
+		actions: actions.New(logger, funder, repos),
 	}, nil
 }
 
@@ -121,7 +130,7 @@ func (p *Provider) FindOrInsertUser(identityKey string) (*wdk.FindOrInsertUserRe
 
 	newUser := &models.User{
 		OutputBaskets: []*models.OutputBasket{{
-			Name:                    "default",
+			Name:                    wdk.BasketNameForChange,
 			NumberOfDesiredUTXOs:    32,
 			MinimumDesiredUTXOValue: 1000,
 		}},

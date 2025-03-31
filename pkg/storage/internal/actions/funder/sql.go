@@ -2,11 +2,11 @@ package funder
 
 import (
 	"context"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions"
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions"
 	"gorm.io/gorm"
 )
 

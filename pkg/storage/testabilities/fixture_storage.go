@@ -50,7 +50,7 @@ func (s *storageFixture) GormProvider() *storage.Provider {
 		DB:       dbConfig,
 		Chain:    defs.NetworkTestnet,
 		FeeModel: defs.DefaultFeeModel(),
-	})
+	}, storage.WithFunder(&MockFunder{}))
 	s.require.NoError(err)
 
 	_, err = activeStorage.Migrate(StorageName, storageIdentityKey)

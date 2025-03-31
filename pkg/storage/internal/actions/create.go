@@ -40,23 +40,38 @@ type Funder interface {
 	Fund(ctx context.Context, targetSat int64, currentTxSize int64, numberOfDesiredUTXOs int, minimumDesiredUTXOValue uint64, userID int) (*FundingResult, error)
 }
 
-type create struct {
-	logger *slog.Logger
-	funder Funder
+type BasketRepo interface {
+	FindByName(userID int, name string) (*wdk.TableOutputBasket, error)
 }
 
-func newCreateAction(logger *slog.Logger, funder Funder) *create {
+type create struct {
+	logger     *slog.Logger
+	funder     Funder
+	basketRepo BasketRepo
+}
+
+func newCreateAction(logger *slog.Logger, funder Funder, basketRepo BasketRepo) *create {
 	logger = logging.Child(logger, "createAction")
 	return &create{
-		logger: logger,
-		funder: funder,
+		logger:     logger,
+		funder:     funder,
+		basketRepo: basketRepo,
 	}
 }
 
 func (c *create) Create(auth wdk.AuthID, args CreateActionParams) (*wdk.StorageCreateActionResult, error) {
-	result, err := c.funder.Fund(context.Background(), 0, 0, 0, 0, *auth.UserID)
+	basket, err := c.basketRepo.FindByName(*auth.UserID, wdk.BasketNameForChange)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find basket: %w", err)
+	}
+	if basket == nil {
+		return nil, fmt.Errorf("basket for change (%s) not found", wdk.BasketNameForChange)
+	}
+
+	_, err = c.funder.Fund(context.Background(), 0, 0, 0, 0, *auth.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("funding failed: %w", err)
 	}
-	panic(fmt.Errorf("not implemented %v", result))
+
+	return &wdk.StorageCreateActionResult{}, nil
 }
