@@ -21,10 +21,10 @@ type ValidCreateActionOutput struct {
 
 // ValidProcessActionOptions represents options for processing an action
 type ValidProcessActionOptions struct {
-	AcceptDelayedBroadcast BooleanDefaultTrue  `json:"acceptDelayedBroadcast,omitempty"`
-	ReturnTXIDOnly         BooleanDefaultFalse `json:"returnTXIDOnly,omitempty"`
-	NoSend                 BooleanDefaultFalse `json:"noSend,omitempty"`
-	SendWith               []TXIDHexString     `json:"sendWith,omitempty"`
+	AcceptDelayedBroadcast *BooleanDefaultTrue  `json:"acceptDelayedBroadcast,omitempty"`
+	ReturnTXIDOnly         *BooleanDefaultFalse `json:"returnTXIDOnly,omitempty"`
+	NoSend                 *BooleanDefaultFalse `json:"noSend,omitempty"`
+	SendWith               []TXIDHexString      `json:"sendWith,omitempty"`
 }
 
 // ValidCreateActionOptions extends ValidProcessActionOptions with additional options

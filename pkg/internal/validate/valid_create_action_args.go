@@ -31,12 +31,12 @@ func ValidCreateActionArgs(args *wdk.ValidCreateActionArgs) error {
 		return fmt.Errorf("inconsistent IsSignAction with IsNewTx and Options.SignAndProcess and Inputs.UnlockingScript")
 	}
 
-	deducedIsDelayed := bool(args.Options.AcceptDelayedBroadcast)
+	deducedIsDelayed := args.Options.AcceptDelayedBroadcast.Value()
 	if args.IsDelayed != deducedIsDelayed {
 		return fmt.Errorf("inconsistent IsDelayed with Options.AcceptDelayedBroadcast")
 	}
 
-	deducedIsNoSend := bool(args.Options.NoSend)
+	deducedIsNoSend := args.Options.NoSend.Value()
 	if args.IsNoSend != deducedIsNoSend {
 		return fmt.Errorf("inconsistent IsNoSend with Options.NoSend")
 	}

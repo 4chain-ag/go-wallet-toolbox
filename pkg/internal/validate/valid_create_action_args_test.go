@@ -56,14 +56,14 @@ func TestWrongCreateActionArgs(t *testing.T) {
 		"IsDelayed is set even though options.AcceptDelayedBroadcast is false": {
 			modifier: func(args wdk.ValidCreateActionArgs) wdk.ValidCreateActionArgs {
 				args.IsDelayed = true
-				args.Options.AcceptDelayedBroadcast = false
+				args.Options.AcceptDelayedBroadcast = utils.Ptr[wdk.BooleanDefaultTrue](false)
 				return args
 			},
 		},
 		"IsNoSend is set even though options.NoSend is false": {
 			modifier: func(args wdk.ValidCreateActionArgs) wdk.ValidCreateActionArgs {
 				args.IsNoSend = true
-				args.Options.NoSend = false
+				args.Options.NoSend = utils.Ptr[wdk.BooleanDefaultFalse](false)
 				return args
 			},
 		},

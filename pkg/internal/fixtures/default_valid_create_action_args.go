@@ -22,9 +22,7 @@ func DefaultValidCreateActionArgs() wdk.ValidCreateActionArgs {
 		Labels:   []wdk.IdentifierStringUnder300{"outputbrc29"},
 		Options: wdk.ValidCreateActionOptions{
 			ValidProcessActionOptions: wdk.ValidProcessActionOptions{
-				AcceptDelayedBroadcast: false,
-				NoSend:                 false,
-				ReturnTXIDOnly:         false,
+				AcceptDelayedBroadcast: utils.Ptr[wdk.BooleanDefaultTrue](false),
 				SendWith:               []wdk.TXIDHexString{},
 			},
 			SignAndProcess:   true,
