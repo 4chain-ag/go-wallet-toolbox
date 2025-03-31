@@ -2,8 +2,8 @@ package models
 
 import "time"
 
-// Settings is the database model of the settings
-type Settings struct {
+// Setting is the database model of the settings
+type Setting struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 

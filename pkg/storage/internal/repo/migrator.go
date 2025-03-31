@@ -17,9 +17,9 @@ func NewMigrator(db *gorm.DB) *Migrator {
 
 func (m *Migrator) Migrate() error {
 	err := m.db.AutoMigrate(
-		&models.Settings{},
+		&models.Setting{},
 		&models.User{},
-		&models.OutputBaskets{},
+		&models.OutputBasket{},
 		&models.CertificateField{},
 		&models.Certificate{},
 	)

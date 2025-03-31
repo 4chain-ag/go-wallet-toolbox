@@ -68,7 +68,11 @@ func (s *storageFixture) GormProviderWithoutSeed() *storage.Provider {
 
 	s.db = db.DB
 
-	activeStorage, err := storage.NewGORMProvider(s.logger, dbConfig, defs.NetworkTestnet, storage.WithGORM(s.db))
+	activeStorage, err := storage.NewGORMProvider(s.logger, storage.GORMProviderConfig{
+		DB:       dbConfig,
+		Chain:    defs.NetworkTestnet,
+		FeeModel: defs.DefaultFeeModel(),
+	}, storage.WithGORM(s.db))
 	s.require.NoError(err)
 
 	_, err = activeStorage.Migrate(StorageName, storageIdentityKey)

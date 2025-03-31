@@ -22,6 +22,14 @@ type FundingResult struct {
 	Fee            uint64
 }
 
+type CreateActionParams struct {
+}
+
+func FromValidCreateActionArgs(args *wdk.ValidCreateActionArgs) CreateActionParams {
+	// TODO: use only the necessary fields (no redundant fields)
+	return CreateActionParams{}
+}
+
 type Funder interface {
 	// Fund
 	// @param targetSat - the target amount of satoshis to fund (total inputs - total outputs)
@@ -45,7 +53,7 @@ func newCreateAction(logger *slog.Logger, funder Funder) *create {
 	}
 }
 
-func (c *create) Create(auth wdk.AuthID, args wdk.ValidCreateActionArgs) (*wdk.StorageCreateActionResult, error) {
+func (c *create) Create(auth wdk.AuthID, args CreateActionParams) (*wdk.StorageCreateActionResult, error) {
 	result, err := c.funder.Fund(context.Background(), 0, 0, 0, 0, *auth.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("funding failed: %w", err)
