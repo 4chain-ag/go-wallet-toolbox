@@ -1,0 +1,26 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder
+cpu: Apple M2 Pro
+BenchmarkFund/1-12  	   30537	     35937 ns/op
+BenchmarkFund/1-12  	   33450	     36816 ns/op
+BenchmarkFund/1-12  	   32697	     36419 ns/op
+BenchmarkFund/1-12  	   32443	     35865 ns/op
+BenchmarkFund/1-12  	   33480	     35887 ns/op
+BenchmarkFund/1-12  	   33951	     35819 ns/op
+BenchmarkFund/1-12  	   33481	     35266 ns/op
+BenchmarkFund/1-12  	   33319	     35829 ns/op
+BenchmarkFund/1-12  	   33756	     35663 ns/op
+BenchmarkFund/1-12  	   32289	     37033 ns/op
+BenchmarkFund/2-12  	   32739	     36512 ns/op
+BenchmarkFund/2-12  	   32079	     36920 ns/op
+BenchmarkFund/2-12  	   32772	     36196 ns/op
+BenchmarkFund/2-12  	   32538	     36425 ns/op
+BenchmarkFund/2-12  	   32440	     37418 ns/op
+BenchmarkFund/2-12  	   32829	     36479 ns/op
+BenchmarkFund/2-12  	   32608	     36698 ns/op
+BenchmarkFund/2-12  	   32527	     36456 ns/op
+BenchmarkFund/2-12  	   28432	     36899 ns/op
+BenchmarkFund/2-12  	   33264	     36457 ns/op
+PASS
+ok  	github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder	31.787s
