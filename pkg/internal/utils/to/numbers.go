@@ -101,46 +101,46 @@ func Int64FromUnsigned[V types.Unsigned](value V) (int64, error) {
 }
 
 // UInt will convert any integer to uint, with range checks
-func UInt[V types.Integer](value V) (uint, error) {
+func UInt[V types.Number](value V) (uint, error) {
 	if value < 0 || uint64(value) > math.MaxUint {
-		return 0, fmt.Errorf("%d %w to uint", value, ErrValueOutOfRange)
+		return 0, fmt.Errorf("%v %w to uint", value, ErrValueOutOfRange)
 	}
 	return uint(value), nil
 }
 
 // UInt8 will convert any integer to uint8, with range checks
-func UInt8[V types.Integer](value V) (uint8, error) {
+func UInt8[V types.Number](value V) (uint8, error) {
 	if value < 0 || uint64(value) > math.MaxUint8 {
-		return 0, fmt.Errorf("%d %w to uint8", value, ErrValueOutOfRange)
+		return 0, fmt.Errorf("%v %w to uint8", value, ErrValueOutOfRange)
 	}
 	return uint8(value), nil
 }
 
 // UInt16 will convert any integer to uint16, with range checks
-func UInt16[V types.Integer](value V) (uint16, error) {
+func UInt16[V types.Number](value V) (uint16, error) {
 	if value < 0 || uint64(value) > math.MaxUint16 {
-		return 0, fmt.Errorf("%d %w to uint16", value, ErrValueOutOfRange)
+		return 0, fmt.Errorf("%v %w to uint16", value, ErrValueOutOfRange)
 	}
 	return uint16(value), nil
 }
 
 // UInt32 will convert any integer to uint32, with range checks
-func UInt32[V types.Integer](value V) (uint32, error) {
+func UInt32[V types.Number](value V) (uint32, error) {
 	if value < 0 || uint64(value) > math.MaxUint32 {
-		return 0, fmt.Errorf("%d %w to uint32", value, ErrValueOutOfRange)
+		return 0, fmt.Errorf("%v %w to uint32", value, ErrValueOutOfRange)
 	}
 	return uint32(value), nil
 }
 
 // UInt64 will convert any integer to uint64, with range checks
-func UInt64[V types.Integer](value V) (uint64, error) {
+func UInt64[V types.Number](value V) (uint64, error) {
 	if value < 0 {
-		return 0, fmt.Errorf("%d %w to uint64", value, ErrValueOutOfRange)
+		return 0, fmt.Errorf("%v %w to uint64", value, ErrValueOutOfRange)
 	}
 	return uint64(value), nil
 }
 
-// Float64FromInteger will convert any integer to float64
-func Float64FromInteger[V types.Integer](value V) (float64, error) {
+// Float64 will convert any integer to float64
+func Float64[V types.Number](value V) (float64, error) {
 	return float64(value), nil
 }
