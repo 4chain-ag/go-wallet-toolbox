@@ -17,7 +17,7 @@ func tableCertificateXFieldsToModelFields(userID int) func(*wdk.TableCertificate
 	}
 }
 
-func listCertificatesArgsToOptions(args wdk.ListCertificatesArgs) repo.ListCertificatesActionParams {
+func listCertificatesArgsToActionParams(args wdk.ListCertificatesArgs) repo.ListCertificatesActionParams {
 	opts := repo.ListCertificatesActionParams{
 		Limit:  args.Limit,
 		Offset: args.Offset,

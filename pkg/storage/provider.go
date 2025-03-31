@@ -171,7 +171,7 @@ func (p *Provider) ListCertificates(auth wdk.AuthID, args wdk.ListCertificatesAr
 	// TODO: validate args
 
 	// prepare arguments
-	filterOptions := listCertificatesArgsToOptions(args)
+	filterOptions := listCertificatesArgsToActionParams(args)
 
 	certModels, totalCount, err := p.repo.ListAndCountCertificates(*auth.UserID, filterOptions)
 	if err != nil {
