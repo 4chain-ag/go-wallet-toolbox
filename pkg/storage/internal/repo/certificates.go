@@ -12,7 +12,7 @@ type Certificates struct {
 	db *gorm.DB
 }
 
-type ListCertificatesOptions struct {
+type ListCertificatesActionParams struct {
 	SerialNumber       *wdk.Base64String
 	Subject            *wdk.PubKeyHex
 	RevocationOutpoint *wdk.OutpointString
@@ -36,15 +36,18 @@ func (c *Certificates) CreateCertificate(certificate *models.Certificate) (uint,
 }
 
 func (c *Certificates) DeleteCertificate(userID int, args wdk.RelinquishCertificateArgs) error {
-	err := c.db.Delete(&models.Certificate{}, "type = ? AND serial_number = ? AND certifier = ? AND user_id = ?", args.Type, args.SerialNumber, args.Certifier, userID).Error
-	if err != nil {
-		return fmt.Errorf("failed to delete certificate model: %w", err)
+	tx := c.db.Delete(&models.Certificate{}, "type = ? AND serial_number = ? AND certifier = ? AND user_id = ?", args.Type, args.SerialNumber, args.Certifier, userID)
+	if tx.RowsAffected == 0 {
+		return fmt.Errorf("failed to delete certificate model: certificate not found")
+	}
+	if tx.Error != nil {
+		return fmt.Errorf("failed to delete certificate model: %w", tx.Error)
 	}
 
 	return nil
 }
 
-func (c *Certificates) ListAndCountCertificates(userID int, opts ListCertificatesOptions) ([]*models.Certificate, int64, error) {
+func (c *Certificates) ListAndCountCertificates(userID int, opts ListCertificatesActionParams) ([]*models.Certificate, int64, error) {
 	var certificates []*models.Certificate
 	var totalRows int64
 

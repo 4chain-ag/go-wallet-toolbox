@@ -5,7 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/lox"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/lox"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
@@ -27,7 +27,7 @@ type Repository interface {
 
 	CreateCertificate(certificate *models.Certificate) (uint, error)
 	DeleteCertificate(userID int, args wdk.RelinquishCertificateArgs) error
-	ListAndCountCertificates(userID int, opts repo.ListCertificatesOptions) ([]*models.Certificate, int64, error)
+	ListAndCountCertificates(userID int, opts repo.ListCertificatesActionParams) ([]*models.Certificate, int64, error)
 }
 
 // ProviderOption is function for additional setup of Provider itself.
@@ -159,7 +159,6 @@ func (p *Provider) InsertCertificateAuth(auth wdk.AuthID, certificate *wdk.Table
 }
 
 // RelinquishCertificate will relinquish existing certificate
-// TODO: Add options to NewGormProvider to apply db already, and add function to seed database with users
 func (p *Provider) RelinquishCertificate(auth wdk.AuthID, args wdk.RelinquishCertificateArgs) error {
 	if auth.UserID == nil {
 		return fmt.Errorf("access is denied due to an authorization error")
@@ -184,7 +183,6 @@ func (p *Provider) ListCertificates(auth wdk.AuthID, args wdk.ListCertificatesAr
 	// prepare arguments
 	filterOptions := listCertificatesArgsToOptions(args)
 
-	// use repo to findCertificates with prepared args and also return them with fields
 	certModels, totalCount, err := p.repo.ListAndCountCertificates(*auth.UserID, filterOptions)
 	if err != nil {
 		return nil, fmt.Errorf("error during listing certificates action: %w", err)

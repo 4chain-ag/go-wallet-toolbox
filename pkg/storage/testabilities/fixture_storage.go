@@ -10,12 +10,15 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/mocks"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/server"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/dbfixtures"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"gorm.io/gorm"
 )
 
 const (
@@ -27,11 +30,12 @@ const (
 
 type StorageFixture interface {
 	GormProvider() *storage.Provider
+	GormProviderWithoutSeed() *storage.Provider
+
 	StartedRPCServerFor(provider wdk.WalletStorageWriter) (cleanup func())
 	RPCClient() (*wdk.WalletStorageWriterClient, func())
-	MockProvider() *mocks.MockWalletStorageWriter
 
-	GormProviderWithUsers() *storage.Provider
+	MockProvider() *mocks.MockWalletStorageWriter
 }
 
 type storageFixture struct {
@@ -39,29 +43,32 @@ type storageFixture struct {
 	require    *require.Assertions
 	logger     *slog.Logger
 	testServer *httptest.Server
+	db         *gorm.DB
 }
 
-func (s *storageFixture) GormProviderWithUsers() *storage.Provider {
-	activeStorage := s.GormProvider()
+func (s *storageFixture) GormProvider() *storage.Provider {
+	activeStorage := s.GormProviderWithoutSeed()
 
-	_, err := activeStorage.FindOrInsertUser(testusers.Alice.PrivKey)
-	s.require.NoError(err)
+	s.require.NotNil(s.db)
 
-	_, err = activeStorage.FindOrInsertUser(testusers.Bob.PrivKey)
-	s.require.NoError(err)
+	s.seedUsers()
 
 	return activeStorage
 }
 
-func (s *storageFixture) GormProvider() *storage.Provider {
+func (s *storageFixture) GormProviderWithoutSeed() *storage.Provider {
 	s.t.Helper()
 
 	storageIdentityKey, err := wdk.IdentityKey(StorageServerPrivKey)
 	s.require.NoError(err)
 
 	dbConfig := dbfixtures.DBConfigForTests()
+	db, err := database.NewDatabase(dbConfig, s.logger)
+	s.require.NoError(err)
 
-	activeStorage, err := storage.NewGORMProvider(s.logger, dbConfig, defs.NetworkTestnet)
+	s.db = db.DB
+
+	activeStorage, err := storage.NewGORMProvider(s.logger, dbConfig, defs.NetworkTestnet, storage.WithGORM(s.db))
 	s.require.NoError(err)
 
 	_, err = activeStorage.Migrate(StorageName, storageIdentityKey)
@@ -95,10 +102,25 @@ func (s *storageFixture) MockProvider() *mocks.MockWalletStorageWriter {
 	return mocks.NewMockWalletStorageWriter(ctrl)
 }
 
+func (s *storageFixture) seedUsers() {
+	err := s.db.Create(&models.User{
+		UserID:      testusers.Alice.ID,
+		IdentityKey: testusers.Alice.PrivKey,
+	}).Error
+	s.require.NoError(err)
+
+	err = s.db.Create(&models.User{
+		UserID:      testusers.Bob.ID,
+		IdentityKey: testusers.Bob.PrivKey,
+	}).Error
+	s.require.NoError(err)
+}
+
 func Given(t testing.TB) StorageFixture {
 	return &storageFixture{
 		t:       t,
 		require: require.New(t),
 		logger:  logging.NewTestLogger(t),
+		db:      nil,
 	}
 }

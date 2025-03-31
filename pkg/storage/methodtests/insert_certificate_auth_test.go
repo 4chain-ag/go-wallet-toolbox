@@ -14,7 +14,7 @@ func TestInsertCertificateAuth(t *testing.T) {
 	given := testabilities.Given(t)
 
 	// and:
-	activeStorage := given.GormProviderWithUsers()
+	activeStorage := given.GormProvider()
 
 	t.Run("should insert a certificate for Alice", func(t *testing.T) {
 		// and:
@@ -138,7 +138,7 @@ func TestInsertCertificateAuthFailure(t *testing.T) {
 	given := testabilities.Given(t)
 
 	// and:
-	activeStorage := given.GormProviderWithUsers()
+	activeStorage := given.GormProvider()
 
 	t.Run("should fail to insert a certificate when no UserID provided in auth and when certificate UserID is different than authID", func(t *testing.T) {
 		// when:
@@ -172,5 +172,19 @@ func TestInsertCertificateAuthFailure(t *testing.T) {
 
 		// then:
 		require.ErrorContains(t, err, "access is denied due to an authorization error")
+	})
+
+	t.Run("should fail to delete certificate when no cert is found", func(t *testing.T) {
+		// when:
+		err := activeStorage.RelinquishCertificate(wdk.AuthID{
+			UserID: &testusers.Alice.ID,
+		}, wdk.RelinquishCertificateArgs{
+			Type:         "not-type",
+			SerialNumber: "not-serial",
+			Certifier:    "not-certifier",
+		})
+
+		// then:
+		require.ErrorContains(t, err, "failed to delete certificate model: certificate not found")
 	})
 }

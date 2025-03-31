@@ -13,7 +13,7 @@ func TestMakeAvailable(t *testing.T) {
 	given := testabilities.Given(t)
 
 	// given:
-	activeStorage := given.GormProvider()
+	activeStorage := given.GormProviderWithoutSeed()
 
 	// when:
 	tableSettings, err := activeStorage.MakeAvailable()
