@@ -3,20 +3,16 @@ package paging
 import "strings"
 
 type Page struct {
-	Number int
-	Size   int
+	Limit  int
+	Offset int
 	Sort   string
 	SortBy string
 }
 
 // ApplyDefaults sets default values for a Page object (in place).
 func (p *Page) ApplyDefaults() {
-	if p.Number <= 0 {
-		p.Number = 1
-	}
-
-	if p.Size <= 0 {
-		p.Size = 20
+	if p.Limit <= 0 {
+		p.Limit = 1
 	}
 
 	p.SortBy = strings.ToLower(p.SortBy)
@@ -29,8 +25,4 @@ func (p *Page) ApplyDefaults() {
 	} else {
 		p.Sort = "DESC"
 	}
-}
-
-func (p *Page) Next() {
-	p.Number++
 }

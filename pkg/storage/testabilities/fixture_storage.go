@@ -30,7 +30,7 @@ const (
 
 type StorageFixture interface {
 	GormProvider() *storage.Provider
-	GormProviderWithoutSeed() *storage.Provider
+	GormProviderWithCleanDatabase() *storage.Provider
 
 	StartedRPCServerFor(provider wdk.WalletStorageWriter) (cleanup func())
 	RPCClient() (*wdk.WalletStorageWriterClient, func())
@@ -47,7 +47,7 @@ type storageFixture struct {
 }
 
 func (s *storageFixture) GormProvider() *storage.Provider {
-	activeStorage := s.GormProviderWithoutSeed()
+	activeStorage := s.GormProviderWithCleanDatabase()
 
 	s.require.NotNil(s.db)
 
@@ -56,7 +56,7 @@ func (s *storageFixture) GormProvider() *storage.Provider {
 	return activeStorage
 }
 
-func (s *storageFixture) GormProviderWithoutSeed() *storage.Provider {
+func (s *storageFixture) GormProviderWithCleanDatabase() *storage.Provider {
 	s.t.Helper()
 
 	storageIdentityKey, err := wdk.IdentityKey(StorageServerPrivKey)

@@ -23,7 +23,7 @@ func TestInsertCertificateAuth(t *testing.T) {
 	}
 
 	t.Run("should insert a certificate for Alice", func(t *testing.T) {
-		// and:
+		// given:
 		certToInsert := &wdk.TableCertificateX{
 			TableCertificate: wdk.TableCertificate{
 				UserID:             testusers.Alice.ID,
@@ -79,7 +79,7 @@ func TestInsertCertificateAuth(t *testing.T) {
 	})
 
 	t.Run("should insert a certificate for Bob", func(t *testing.T) {
-		// and:
+		// given:
 		certToInsert := &wdk.TableCertificateX{
 			TableCertificate: wdk.TableCertificate{
 				UserID:             testusers.Bob.ID,
@@ -251,5 +251,90 @@ func TestInsertCertificateAuthFailure(t *testing.T) {
 
 		// then:
 		require.ErrorContains(t, err, "failed to delete certificate model: certificate not found")
+	})
+}
+
+func TestListCertificates(t *testing.T) {
+	// given:
+	given := testabilities.Given(t)
+
+	// and:
+	activeStorage := given.GormProvider()
+
+	t.Run("should insert 3 certificates for Alice", func(t *testing.T) {
+		// given:
+		certToInsert := &wdk.TableCertificateX{
+			TableCertificate: wdk.TableCertificate{
+				UserID:             testusers.Alice.ID,
+				Type:               "exampleType",
+				SerialNumber:       "exampleSerialNumber",
+				Certifier:          "certifierPubKey",
+				Subject:            "subjectPubKey",
+				RevocationOutpoint: "outpointString",
+				Signature:          "signatureHex",
+			},
+			Fields: []*wdk.TableCertificateField{
+				{
+					UserID:     testusers.Bob.ID,
+					FieldName:  "exampleField",
+					FieldValue: "exampleValue",
+					MasterKey:  "exampleMasterKey",
+				},
+			},
+		}
+
+		// when: insert 1st certificate for Bob
+		_, err := activeStorage.InsertCertificateAuth(testusers.Alice.AuthID(), certToInsert)
+
+		// then:
+		require.NoError(t, err)
+
+		// when: update 2nd cert type and insert
+		certToInsert.Type = "exampleType2"
+		_, err = activeStorage.InsertCertificateAuth(testusers.Alice.AuthID(), certToInsert)
+
+		// then:
+		require.NoError(t, err)
+
+		// when: update 3nd cert type and insert
+		certToInsert.Type = "exampleType3"
+		_, err = activeStorage.InsertCertificateAuth(testusers.Alice.AuthID(), certToInsert)
+
+		// then:
+		require.NoError(t, err)
+
+		// when: listing certificates with limit 1
+		certs, err := activeStorage.ListCertificates(testusers.Alice.AuthID(), wdk.ListCertificatesArgs{
+			Limit: wdk.PositiveIntegerDefault10Max10000(1),
+		})
+
+		// then:
+		require.NoError(t, err)
+		require.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
+		require.Equal(t, 1, len(certs.Certificates))
+		require.Equal(t, wdk.Base64String("exampleType3"), certs.Certificates[0].Type)
+
+		// when: listing certificates with limit 2
+		certs, err = activeStorage.ListCertificates(testusers.Alice.AuthID(), wdk.ListCertificatesArgs{
+			Limit: wdk.PositiveIntegerDefault10Max10000(2),
+		})
+
+		// then:
+		require.NoError(t, err)
+		require.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
+		require.Equal(t, 2, len(certs.Certificates))
+		require.Equal(t, wdk.Base64String("exampleType3"), certs.Certificates[0].Type)
+		require.Equal(t, wdk.Base64String("exampleType2"), certs.Certificates[1].Type)
+
+		// when: listing certificates with limit 1 and offset 2
+		certs, err = activeStorage.ListCertificates(testusers.Alice.AuthID(), wdk.ListCertificatesArgs{
+			Offset: wdk.PositiveIntegerOrZero(2),
+		})
+
+		// then:
+		require.NoError(t, err)
+		require.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
+		require.Equal(t, 1, len(certs.Certificates))
+		require.Equal(t, wdk.Base64String("exampleType"), certs.Certificates[0].Type)
 	})
 }

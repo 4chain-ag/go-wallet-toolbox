@@ -50,11 +50,8 @@ func (c *Certificates) DeleteCertificate(userID int, args wdk.RelinquishCertific
 	return nil
 }
 
-func (c *Certificates) ListAndCountCertificates(userID int, opts ListCertificatesActionParams) ([]*models.Certificate, int64, error) {
-	var certificates []*models.Certificate
-	var totalRows int64
-
-	err := c.db.Transaction(func(tx *gorm.DB) error {
+func (c *Certificates) ListAndCountCertificates(userID int, opts ListCertificatesActionParams) (certificates []*models.Certificate, totalRows int64, err error) {
+	err = c.db.Transaction(func(tx *gorm.DB) error {
 		page := &paging.Page{}
 
 		// parse offset and limit
@@ -63,7 +60,7 @@ func (c *Certificates) ListAndCountCertificates(userID int, opts ListCertificate
 			if err != nil {
 				return fmt.Errorf("error during parsing limit: %w", err)
 			}
-			page.Size = limit
+			page.Limit = limit
 		}
 
 		if opts.Offset > 0 {
@@ -71,16 +68,12 @@ func (c *Certificates) ListAndCountCertificates(userID int, opts ListCertificate
 			if err != nil {
 				return fmt.Errorf("error during parsing offset: %w", err)
 			}
-			// TODO: check if it can be like this or do we need to calculate the
-			// page number with page size and provided offset
-			page.Number = ofs
+			page.Offset = ofs
 		}
 
 		// prepare query
 		query := tx.Model(&models.Certificate{}).Scopes(
 			scopes.UserID(userID),
-			scopes.Preload("CertificateFields"),
-			scopes.Paginate(page),
 		)
 
 		if opts.SerialNumber != nil {
@@ -102,11 +95,18 @@ func (c *Certificates) ListAndCountCertificates(userID int, opts ListCertificate
 			query = query.Where("type IN ?", opts.Types)
 		}
 
-		// First count all certificates
+		// first count all certificates
 		err := query.Model(&models.Certificate{}).Count(&totalRows).Error
 		if err != nil {
 			return fmt.Errorf("error during counting certificates: %w", err)
 		}
+
+		// we need to apply scopes here again because count is being affected by offset otherwise
+		query.Scopes(
+			scopes.UserID(userID),
+			scopes.Paginate(page),
+			scopes.Preload("CertificateFields"),
+		)
 
 		// then find certificates with applied filters
 		err = query.Find(&certificates).Error

@@ -9,8 +9,7 @@ import (
 func Paginate(page *paging.Page) func(db *gorm.DB) *gorm.DB {
 	page.ApplyDefaults()
 	return func(db *gorm.DB) *gorm.DB {
-		offset := (page.Number - 1) * page.Size
-		return db.Order(page.SortBy + " " + page.Sort).Offset(offset).Limit(page.Size)
+		return db.Order(page.SortBy + " " + page.Sort).Offset(page.Offset).Limit(page.Limit)
 	}
 }
 
