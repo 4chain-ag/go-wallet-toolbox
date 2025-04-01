@@ -1,5 +1,7 @@
 package testusers
 
+import "github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+
 type User struct {
 	// Name of the user just for in tests logging purpose
 	Name    string
@@ -17,4 +19,10 @@ var Bob = User{
 	Name:    "Bob",
 	ID:      2,
 	PrivKey: "0881208859876fc227d71bfb8b91814462c5164b6fee27e614798f6e85d2547d",
+}
+
+func (u User) AuthID() wdk.AuthID {
+	return wdk.AuthID{
+		UserID: &u.ID,
+	}
 }
