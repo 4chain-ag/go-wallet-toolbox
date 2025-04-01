@@ -47,3 +47,6 @@
 - name: "stale"
   color: "c2e0c6"
   description: "Old, unused, stale"
+- name: "migrated"
+  color: "cc317c"
+  description: "Migrated to bsv-blockchain project"
