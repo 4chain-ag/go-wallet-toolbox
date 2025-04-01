@@ -12,7 +12,7 @@ type Page struct {
 // ApplyDefaults sets default values for a Page object (in place).
 func (p *Page) ApplyDefaults() {
 	if p.Limit <= 0 {
-		p.Limit = 1
+		p.Limit = -1
 	}
 
 	p.SortBy = strings.ToLower(p.SortBy)
