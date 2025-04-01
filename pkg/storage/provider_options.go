@@ -20,6 +20,7 @@ func WithGORM(gormDB *gorm.DB) ProviderOption {
 	}
 }
 
+// WithFunder sets the funder for the provider.
 func WithFunder(funder actions.Funder) ProviderOption {
 	return func(o *providerOptions) {
 		o.funder = funder
