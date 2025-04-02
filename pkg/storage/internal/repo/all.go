@@ -8,6 +8,7 @@ type Repositories struct {
 	*Users
 	*OutputBaskets
 	*Certificates
+	*UTXOs
 }
 
 func NewSQLRepositories(db *gorm.DB) *Repositories {
@@ -16,6 +17,7 @@ func NewSQLRepositories(db *gorm.DB) *Repositories {
 		Settings:      NewSettings(db),
 		OutputBaskets: NewOutputBaskets(db),
 		Certificates:  NewCertificates(db),
+		UTXOs:         NewUTXOs(db),
 	}
 	repositories.Users = NewUsers(db, repositories.Settings, repositories.OutputBaskets)
 

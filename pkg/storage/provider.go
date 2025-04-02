@@ -5,15 +5,14 @@ import (
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/lox"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/utils/to"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/validate"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/repo"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
-	"github.com/samber/lo"
+	"github.com/go-softwarelab/common/pkg/slices"
+	"github.com/go-softwarelab/common/pkg/to"
 )
 
 // Repository is an interface for the actual storage repository.
@@ -136,7 +135,7 @@ func (p *Provider) InsertCertificateAuth(auth wdk.AuthID, certificate *wdk.Table
 		Signature:          string(certificate.Signature),
 
 		UserID:            *auth.UserID,
-		CertificateFields: lo.Map(certificate.Fields, lox.MappingFn(tableCertificateXFieldsToModelFields(*auth.UserID))),
+		CertificateFields: slices.Map(certificate.Fields, tableCertificateXFieldsToModelFields(*auth.UserID)),
 	}
 
 	if certificate.Verifier != nil {
@@ -196,7 +195,7 @@ func (p *Provider) ListCertificates(auth wdk.AuthID, args wdk.ListCertificatesAr
 
 	result := &wdk.ListCertificatesResult{
 		TotalCertificates: wdk.PositiveIntegerOrZero(tc),
-		Certificates:      lo.Map(certModels, lox.MappingFn(certModelToResult)),
+		Certificates:      slices.Map(certModels, certModelToResult),
 	}
 
 	return result, nil
