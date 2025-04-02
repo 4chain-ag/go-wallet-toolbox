@@ -192,6 +192,7 @@ type BEEF []byte
 // The TXID is given as a hex string followed by a period "." and then the output index is given as a decimal integer.
 type OutpointString string
 
+// Validate checks if the string is proper outpoint string and contains outpoint index after "."
 func (s OutpointString) Validate() error {
 	split := strings.Split(string(s), ".")
 
@@ -201,7 +202,6 @@ func (s OutpointString) Validate() error {
 
 	// check if after decimal point there is an outpoint index
 	_, err := strconv.Atoi(split[1])
-
 	if err != nil {
 		return fmt.Errorf("txid as hexstring and numeric output index joined with '.'")
 	}
