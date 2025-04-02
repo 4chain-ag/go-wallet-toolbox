@@ -30,14 +30,9 @@ func TestCreateActionHappyPath(t *testing.T) {
 	// given:
 	activeStorage := given.GormProvider()
 
-	// and:
-	// TODO: remove this after dzolt-4chain merge his PR
-	userResp, err := activeStorage.FindOrInsertUser(testusers.Alice.PrivKey)
-	require.NoError(t, err)
-
 	// when:
-	_, err = activeStorage.CreateAction(
-		wdk.AuthID{UserID: utils.Ptr(userResp.User.UserID)},
+	_, err := activeStorage.CreateAction(
+		wdk.AuthID{UserID: utils.Ptr(testusers.Alice.ID)},
 		fixtures.DefaultValidCreateActionArgs(),
 	)
 
