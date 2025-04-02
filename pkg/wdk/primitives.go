@@ -198,7 +198,7 @@ func (s OutpointString) Validate() error {
 	if len(split) != 2 {
 		return fmt.Errorf("txid as hexstring and numeric output index joined with '.'")
 	}
-	
+
 	// check if after decimal point there is an outpoint index
 	_, err := strconv.Atoi(split[1])
 

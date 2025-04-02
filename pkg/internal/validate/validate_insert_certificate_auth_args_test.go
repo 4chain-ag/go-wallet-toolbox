@@ -1,12 +1,12 @@
 package validate_test
 
 import (
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"strings"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/validate"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/stretchr/testify/require"
 )
 
