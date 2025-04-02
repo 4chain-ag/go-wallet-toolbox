@@ -1,8 +1,11 @@
 package wdk
 
 import (
+	"encoding/base64"
 	"fmt"
 	"regexp"
+	"strconv"
+	"strings"
 )
 
 // String5to2000Bytes represents a string used for descriptions,
@@ -23,17 +26,82 @@ func (d String5to2000Bytes) Validate() error {
 // Base64String is a string in base64 format
 type Base64String string
 
+// Validate checks if the string is valid a base64 string
+func (s Base64String) Validate() error {
+	// Step 1: Check if the string's length is divisible by 4 (Base64 requirement)
+	if len(s)%4 != 0 {
+		return fmt.Errorf("base64 string length must be divisible by 4")
+	}
+
+	// Step 2: Validate padding
+	paddingCount := strings.Count(string(s), "=")
+	if paddingCount > 2 || (paddingCount > 0 && !strings.HasSuffix(string(s), strings.Repeat("=", paddingCount))) {
+		return fmt.Errorf("invalid base64 padding")
+	}
+
+	// Step 3: Check if the string is valid Base64
+	_, err := base64.StdEncoding.DecodeString(string(s))
+	if err != nil {
+		return fmt.Errorf("invalid base64 string")
+	}
+
+	return nil
+}
+
 // DescriptionString5to50Bytes is a string used for descriptions, with a length between 5 and 50 characters.
 type DescriptionString5to50Bytes string
+
+// Validate checks if the string is between 5 and 50 characters long
+func (s DescriptionString5to50Bytes) Validate() error {
+	if len(s) < 5 {
+		return fmt.Errorf("at least 5 length")
+	}
+	if len(s) > 50 {
+		return fmt.Errorf("no more than 50 length")
+	}
+	return nil
+}
 
 // PositiveIntegerDefault10Max10000  is a positive integer that defaults to 10, and has an upper bound of 10000.
 type PositiveIntegerDefault10Max10000 uint
 
+// Validate checks if the integer is maximum 10000
+func (i PositiveIntegerDefault10Max10000) Validate() error {
+	if i > 10000 {
+		return fmt.Errorf("is larger than 10000")
+	}
+
+	return nil
+}
+
 // CertificateFieldNameUnder50Bytes Represents a certificate field name with a maximum length of 50 characters
 type CertificateFieldNameUnder50Bytes string
 
+// Validate checks if the string is under 50 length
+func (s CertificateFieldNameUnder50Bytes) Validate() error {
+	if len(s) < 1 {
+		return fmt.Errorf("at least 1 length")
+	}
+
+	if len(s) > 50 {
+		return fmt.Errorf("no more than 50 length")
+	}
+	return nil
+}
+
 // PubKeyHex is a compressed DER secp256k1 public key, exactly 66 hex characters (33 bytes) in length.
 type PubKeyHex HexString
+
+// Validate checks if the string is valid pubkey hexadecimal string
+func (pkh PubKeyHex) Validate() error {
+	// Validate as HexString
+	hs := HexString(pkh)
+	if err := hs.Validate(); err != nil {
+		return fmt.Errorf("invalid pubKey hex string: %w", err)
+	}
+
+	return nil
+}
 
 // HexString is a string in hexadecimal format
 type HexString string
@@ -87,6 +155,10 @@ const MaxSatoshis = 2100000000000000
 
 // Validate checks if the value is less than the maximum number of Satoshis
 func (s SatoshiValue) Validate() error {
+	if s < 1 {
+		return fmt.Errorf("at least %d", MaxSatoshis)
+	}
+
 	if s > MaxSatoshis {
 		return fmt.Errorf("less than %d", MaxSatoshis)
 	}
@@ -119,6 +191,23 @@ type BEEF []byte
 // OutpointString represents a transaction ID and output index pair.
 // The TXID is given as a hex string followed by a period "." and then the output index is given as a decimal integer.
 type OutpointString string
+
+func (s OutpointString) Validate() error {
+	split := strings.Split(string(s), ".")
+
+	if len(split) != 2 {
+		return fmt.Errorf("txid as hexstring and numeric output index joined with '.'")
+	}
+	
+	// check if after decimal point there is an outpoint index
+	_, err := strconv.Atoi(split[1])
+
+	if err != nil {
+		return fmt.Errorf("txid as hexstring and numeric output index joined with '.'")
+	}
+
+	return nil
+}
 
 // OutPoint identifies a unique transaction output by its txid and index vout
 type OutPoint struct {
