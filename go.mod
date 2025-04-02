@@ -10,7 +10,6 @@ require (
 	github.com/go-softwarelab/common v0.8.0
 	github.com/go-viper/mapstructure/v2 v2.2.1
 	github.com/mattn/go-sqlite3 v1.14.24
-	github.com/samber/lo v1.49.1
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/mock v0.5.0
