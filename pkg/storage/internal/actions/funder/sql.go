@@ -51,6 +51,34 @@ func (f *SQL) Fund(ctx context.Context, targetSat int64, currentTxSize int64, nu
 		return nil, fmt.Errorf("invalid currentTxSize: %w", err)
 	}
 
+	if targetSat < 0 {
+		calculatedFee, err := f.feeCalculator.Calculate(txSize)
+		if err != nil {
+			return nil, fmt.Errorf("cound't calculate the fee: %w", err)
+		}
+
+		fee, err := to.Int64FromUnsigned(calculatedFee)
+		if err != nil {
+			return nil, fmt.Errorf("cannot calculate the satoshis to cover: %w", err)
+		}
+
+		satsToCover := targetSat + fee
+
+		if satsToCover <= 0 {
+			changeAmount, err := to.UInt64(0 - satsToCover)
+			if err != nil {
+				return nil, fmt.Errorf("cannot calculate the changeAmount: %w", err)
+			}
+
+			return &actions.FundingResult{
+				AllocatedUTXOs: make([]*actions.UTXO, 0),
+				Fee:            calculatedFee,
+				ChangeAmount:   changeAmount,
+				ChangeCount:    to.IfThen(changeAmount == 0, 0).ElseThen(1),
+			}, nil
+		}
+	}
+
 	txSats, err := to.UInt64(targetSat)
 	if err != nil {
 		return nil, fmt.Errorf("invalid targetSat: %w", err)
@@ -85,7 +113,11 @@ func (f *SQL) loadUTXOs(ctx context.Context, userID int) iter.Seq2[*models.UserU
 }
 
 func (f *SQL) allocate(sats uint64, size uint64, utxos iter.Seq2[*models.UserUTXO, error]) (*actions.FundingResult, error) {
-	collector := newCollector(sats, size, f.feeCalculator)
+	collector, err := newCollector(sats, size, f.feeCalculator)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start collecting utxo: %w", err)
+	}
+
 	for utxo, err := range utxos {
 		if err != nil {
 			return nil, fmt.Errorf("failed to allocate utxo: %w", err)
@@ -113,19 +145,23 @@ type utxoCollector struct {
 	feeCalculator *feeCalc
 }
 
-func newCollector(txSats, txSize uint64, feeCalculator *feeCalc) *utxoCollector {
+func newCollector(txSats, txSize uint64, feeCalculator *feeCalc) (*utxoCollector, error) {
+	fee, err := feeCalculator.Calculate(txSize)
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate fee: %w", err)
+	}
+
 	return &utxoCollector{
 		txSats:        txSats,
 		txSize:        txSize,
 		feeCalculator: feeCalculator,
-
 		result: &actions.FundingResult{
 			AllocatedUTXOs: make([]*actions.UTXO, 0),
 			ChangeAmount:   0,
 			ChangeCount:    0,
-			Fee:            0,
+			Fee:            fee,
 		},
-	}
+	}, nil
 }
 
 func (c *utxoCollector) Allocate(utxo *models.UserUTXO) (err error) {
@@ -146,7 +182,7 @@ func (c *utxoCollector) IsFunded() bool {
 
 func (c *utxoCollector) GetResult() (*actions.FundingResult, error) {
 	if c.IsFunded() {
-		return c.result, nil
+		return c.prepareResult(), nil
 	}
 	return nil, errfunder.NotEnoughFunds
 }
@@ -174,4 +210,10 @@ func (c *utxoCollector) increaseValue(satoshis uint64) {
 
 func (c *utxoCollector) satsToCover() uint64 {
 	return c.txSats + c.result.Fee
+}
+
+func (c *utxoCollector) prepareResult() *actions.FundingResult {
+	c.result.ChangeAmount = c.satsCovered - c.satsToCover()
+	c.result.ChangeCount = to.IfThen(c.result.ChangeAmount == 0, 0).ElseThen(1)
+	return c.result
 }
