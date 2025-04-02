@@ -3,6 +3,7 @@ package funder
 import (
 	"context"
 	"fmt"
+	"iter"
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
@@ -12,6 +13,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder/errfunder"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/paging"
+	"github.com/go-softwarelab/common/pkg/seqerr"
 )
 
 type UTXORepository interface {
@@ -52,39 +54,52 @@ func (f *SQL) Fund(ctx context.Context, targetSat int64, currentTxSize int64, nu
 		return nil, fmt.Errorf("invalid targetSat: %w", err)
 	}
 
-	page := &paging.Page{
-		Size:   1000,
-		SortBy: "satoshis",
+	utxos := f.loadUTXOs(ctx, userID)
+
+	result, err := f.allocate(txSats, txSize, utxos)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fund transaction: %w", err)
 	}
+	return result, nil
 
-	collector := newCollector(txSats, txSize, f.feeCalculator)
+}
 
-	for {
-		utxos, err := f.utxoRepository.FindAllUTXOs(ctx, userID, page)
+func (f *SQL) loadUTXOs(ctx context.Context, userID int) iter.Seq2[*models.UserUTXO, error] {
+	batches := seqerr.ProduceWithArg(
+		func(page *paging.Page) ([]*models.UserUTXO, *paging.Page, error) {
+			utxos, err := f.utxoRepository.FindAllUTXOs(ctx, userID, page)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to load utxos: %w", err)
+			}
+			page.Next()
+			return utxos, page, nil
+		},
+		&paging.Page{
+			Size:   1000,
+			SortBy: "satoshis",
+		})
+
+	return seqerr.FlattenSlices(batches)
+}
+
+func (f *SQL) allocate(sats uint64, size uint64, utxos iter.Seq2[*models.UserUTXO, error]) (*actions.FundingResult, error) {
+	collector := newCollector(sats, size, f.feeCalculator)
+	for utxo, err := range utxos {
 		if err != nil {
-			return nil, fmt.Errorf("couldn't get users utxos: %w", err)
-		} else if len(utxos) == 0 && !collector.IsFunded() {
-			return nil, errfunder.NotEnoughFunds
+			return nil, fmt.Errorf("failed to get utxo: %w", err)
 		}
 
-		for _, utxo := range utxos {
-			err = collector.Allocate(utxo)
-			if err != nil {
-				return nil, fmt.Errorf("failed to collect utxo: %w", err)
-			}
+		err = collector.Allocate(utxo)
+		if err != nil {
+			return nil, fmt.Errorf("failed to allocate utxo: %w", err)
 		}
 
 		if collector.IsFunded() {
 			break
 		}
-		page.Next()
 	}
 
-	result, err := collector.GetResult()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get result: %w", err)
-	}
-	return result, nil
+	return collector.GetResult()
 }
 
 type utxoCollector struct {
@@ -153,5 +168,8 @@ func (c *utxoCollector) satsToCover() uint64 {
 }
 
 func (c *utxoCollector) GetResult() (*actions.FundingResult, error) {
-	return c.result, nil
+	if c.IsFunded() {
+		return c.result, nil
+	}
+	return nil, errfunder.NotEnoughFunds
 }
