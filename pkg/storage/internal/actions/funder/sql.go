@@ -16,6 +16,8 @@ import (
 	"github.com/go-softwarelab/common/pkg/to"
 )
 
+const utxoBatchSize = 1000
+
 type UTXORepository interface {
 	FindAllUTXOs(ctx context.Context, userID int, page *paging.Page) ([]*models.UserUTXO, error)
 }
@@ -75,7 +77,7 @@ func (f *SQL) loadUTXOs(ctx context.Context, userID int) iter.Seq2[*models.UserU
 			return utxos, page, nil
 		},
 		&paging.Page{
-			Limit:  1000,
+			Limit:  utxoBatchSize,
 			SortBy: "satoshis",
 		})
 

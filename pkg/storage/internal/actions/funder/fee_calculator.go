@@ -31,7 +31,7 @@ func newFeeCalculator(model defs.FeeModel) *feeCalc {
 func (f *feeCalc) Calculate(txSize uint64) (uint64, error) {
 	size, err := to.Float64FromUnsigned(txSize)
 	if err != nil {
-		return 0, fmt.Errorf("invalid transaction size: %s", err.Error())
+		return 0, fmt.Errorf("invalid transaction size: %w", err)
 	}
 
 	multiplier, err := to.UInt64(math.Ceil(size / f.bytes))
