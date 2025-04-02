@@ -23,6 +23,18 @@ func (d String5to2000Bytes) Validate() error {
 // Base64String is a string in base64 format
 type Base64String string
 
+// DescriptionString5to50Bytes is a string used for descriptions, with a length between 5 and 50 characters.
+type DescriptionString5to50Bytes string
+
+// PositiveIntegerDefault10Max10000  is a positive integer that defaults to 10, and has an upper bound of 10000.
+type PositiveIntegerDefault10Max10000 uint
+
+// CertificateFieldNameUnder50Bytes Represents a certificate field name with a maximum length of 50 characters
+type CertificateFieldNameUnder50Bytes string
+
+// PubKeyHex is a compressed DER secp256k1 public key, exactly 66 hex characters (33 bytes) in length.
+type PubKeyHex HexString
+
 // HexString is a string in hexadecimal format
 type HexString string
 
@@ -103,6 +115,10 @@ type TXIDHexString string
 
 // BEEF An array of integers, each ranging from 0 to 255, indicating transaction data in BEEF (BRC-62) format.
 type BEEF []byte
+
+// OutpointString represents a transaction ID and output index pair.
+// The TXID is given as a hex string followed by a period "." and then the output index is given as a decimal integer.
+type OutpointString string
 
 // OutPoint identifies a unique transaction output by its txid and index vout
 type OutPoint struct {

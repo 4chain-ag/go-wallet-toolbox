@@ -84,3 +84,30 @@ type ValidCreateActionArgs struct {
 	// IsDelayed is true if options.AcceptDelayedBroadcast is true
 	IsDelayed bool `json:"isDelayed,omitempty"`
 }
+
+// RelinquishCertificateArgs represents the arguments for relinquishing certificate
+type RelinquishCertificateArgs struct {
+	Type         Base64String `json:"type"`
+	SerialNumber Base64String `json:"serialNumber"`
+	Certifier    PubKeyHex    `json:"certifier"`
+}
+
+// ListCertificatesArgsPartial is
+type ListCertificatesArgsPartial struct {
+	Type               *Base64String   `json:"type"`
+	Certifier          *PubKeyHex      `json:"certifier"`
+	SerialNumber       *Base64String   `json:"serialNumber"`
+	Subject            *PubKeyHex      `json:"subject"`
+	RevocationOutpoint *OutpointString `json:"revocationOutpoint"`
+	Signature          *HexString      `json:"signature"`
+}
+
+// ListCertificatesArgs represents the arguments for listing certificates
+type ListCertificatesArgs struct {
+	Partial *ListCertificatesArgsPartial `json:"partial"`
+
+	Certifiers []PubKeyHex                      `json:"certifiers"`
+	Types      []Base64String                   `json:"types"`
+	Limit      PositiveIntegerDefault10Max10000 `json:"limit"`
+	Offset     PositiveIntegerOrZero            `json:"offset"`
+}

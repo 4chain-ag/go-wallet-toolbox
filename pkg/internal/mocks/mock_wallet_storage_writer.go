@@ -70,6 +70,36 @@ func (mr *MockWalletStorageWriterMockRecorder) FindOrInsertUser(identityKey any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindOrInsertUser", reflect.TypeOf((*MockWalletStorageWriter)(nil).FindOrInsertUser), identityKey)
 }
 
+// InsertCertificateAuth mocks base method.
+func (m *MockWalletStorageWriter) InsertCertificateAuth(auth wdk.AuthID, certificate *wdk.TableCertificateX) (uint, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertCertificateAuth", auth, certificate)
+	ret0, _ := ret[0].(uint)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InsertCertificateAuth indicates an expected call of InsertCertificateAuth.
+func (mr *MockWalletStorageWriterMockRecorder) InsertCertificateAuth(auth, certificate any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertCertificateAuth", reflect.TypeOf((*MockWalletStorageWriter)(nil).InsertCertificateAuth), auth, certificate)
+}
+
+// ListCertificates mocks base method.
+func (m *MockWalletStorageWriter) ListCertificates(auth wdk.AuthID, args wdk.ListCertificatesArgs) (*wdk.ListCertificatesResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListCertificates", auth, args)
+	ret0, _ := ret[0].(*wdk.ListCertificatesResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListCertificates indicates an expected call of ListCertificates.
+func (mr *MockWalletStorageWriterMockRecorder) ListCertificates(auth, args any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCertificates", reflect.TypeOf((*MockWalletStorageWriter)(nil).ListCertificates), auth, args)
+}
+
 // MakeAvailable mocks base method.
 func (m *MockWalletStorageWriter) MakeAvailable() (*wdk.TableSettings, error) {
 	m.ctrl.T.Helper()
@@ -98,4 +128,18 @@ func (m *MockWalletStorageWriter) Migrate(storageName, storageIdentityKey string
 func (mr *MockWalletStorageWriterMockRecorder) Migrate(storageName, storageIdentityKey any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Migrate", reflect.TypeOf((*MockWalletStorageWriter)(nil).Migrate), storageName, storageIdentityKey)
+}
+
+// RelinquishCertificate mocks base method.
+func (m *MockWalletStorageWriter) RelinquishCertificate(auth wdk.AuthID, args wdk.RelinquishCertificateArgs) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RelinquishCertificate", auth, args)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RelinquishCertificate indicates an expected call of RelinquishCertificate.
+func (mr *MockWalletStorageWriterMockRecorder) RelinquishCertificate(auth, args any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RelinquishCertificate", reflect.TypeOf((*MockWalletStorageWriter)(nil).RelinquishCertificate), auth, args)
 }

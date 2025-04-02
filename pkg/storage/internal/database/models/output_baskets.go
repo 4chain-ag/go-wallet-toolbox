@@ -17,5 +17,5 @@ type OutputBasket struct {
 	NumberOfDesiredUTXOs    int    `gorm:"not null;default:6"`
 	MinimumDesiredUTXOValue int    `gorm:"not null;default:10000"`
 
-	UserID int `gorm:"not null;index:idx_name_user_id"`
+	UserID int `gorm:"uniqueIndex:idx_name_user_id"`
 }

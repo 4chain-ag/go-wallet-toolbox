@@ -9,8 +9,7 @@ import (
 func Paginate(page *paging.Page) func(db *gorm.DB) *gorm.DB {
 	page.ApplyDefaults()
 	return func(db *gorm.DB) *gorm.DB {
-		offset := (page.Number - 1) * page.Size
-		return db.Order(page.SortBy + " " + page.Sort).Offset(offset).Limit(page.Size)
+		return db.Order(page.SortBy + " " + page.Sort).Offset(page.Offset).Limit(page.Limit)
 	}
 }
 
@@ -18,5 +17,11 @@ func Paginate(page *paging.Page) func(db *gorm.DB) *gorm.DB {
 func UserID(id int) func(*gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("user_id = ?", id)
+	}
+}
+
+func Preload(name string) func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Preload(name)
 	}
 }

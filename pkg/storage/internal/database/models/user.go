@@ -11,5 +11,7 @@ type User struct {
 	IdentityKey   string `gorm:"type:varchar(130);not null"`
 	ActiveStorage string `gorm:"type:varchar(255);not null"`
 
-	OutputBaskets []*OutputBasket `gorm:"foreignKey:UserID"`
+	OutputBaskets     []*OutputBasket     `gorm:"foreignKey:UserID"`
+	Certificates      []*Certificate      `gorm:"foreignKey:UserID"`
+	CertificateFields []*CertificateField `gorm:"foreignKey:UserID"`
 }

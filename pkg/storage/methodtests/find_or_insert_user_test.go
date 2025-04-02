@@ -15,7 +15,7 @@ func TestFindOrInsertUser(t *testing.T) {
 	userIdentityKey := "03f17660f611ce531402a2ce1e070380b6fde57aca211d707bfab27bce42d86beb"
 
 	// and:
-	activeStorage := given.GormProvider()
+	activeStorage := given.GormProviderWithCleanDatabase()
 
 	// when:
 	tableUser, err := activeStorage.FindOrInsertUser(userIdentityKey)
