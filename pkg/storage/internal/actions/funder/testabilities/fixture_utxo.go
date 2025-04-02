@@ -75,9 +75,7 @@ func (f *userUtxoFixture) Stored() {
 		Vout:               f.vout,
 		Satoshis:           f.satoshis,
 		EstimatedInputSize: f.estimatedInputSize,
-		Basket:             "default",
 		CreatedAt:          FirstCreatedAt.Add(time.Duration(f.index) * time.Second),
-		TouchedAt:          FirstCreatedAt.Add(time.Duration(24) * time.Hour),
 	}
 
 	f.parent.Save(utxo)
