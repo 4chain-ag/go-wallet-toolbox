@@ -5,7 +5,7 @@ import (
 	"math"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/utils/to"
+	"github.com/go-softwarelab/common/pkg/to"
 )
 
 type feeCalc struct {
@@ -29,7 +29,7 @@ func newFeeCalculator(model defs.FeeModel) *feeCalc {
 }
 
 func (f *feeCalc) Calculate(txSize uint64) (uint64, error) {
-	size, err := to.Float64(txSize)
+	size, err := to.Float64FromUnsigned(txSize)
 	if err != nil {
 		return 0, fmt.Errorf("invalid transaction size: %s", err.Error())
 	}
