@@ -3,13 +3,13 @@ package actions
 import (
 	"context"
 	"fmt"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/txutils"
-	"github.com/go-softwarelab/common/pkg/seq"
-	"github.com/go-softwarelab/common/pkg/seqerr"
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/txutils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/go-softwarelab/common/pkg/seq"
+	"github.com/go-softwarelab/common/pkg/seqerr"
 )
 
 type UTXO struct {

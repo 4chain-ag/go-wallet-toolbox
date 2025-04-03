@@ -2,6 +2,7 @@ package wdk
 
 import (
 	"fmt"
+
 	"github.com/go-softwarelab/common/pkg/to"
 )
 
@@ -14,6 +15,7 @@ type ValidCreateActionInput struct {
 	UnlockingScriptLength *PositiveInteger      `json:"unlockingScriptLength,omitempty"`
 }
 
+// ScriptLength returns the length of the unlocking script in bytes.
 func (i *ValidCreateActionInput) ScriptLength() (uint64, error) {
 	if i.UnlockingScript != nil {
 		lengthInBytes, err := to.UInt64(len(*i.UnlockingScript) / 2)
@@ -38,6 +40,7 @@ type ValidCreateActionOutput struct {
 	Tags               []IdentifierStringUnder300 `json:"tags,omitempty"`
 }
 
+// ScriptLength returns the length of the locking script in bytes.
 func (o *ValidCreateActionOutput) ScriptLength() (uint64, error) {
 	lengthInBytes, err := to.UInt64(len(o.LockingScript) / 2)
 	if err != nil {
