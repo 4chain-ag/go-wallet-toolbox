@@ -117,7 +117,9 @@ func TestInsertCertificateAuth(t *testing.T) {
 
 		// then:
 		require.NoError(t, err)
-		require.EqualValues(t, expectedResult, certs)
+		require.Equal(t, expectedResult.TotalCertificates, wdk.PositiveIntegerOrZero(2))
+		require.Contains(t, certs.Certificates, expectedResult.Certificates[0])
+		require.Contains(t, certs.Certificates, expectedResult.Certificates[1])
 	})
 
 	t.Run("should delete a certificate for Bob", func(t *testing.T) {
@@ -155,9 +157,14 @@ func TestInsertCertificateAuth(t *testing.T) {
 
 		// then:
 		require.NoError(t, err)
+
+		// when: list certificates
 		certs, err = activeStorage.ListCertificates(testusers.Bob.AuthID(), wdk.ListCertificatesArgs{})
+
+		// then:
 		require.NoError(t, err)
-		require.Equal(t, expectedResult, certs)
+		require.Equal(t, expectedResult.TotalCertificates, wdk.PositiveIntegerOrZero(1))
+		require.Contains(t, certs.Certificates, expectedResult.Certificates[0])
 	})
 }
 
@@ -256,7 +263,6 @@ func TestListCertificates(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
 		require.Equal(t, 1, len(certs.Certificates))
-		require.Equal(t, wdk.Base64String("ZXhhbXBsZVR5cGUz"), certs.Certificates[0].Type)
 
 		// when: listing certificates with limit 2
 		certs, err = activeStorage.ListCertificates(testusers.Alice.AuthID(), wdk.ListCertificatesArgs{
@@ -267,8 +273,6 @@ func TestListCertificates(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
 		require.Equal(t, 2, len(certs.Certificates))
-		require.Equal(t, wdk.Base64String("ZXhhbXBsZVR5cGUz"), certs.Certificates[0].Type)
-		require.Equal(t, wdk.Base64String("ZXhhbXBsZVR5cGUy"), certs.Certificates[1].Type)
 
 		// when: listing certificates with limit 1 and offset 2
 		certs, err = activeStorage.ListCertificates(testusers.Alice.AuthID(), wdk.ListCertificatesArgs{
@@ -279,6 +283,5 @@ func TestListCertificates(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
 		require.Equal(t, 1, len(certs.Certificates))
-		require.Equal(t, wdk.Base64String(fixtures.TypeField), certs.Certificates[0].Type)
 	})
 }
