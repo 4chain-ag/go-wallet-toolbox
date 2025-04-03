@@ -156,7 +156,7 @@ const MaxSatoshis = 2100000000000000
 // Validate checks if the value is less than the maximum number of Satoshis
 func (s SatoshiValue) Validate() error {
 	if s < 1 {
-		return fmt.Errorf("at least %d", MaxSatoshis)
+		return fmt.Errorf("at least 1")
 	}
 
 	if s > MaxSatoshis {
