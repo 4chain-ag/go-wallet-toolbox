@@ -61,7 +61,7 @@ func validateListCertificatesPartialArgs(args *wdk.ListCertificatesArgsPartial) 
 	if args.RevocationOutpoint != nil {
 		err := args.RevocationOutpoint.Validate()
 		if err != nil {
-			return fmt.Errorf("invalid partial serialNumber argument: %w", err)
+			return fmt.Errorf("invalid partial revocationOutpoint argument: %w", err)
 		}
 	}
 
