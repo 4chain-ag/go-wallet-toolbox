@@ -4,10 +4,10 @@ import (
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/utils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/testabilities"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/go-softwarelab/common/pkg/to"
 	"github.com/stretchr/testify/require"
 )
 
@@ -32,7 +32,7 @@ func TestCreateActionHappyPath(t *testing.T) {
 
 	// when:
 	_, err := activeStorage.CreateAction(
-		wdk.AuthID{UserID: utils.Ptr(testusers.Alice.ID)},
+		wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
 		fixtures.DefaultValidCreateActionArgs(),
 	)
 
