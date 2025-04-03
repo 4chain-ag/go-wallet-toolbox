@@ -51,10 +51,6 @@ func (f *SQL) Fund(ctx context.Context, targetSat int64, currentTxSize uint64, n
 		return nil, fmt.Errorf("failed to start collecting utxo: %w", err)
 	}
 
-	if collector.IsFunded() {
-		return collector.GetResult()
-	}
-
 	utxos := f.loadUTXOs(ctx, userID)
 
 	err = collector.Allocate(utxos)
@@ -109,19 +105,10 @@ func newCollector(txSats int64, txSize uint64, feeCalculator *feeCalc) (*utxoCol
 }
 
 func (c *utxoCollector) Allocate(utxos iter.Seq2[*models.UserUTXO, error]) error {
-	for utxo, err := range utxos {
-		if err != nil {
-			return fmt.Errorf("failed to allocate utxo: %w", err)
-		}
-
-		err = c.allocateUTXO(utxo)
-		if err != nil {
-			return fmt.Errorf("failed to allocate utxo: %w", err)
-		}
-
-		if c.IsFunded() {
-			break
-		}
+	utxos = seqerr.TakeUntilTrue(utxos, c.IsFunded)
+	err := seqerr.ForEach(utxos, c.allocateUTXO)
+	if err != nil {
+		return fmt.Errorf("failed to allocate utxo: %w", err)
 	}
 	return nil
 }
