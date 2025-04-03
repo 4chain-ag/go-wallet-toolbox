@@ -3,11 +3,11 @@ package repo
 import (
 	"fmt"
 
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/utils/to"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/scopes"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/paging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/go-softwarelab/common/pkg/to"
 	"gorm.io/gorm"
 )
 

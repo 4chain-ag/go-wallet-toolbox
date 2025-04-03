@@ -16,7 +16,7 @@ type UTXO struct {
 }
 
 type FundingResult struct {
-	AllocatedUTXOs []UTXO
+	AllocatedUTXOs []*UTXO
 	ChangeCount    int
 	ChangeAmount   uint64
 	Fee            uint64

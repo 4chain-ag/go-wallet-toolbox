@@ -1,8 +1,8 @@
 package fixtures
 
 import (
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/utils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/go-softwarelab/common/pkg/to"
 )
 
 func DefaultValidCreateActionArgs() wdk.ValidCreateActionArgs {
@@ -14,7 +14,7 @@ func DefaultValidCreateActionArgs() wdk.ValidCreateActionArgs {
 				LockingScript:      "76a914dbc0a7c84983c5bf199b7b2d41b3acf0408ee5aa88ac",
 				Satoshis:           42000,
 				OutputDescription:  "outputBRC29",
-				CustomInstructions: utils.Ptr(`{"derivationPrefix":"bPRI9FYwsIo=","derivationSuffix":"FdjLdpnLnJM=","type":"BRC29"}`),
+				CustomInstructions: to.Ptr(`{"derivationPrefix":"bPRI9FYwsIo=","derivationSuffix":"FdjLdpnLnJM=","type":"BRC29"}`),
 			},
 		},
 		LockTime: 0,
@@ -22,7 +22,7 @@ func DefaultValidCreateActionArgs() wdk.ValidCreateActionArgs {
 		Labels:   []wdk.IdentifierStringUnder300{"outputbrc29"},
 		Options: wdk.ValidCreateActionOptions{
 			ValidProcessActionOptions: wdk.ValidProcessActionOptions{
-				AcceptDelayedBroadcast: utils.Ptr[wdk.BooleanDefaultTrue](false),
+				AcceptDelayedBroadcast: to.Ptr[wdk.BooleanDefaultTrue](false),
 				SendWith:               []wdk.TXIDHexString{},
 			},
 			SignAndProcess:   true,

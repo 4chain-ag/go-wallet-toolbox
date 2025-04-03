@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/utils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/validate"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/go-softwarelab/common/pkg/to"
 	"github.com/stretchr/testify/require"
 )
 
@@ -56,14 +56,14 @@ func TestWrongCreateActionArgs(t *testing.T) {
 		"IsDelayed is set even though options.AcceptDelayedBroadcast is false": {
 			modifier: func(args wdk.ValidCreateActionArgs) wdk.ValidCreateActionArgs {
 				args.IsDelayed = true
-				args.Options.AcceptDelayedBroadcast = utils.Ptr[wdk.BooleanDefaultTrue](false)
+				args.Options.AcceptDelayedBroadcast = to.Ptr[wdk.BooleanDefaultTrue](false)
 				return args
 			},
 		},
 		"IsNoSend is set even though options.NoSend is false": {
 			modifier: func(args wdk.ValidCreateActionArgs) wdk.ValidCreateActionArgs {
 				args.IsNoSend = true
-				args.Options.NoSend = utils.Ptr[wdk.BooleanDefaultFalse](false)
+				args.Options.NoSend = to.Ptr[wdk.BooleanDefaultFalse](false)
 				return args
 			},
 		},
@@ -117,13 +117,13 @@ func TestWrongCreateActionArgs(t *testing.T) {
 		},
 		"Output's basket too long": {
 			modifier: func(args wdk.ValidCreateActionArgs) wdk.ValidCreateActionArgs {
-				args.Outputs[0].Basket = utils.Ptr(wdk.IdentifierStringUnder300(bytes.Repeat([]byte{'a'}, 301)))
+				args.Outputs[0].Basket = to.Ptr(wdk.IdentifierStringUnder300(bytes.Repeat([]byte{'a'}, 301)))
 				return args
 			},
 		},
 		"Output's basket empty": {
 			modifier: func(args wdk.ValidCreateActionArgs) wdk.ValidCreateActionArgs {
-				args.Outputs[0].Basket = utils.Ptr(wdk.IdentifierStringUnder300(""))
+				args.Outputs[0].Basket = to.Ptr(wdk.IdentifierStringUnder300(""))
 				return args
 			},
 		},
@@ -148,7 +148,7 @@ func TestWrongCreateActionArgs(t *testing.T) {
 		"Input's unlockingScript not in hex format": {
 			modifier: func(args wdk.ValidCreateActionArgs) wdk.ValidCreateActionArgs {
 				args.Inputs = []wdk.ValidCreateActionInput{{
-					UnlockingScript: utils.Ptr(wdk.HexString("not-hex")),
+					UnlockingScript: to.Ptr(wdk.HexString("not-hex")),
 				}}
 				return args
 			},
@@ -156,8 +156,8 @@ func TestWrongCreateActionArgs(t *testing.T) {
 		"Input's unlockingScript length doesn't match unlockingScriptLength": {
 			modifier: func(args wdk.ValidCreateActionArgs) wdk.ValidCreateActionArgs {
 				args.Inputs = []wdk.ValidCreateActionInput{{
-					UnlockingScript:       utils.Ptr(wdk.HexString("00")),
-					UnlockingScriptLength: utils.Ptr(wdk.PositiveInteger(2)),
+					UnlockingScript:       to.Ptr(wdk.HexString("00")),
+					UnlockingScriptLength: to.Ptr(wdk.PositiveInteger(2)),
 				}}
 				return args
 			},
@@ -165,7 +165,7 @@ func TestWrongCreateActionArgs(t *testing.T) {
 		"Input's description too short": {
 			modifier: func(args wdk.ValidCreateActionArgs) wdk.ValidCreateActionArgs {
 				args.Inputs = []wdk.ValidCreateActionInput{{
-					UnlockingScript:  utils.Ptr(wdk.HexString("00")),
+					UnlockingScript:  to.Ptr(wdk.HexString("00")),
 					InputDescription: "sh",
 				}}
 				return args
@@ -174,7 +174,7 @@ func TestWrongCreateActionArgs(t *testing.T) {
 		"Input's description too long": {
 			modifier: func(args wdk.ValidCreateActionArgs) wdk.ValidCreateActionArgs {
 				args.Inputs = []wdk.ValidCreateActionInput{{
-					UnlockingScript:  utils.Ptr(wdk.HexString("00")),
+					UnlockingScript:  to.Ptr(wdk.HexString("00")),
 					InputDescription: wdk.String5to2000Bytes(bytes.Repeat([]byte{'a'}, 2001)),
 				}}
 				return args
@@ -185,7 +185,7 @@ func TestWrongCreateActionArgs(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			// when:
 			defaultArgs := fixtures.DefaultValidCreateActionArgs()
-			err := validate.ValidCreateActionArgs(utils.Ptr(test.modifier(defaultArgs)))
+			err := validate.ValidCreateActionArgs(to.Ptr(test.modifier(defaultArgs)))
 
 			// then:
 			require.Error(t, err)
