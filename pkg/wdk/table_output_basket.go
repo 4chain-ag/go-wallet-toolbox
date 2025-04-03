@@ -24,7 +24,7 @@ type TableOutputBasket struct {
 // DefaultBasketConfiguration returns a default basket configuration
 func DefaultBasketConfiguration() BasketConfiguration {
 	return BasketConfiguration{
-		Name:                    "default",
+		Name:                    BasketNameForChange,
 		NumberOfDesiredUTXOs:    32,
 		MinimumDesiredUTXOValue: 1000,
 	}

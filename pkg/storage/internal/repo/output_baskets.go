@@ -28,12 +28,15 @@ func (u *OutputBaskets) FindByName(userID int, name string) (*wdk.TableOutputBas
 	}
 
 	return &wdk.TableOutputBasket{
-		BasketID:                outputBasket.BasketID,
-		UserID:                  outputBasket.UserID,
-		MinimumDesiredUTXOValue: outputBasket.MinimumDesiredUTXOValue,
-		NumberOfDesiredUTXOs:    outputBasket.NumberOfDesiredUTXOs,
-		Name:                    outputBasket.Name,
-		CreatedAt:               outputBasket.CreatedAt,
-		UpdatedAt:               outputBasket.UpdatedAt,
+		BasketID:  outputBasket.BasketID,
+		UserID:    outputBasket.UserID,
+		CreatedAt: outputBasket.CreatedAt,
+		UpdatedAt: outputBasket.UpdatedAt,
+
+		BasketConfiguration: wdk.BasketConfiguration{
+			Name:                    outputBasket.Name,
+			NumberOfDesiredUTXOs:    outputBasket.NumberOfDesiredUTXOs,
+			MinimumDesiredUTXOValue: outputBasket.MinimumDesiredUTXOValue,
+		},
 	}, nil
 }
