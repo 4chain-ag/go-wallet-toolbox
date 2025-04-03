@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
@@ -16,18 +17,23 @@ func NewOutputBaskets(db *gorm.DB) *OutputBaskets {
 	return &OutputBaskets{db: db}
 }
 
-func (u *OutputBaskets) Create(outputBasket *wdk.TableOutputBasket) error {
-	outputBasketModel := &models.OutputBasket{
+func (u *OutputBaskets) FindByName(userID int, name string) (*wdk.TableOutputBasket, error) {
+	outputBasket := &models.OutputBasket{}
+	err := u.db.First(&outputBasket, "user_id = ? AND name = ?", userID, name).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find output basket: %w", err)
+	}
+
+	return &wdk.TableOutputBasket{
 		BasketID:                outputBasket.BasketID,
 		UserID:                  outputBasket.UserID,
 		MinimumDesiredUTXOValue: outputBasket.MinimumDesiredUTXOValue,
 		NumberOfDesiredUTXOs:    outputBasket.NumberOfDesiredUTXOs,
 		Name:                    outputBasket.Name,
-	}
-
-	err := u.db.Create(outputBasketModel).Error
-	if err != nil {
-		return fmt.Errorf("failed to create output basket model: %w", err)
-	}
-	return nil
+		CreatedAt:               outputBasket.CreatedAt,
+		UpdatedAt:               outputBasket.UpdatedAt,
+	}, nil
 }
