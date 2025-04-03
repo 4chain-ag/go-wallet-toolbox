@@ -47,7 +47,7 @@ func ValidateInsertCertificateAuthArgs(args *wdk.TableCertificateX) error {
 	for _, f := range args.Fields {
 		err = f.MasterKey.Validate()
 		if err != nil {
-			return fmt.Errorf("invalid %s field maskerKey argument: %w", f.FieldName, err)
+			return fmt.Errorf("invalid %s field masterKey argument: %w", f.FieldName, err)
 		}
 	}
 
