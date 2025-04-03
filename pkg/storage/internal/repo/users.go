@@ -3,9 +3,11 @@ package repo
 import (
 	"errors"
 	"fmt"
+	"iter"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/go-softwarelab/common/pkg/seq"
 	"gorm.io/gorm"
 )
 
@@ -38,8 +40,19 @@ func (u *Users) FindUser(identityKey string) (*wdk.TableUser, error) {
 	}, nil
 }
 
-func (u *Users) CreateUser(user *models.User) (*wdk.TableUser, error) {
-	err := u.db.Create(user).Error
+func (u *Users) CreateUser(identityKey, activeStorage string, baskets iter.Seq[wdk.BasketConfiguration]) (*wdk.TableUser, error) {
+	user := models.User{
+		IdentityKey:   identityKey,
+		ActiveStorage: activeStorage,
+		OutputBaskets: seq.Collect(seq.Map(baskets, func(basket wdk.BasketConfiguration) *models.OutputBasket {
+			return &models.OutputBasket{
+				Name:                    basket.Name,
+				NumberOfDesiredUTXOs:    basket.NumberOfDesiredUTXOs,
+				MinimumDesiredUTXOValue: basket.MinimumDesiredUTXOValue,
+			}
+		})),
+	}
+	err := u.db.Create(&user).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
