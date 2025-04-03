@@ -8,7 +8,7 @@ import (
 type BasketConfiguration struct {
 	Name                    string `json:"name"`
 	NumberOfDesiredUTXOs    int    `json:"numberOfDesiredUTXOs"`
-	MinimumDesiredUTXOValue int    `json:"minimumDesiredUTXOValue"`
+	MinimumDesiredUTXOValue uint64 `json:"minimumDesiredUTXOValue"`
 }
 
 // TableOutputBasket is a struct that holds the output baskets details

@@ -68,7 +68,7 @@ func (c *create) Create(auth wdk.AuthID, args CreateActionParams) (*wdk.StorageC
 		return nil, fmt.Errorf("basket for change (%s) not found", wdk.BasketNameForChange)
 	}
 
-	_, err = c.funder.Fund(context.Background(), 0, 0, 0, 0, *auth.UserID)
+	_, err = c.funder.Fund(context.Background(), 0, 0, basket.NumberOfDesiredUTXOs, basket.MinimumDesiredUTXOValue, *auth.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("funding failed: %w", err)
 	}
