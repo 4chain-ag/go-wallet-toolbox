@@ -23,7 +23,7 @@ type Repository interface {
 	SaveSettings(settings *wdk.TableSettings) error
 
 	FindUser(identityKey string) (*wdk.TableUser, error)
-	CreateUser(user *models.User) (*wdk.TableUser, error)
+	CreateUser(identityKey, activeStorage string, baskets ...wdk.BasketConfiguration) (*wdk.TableUser, error)
 
 	CreateCertificate(certificate *models.Certificate) (uint, error)
 	DeleteCertificate(userID int, args wdk.RelinquishCertificateArgs) error
@@ -223,23 +223,16 @@ func (p *Provider) FindOrInsertUser(identityKey string) (*wdk.FindOrInsertUserRe
 		}, nil
 	}
 
-	newUser := &models.User{
-		OutputBaskets: []*models.OutputBasket{{
-			Name:                    wdk.BasketNameForChange,
-			NumberOfDesiredUTXOs:    32,
-			MinimumDesiredUTXOValue: 1000,
-		}},
-	}
-	newUser.IdentityKey = identityKey
-
 	settings, err := p.repo.ReadSettings()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read settings: %w", err)
 	}
 
-	newUser.ActiveStorage = settings.StorageIdentityKey
-
-	user, err = p.repo.CreateUser(newUser)
+	user, err = p.repo.CreateUser(
+		identityKey,
+		settings.StorageIdentityKey,
+		wdk.DefaultBasketConfiguration(),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert user: %w", err)
 	}
