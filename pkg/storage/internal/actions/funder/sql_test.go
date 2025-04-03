@@ -104,9 +104,25 @@ func TestFunderSQLFundSuccessResult(t *testing.T) {
 			HasFee(1)
 	})
 
-	t.Run("test when target sat are < 0, but after adding the fee it will be more than 0", func(t *testing.T) {
-		// TODO
-		t.Skip("not implemented")
+	t.Run("user has funded by himself the transaction and part of the fee", func(t *testing.T) {
+		// given:
+		given, then, cleanup := testabilities.New(t)
+		defer cleanup()
+
+		// and:
+		funder := given.NewFunderService()
+
+		// and:
+		given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(1).P2PKH().Stored()
+
+		// when:
+		result, err := funder.Fund(ctx, -1, 1500, desiredUTXONumberToPreferSingleChange, testDesiredUTXOValue, testusers.Alice.ID)
+
+		// then:
+		then.Result(result).WithoutError(err).
+			HasAllocatedUTXOs().RowIndexes(0).
+			HasNoChange().
+			HasFee(2)
 	})
 
 	t.Run("test that assigning the change will increase fee and decrease change", func(t *testing.T) {
