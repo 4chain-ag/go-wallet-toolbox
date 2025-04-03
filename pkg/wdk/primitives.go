@@ -3,9 +3,10 @@ package wdk
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/go-softwarelab/common/pkg/to"
 	"regexp"
 	"strings"
+
+	"github.com/go-softwarelab/common/pkg/to"
 )
 
 // String5to2000Bytes represents a string used for descriptions,
