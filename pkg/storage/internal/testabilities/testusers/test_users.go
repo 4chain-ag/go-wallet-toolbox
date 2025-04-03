@@ -2,6 +2,8 @@ package testusers
 
 import "github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 
+// NOTE: Testabilities can modify user IDs, to match ID with database
+
 type User struct {
 	// Name of the user just for in tests logging purpose
 	Name    string
@@ -25,4 +27,8 @@ func (u User) AuthID() wdk.AuthID {
 	return wdk.AuthID{
 		UserID: &u.ID,
 	}
+}
+
+func All() []*User {
+	return []*User{&Alice, &Bob}
 }

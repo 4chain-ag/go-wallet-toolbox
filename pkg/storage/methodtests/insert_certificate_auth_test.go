@@ -154,7 +154,7 @@ func TestInsertCertificateAuth(t *testing.T) {
 
 		// then:
 		require.NoError(t, err)
-		require.Equal(t, expectedResult, certs)
+		require.EqualValues(t, expectedResult, certs)
 	})
 
 	t.Run("should delete a certificate for Bob", func(t *testing.T) {
