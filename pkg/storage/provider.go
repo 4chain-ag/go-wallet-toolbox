@@ -130,7 +130,7 @@ func (p *Provider) InsertCertificateAuth(auth wdk.AuthID, certificate *wdk.Table
 		return 0, fmt.Errorf("access is denied due to an authorization error")
 	}
 
-	err := validate.ValidateInsertCertificateAuthArgs(certificate)
+	err := validate.TableCertificateX(certificate)
 	if err != nil {
 		return 0, fmt.Errorf("invalid insertCertificateAuth args: %w", err)
 	}
@@ -165,7 +165,7 @@ func (p *Provider) RelinquishCertificate(auth wdk.AuthID, args wdk.RelinquishCer
 		return fmt.Errorf("access is denied due to an authorization error")
 	}
 
-	err := validate.ValidateRelinquishCertificateArgs(&args)
+	err := validate.RelinquishCertificateArgs(&args)
 	if err != nil {
 		return fmt.Errorf("invalid relinquishCertificate args: %w", err)
 	}
@@ -184,7 +184,7 @@ func (p *Provider) ListCertificates(auth wdk.AuthID, args wdk.ListCertificatesAr
 		return nil, fmt.Errorf("access is denied due to an authorization error")
 	}
 
-	err := validate.ValidateListCertificatesArgs(&args)
+	err := validate.ListCertificatesArgs(&args)
 	if err != nil {
 		return nil, fmt.Errorf("invalid listCertificates args: %w", err)
 	}

@@ -6,7 +6,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 )
 
-func ValidateRelinquishCertificateArgs(args *wdk.RelinquishCertificateArgs) error {
+func RelinquishCertificateArgs(args *wdk.RelinquishCertificateArgs) error {
 	err := args.Type.Validate()
 	if err != nil {
 		return fmt.Errorf("invalid type argument: %w", err)

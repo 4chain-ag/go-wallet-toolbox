@@ -14,7 +14,7 @@ func TestForDefaultValidRelinquishCertificateArgs(t *testing.T) {
 	args := fixtures.DefaultValidRelinquishCertificateArgs()
 
 	// when:
-	err := validate.ValidateRelinquishCertificateArgs(args)
+	err := validate.RelinquishCertificateArgs(args)
 
 	// then:
 	require.NoError(t, err)
@@ -83,7 +83,7 @@ func TestWrongRelinquishCertificateArgs(t *testing.T) {
 			modifiedArgs := test.modifier(defaultArgs)
 
 			// when:
-			err := validate.ValidateRelinquishCertificateArgs(modifiedArgs)
+			err := validate.RelinquishCertificateArgs(modifiedArgs)
 
 			// then:
 			require.Error(t, err)

@@ -3,8 +3,8 @@ package wdk
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/go-softwarelab/common/pkg/to"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -26,7 +26,7 @@ func (d String5to2000Bytes) Validate() error {
 // Base64String is a string in base64 format
 type Base64String string
 
-// Validate checks if the string is valid a base64 string
+// Validate will check if string is proper based64 encoded string
 func (s Base64String) Validate() error {
 	// Step 1: Check if the string's length is divisible by 4 (Base64 requirement)
 	if len(s)%4 != 0 {
@@ -34,8 +34,7 @@ func (s Base64String) Validate() error {
 	}
 
 	// Step 2: Validate padding
-	paddingCount := strings.Count(string(s), "=")
-	if paddingCount > 2 || (paddingCount > 0 && !strings.HasSuffix(string(s), strings.Repeat("=", paddingCount))) {
+	if strings.HasSuffix(string(s), "===") {
 		return fmt.Errorf("invalid base64 padding")
 	}
 
@@ -94,6 +93,11 @@ type PubKeyHex HexString
 
 // Validate checks if the string is valid pubkey hexadecimal string
 func (pkh PubKeyHex) Validate() error {
+	// check if pubkey is either compressed or uncompressed length
+	if len(pkh) != PubKeyBytesLenCompressed || len(pkh) != PubKeyBytesLenUncompressed {
+		return fmt.Errorf("invalid pubKey hex length: %d", len(pkh))
+	}
+
 	// Validate as HexString
 	hs := HexString(pkh)
 	if err := hs.Validate(); err != nil {
@@ -201,7 +205,7 @@ func (s OutpointString) Validate() error {
 	}
 
 	// check if after decimal point there is an outpoint index
-	_, err := strconv.Atoi(split[1])
+	_, err := to.UInt64FromString(split[1])
 	if err != nil {
 		return fmt.Errorf("txid as hexstring and numeric output index joined with '.'")
 	}

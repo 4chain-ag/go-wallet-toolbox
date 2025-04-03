@@ -14,7 +14,7 @@ func TestForDefaultValidListCertificatesArgs(t *testing.T) {
 	args := fixtures.DefaultValidListCertificatesArgs()
 
 	// when:
-	err := validate.ValidateListCertificatesArgs(args)
+	err := validate.ListCertificatesArgs(args)
 
 	// then:
 	require.NoError(t, err)
@@ -113,7 +113,7 @@ func TestWrongListCertificatesArgs(t *testing.T) {
 			modifiedArgs := test.modifier(defaultArgs)
 
 			// when:
-			err := validate.ValidateListCertificatesArgs(modifiedArgs)
+			err := validate.ListCertificatesArgs(modifiedArgs)
 
 			// then:
 			require.Error(t, err)

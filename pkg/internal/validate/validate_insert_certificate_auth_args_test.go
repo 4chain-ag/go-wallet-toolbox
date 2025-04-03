@@ -15,7 +15,7 @@ func TestForDefaultValidInsertCertificateAuthArgs(t *testing.T) {
 	args := fixtures.DefaultInsertCertAuth(1)
 
 	// when:
-	err := validate.ValidateInsertCertificateAuthArgs(args)
+	err := validate.TableCertificateX(args)
 
 	// then:
 	require.NoError(t, err)
@@ -102,7 +102,7 @@ func TestWrongInsertCertificateAuthArgs(t *testing.T) {
 			modifiedArgs := test.modifier(defaultArgs)
 
 			// when:
-			err := validate.ValidateInsertCertificateAuthArgs(modifiedArgs)
+			err := validate.TableCertificateX(modifiedArgs)
 
 			// then:
 			require.Error(t, err)

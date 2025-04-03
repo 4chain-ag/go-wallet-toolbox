@@ -5,22 +5,22 @@ import (
 )
 
 const (
-	// Base64-encoded string (original: "exampleType")
+	// TypeField is base64-encoded string (original: "exampleType")
 	TypeField = "ZXhhbXBsZVR5cGU="
 
-	// Base64-encoded string (original: "serial123")
+	// SerialNumber is base64-encoded string (original: "serial123")
 	SerialNumber = "c2VyaWFsMTIz"
 
-	// PubKeyHex (33-byte compressed public key)
+	// Certifier is pubKeyHex (33-byte compressed public key)
 	Certifier = "02c123eabcdeff1234567890abcdef1234567890abcdef1234567890abcdef1234"
 
-	// PubKeyHex (33-byte compressed public key)
+	// SubjectPubKey is pubKeyHex (33-byte compressed public key)
 	SubjectPubKey = "02c123eabcdeff1234567890abcdef1234567890abcdef1234567890abcdef5678"
 
-	// OutpointString (format: txid:vout)
+	// RevocationOutpoint is outpointString (format: txid:vout)
 	RevocationOutpoint = "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890.0"
 
-	// HexString (64-byte signature)
+	// Signature is hexString (64-byte signature)
 	Signature = "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
 )
 

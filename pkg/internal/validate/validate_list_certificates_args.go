@@ -6,7 +6,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 )
 
-func ValidateListCertificatesArgs(args *wdk.ListCertificatesArgs) error {
+func ListCertificatesArgs(args *wdk.ListCertificatesArgs) error {
 	for _, c := range args.Certifiers {
 		err := c.Validate()
 		if err != nil {

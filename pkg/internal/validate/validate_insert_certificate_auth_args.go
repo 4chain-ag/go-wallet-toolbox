@@ -6,7 +6,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 )
 
-func ValidateInsertCertificateAuthArgs(args *wdk.TableCertificateX) error {
+func TableCertificateX(args *wdk.TableCertificateX) error {
 	err := args.Type.Validate()
 	if err != nil {
 		return fmt.Errorf("invalid type argument: %w", err)
