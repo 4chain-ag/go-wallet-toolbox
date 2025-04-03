@@ -2,7 +2,6 @@ package storage
 
 import (
 	"fmt"
-	"iter"
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
@@ -12,7 +11,6 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/repo"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
-	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/go-softwarelab/common/pkg/slices"
 	"github.com/go-softwarelab/common/pkg/to"
 )
@@ -25,7 +23,7 @@ type Repository interface {
 	SaveSettings(settings *wdk.TableSettings) error
 
 	FindUser(identityKey string) (*wdk.TableUser, error)
-	CreateUser(identityKey, activeStorage string, baskets iter.Seq[wdk.BasketConfiguration]) (*wdk.TableUser, error)
+	CreateUser(identityKey, activeStorage string, baskets ...wdk.BasketConfiguration) (*wdk.TableUser, error)
 
 	CreateCertificate(certificate *models.Certificate) (uint, error)
 	DeleteCertificate(userID int, args wdk.RelinquishCertificateArgs) error
@@ -222,7 +220,7 @@ func (p *Provider) FindOrInsertUser(identityKey string) (*wdk.FindOrInsertUserRe
 	user, err = p.repo.CreateUser(
 		identityKey,
 		settings.StorageIdentityKey,
-		seq.Of(wdk.DefaultBasketConfiguration()),
+		wdk.DefaultBasketConfiguration(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert user: %w", err)

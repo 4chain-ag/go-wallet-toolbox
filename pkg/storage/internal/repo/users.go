@@ -3,7 +3,6 @@ package repo
 import (
 	"errors"
 	"fmt"
-	"iter"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
@@ -40,11 +39,11 @@ func (u *Users) FindUser(identityKey string) (*wdk.TableUser, error) {
 	}, nil
 }
 
-func (u *Users) CreateUser(identityKey, activeStorage string, baskets iter.Seq[wdk.BasketConfiguration]) (*wdk.TableUser, error) {
+func (u *Users) CreateUser(identityKey, activeStorage string, baskets ...wdk.BasketConfiguration) (*wdk.TableUser, error) {
 	user := models.User{
 		IdentityKey:   identityKey,
 		ActiveStorage: activeStorage,
-		OutputBaskets: seq.Collect(seq.Map(baskets, func(basket wdk.BasketConfiguration) *models.OutputBasket {
+		OutputBaskets: seq.Collect(seq.Map(seq.Of(baskets...), func(basket wdk.BasketConfiguration) *models.OutputBasket {
 			return &models.OutputBasket{
 				Name:                    basket.Name,
 				NumberOfDesiredUTXOs:    basket.NumberOfDesiredUTXOs,
