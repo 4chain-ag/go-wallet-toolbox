@@ -1,5 +1,10 @@
 package wdk
 
+import (
+	"fmt"
+	"github.com/go-softwarelab/common/pkg/to"
+)
+
 // ValidCreateActionInput represents the input for a transaction action
 type ValidCreateActionInput struct {
 	Outpoint              OutPoint              `json:"outpoint,omitempty"`
@@ -7,6 +12,20 @@ type ValidCreateActionInput struct {
 	SequenceNumber        PositiveIntegerOrZero `json:"sequenceNumber,omitempty"`
 	UnlockingScript       *HexString            `json:"unlockingScript,omitempty"`
 	UnlockingScriptLength *PositiveInteger      `json:"unlockingScriptLength,omitempty"`
+}
+
+func (i *ValidCreateActionInput) ScriptLength() (uint64, error) {
+	if i.UnlockingScript != nil {
+		lengthInBytes, err := to.UInt64(len(*i.UnlockingScript) / 2)
+		if err != nil {
+			return 0, fmt.Errorf("failed to convert unlockingScript length: %w", err)
+		}
+		return lengthInBytes, nil
+	}
+	if i.UnlockingScriptLength != nil {
+		return uint64(*i.UnlockingScriptLength), nil
+	}
+	return 0, fmt.Errorf("unlockingScript and unlockingScriptLength are both nil")
 }
 
 // ValidCreateActionOutput represents the output for a transaction action
@@ -17,6 +36,14 @@ type ValidCreateActionOutput struct {
 	Basket             *IdentifierStringUnder300  `json:"basket,omitempty"`
 	CustomInstructions *string                    `json:"customInstructions,omitempty"`
 	Tags               []IdentifierStringUnder300 `json:"tags,omitempty"`
+}
+
+func (o *ValidCreateActionOutput) ScriptLength() (uint64, error) {
+	lengthInBytes, err := to.UInt64(len(o.LockingScript) / 2)
+	if err != nil {
+		return 0, fmt.Errorf("failed to convert lockingScript length: %w", err)
+	}
+	return lengthInBytes, nil
 }
 
 // ValidProcessActionOptions represents options for processing an action

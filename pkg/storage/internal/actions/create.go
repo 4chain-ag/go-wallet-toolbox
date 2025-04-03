@@ -3,6 +3,9 @@ package actions
 import (
 	"context"
 	"fmt"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/txutils"
+	"github.com/go-softwarelab/common/pkg/seq"
+	"github.com/go-softwarelab/common/pkg/seqerr"
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
@@ -23,11 +26,15 @@ type FundingResult struct {
 }
 
 type CreateActionParams struct {
+	Outputs []wdk.ValidCreateActionOutput
+	Inputs  []wdk.ValidCreateActionInput
 }
 
 func FromValidCreateActionArgs(args *wdk.ValidCreateActionArgs) CreateActionParams {
 	// TODO: use only the necessary fields (no redundant fields)
-	return CreateActionParams{}
+	return CreateActionParams{
+		Outputs: args.Outputs,
+	}
 }
 
 type Funder interface {
@@ -37,7 +44,7 @@ type Funder interface {
 	// @param numberOfDesiredUTXOs - the number of UTXOs in basket #TakeFromBasket
 	// @param minimumDesiredUTXOValue - the minimum value of UTXO in basket #TakeFromBasket
 	// @param userID - the user ID
-	Fund(ctx context.Context, targetSat int64, currentTxSize int64, numberOfDesiredUTXOs int, minimumDesiredUTXOValue uint64, userID int) (*FundingResult, error)
+	Fund(ctx context.Context, targetSat int64, currentTxSize uint64, numberOfDesiredUTXOs int, minimumDesiredUTXOValue uint64, userID int) (*FundingResult, error)
 }
 
 type BasketRepo interface {
@@ -68,10 +75,32 @@ func (c *create) Create(auth wdk.AuthID, args CreateActionParams) (*wdk.StorageC
 		return nil, fmt.Errorf("basket for change (%s) not found", wdk.BasketNameForChange)
 	}
 
-	_, err = c.funder.Fund(context.Background(), 0, 0, basket.NumberOfDesiredUTXOs, basket.MinimumDesiredUTXOValue, *auth.UserID)
+	initialTxSize, err := c.txSize(&args)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = c.funder.Fund(context.Background(), 0, initialTxSize, basket.NumberOfDesiredUTXOs, basket.MinimumDesiredUTXOValue, *auth.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("funding failed: %w", err)
 	}
 
 	return &wdk.StorageCreateActionResult{}, nil
+}
+
+func (c *create) txSize(args *CreateActionParams) (uint64, error) {
+	outputSizes := seqerr.MapSeq(seq.FromSlice(args.Outputs), func(o wdk.ValidCreateActionOutput) (uint64, error) {
+		return o.ScriptLength()
+	})
+
+	inputSizes := seqerr.MapSeq(seq.FromSlice(args.Inputs), func(o wdk.ValidCreateActionInput) (uint64, error) {
+		return o.ScriptLength()
+	})
+
+	txSize, err := txutils.TransactionSize(inputSizes, outputSizes)
+	if err != nil {
+		return 0, fmt.Errorf("failed to calculate transaction size: %w", err)
+	}
+
+	return txSize, nil
 }
