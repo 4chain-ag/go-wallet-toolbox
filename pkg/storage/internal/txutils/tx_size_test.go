@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/go-softwarelab/common/pkg/seq"
+	"github.com/go-softwarelab/common/pkg/seq2"
 	"github.com/go-softwarelab/common/pkg/seqerr"
 	"github.com/stretchr/testify/require"
 )
@@ -91,11 +92,12 @@ func TestTransactionSize(t *testing.T) {
 
 func TestTransactionSizeWithErrorOnInputs(t *testing.T) {
 	// given:
-	inputSizes := seq.Of[uint64](100, 200)
+	inputSizes := seqerr.Of[uint64](100, 200)
+	inputSizes = seq2.Append(inputSizes, 0, fmt.Errorf("error"))
 	outputsSizes := seq.Of[uint64](300, 400)
 
 	// when:
-	_, err := TransactionSize(withErrAtEnd(inputSizes), seqerr.FromSeq(outputsSizes))
+	_, err := TransactionSize(inputSizes, seqerr.FromSeq(outputsSizes))
 
 	// then:
 	require.Error(t, err)
@@ -104,20 +106,12 @@ func TestTransactionSizeWithErrorOnInputs(t *testing.T) {
 func TestTransactionSizeWithErrorOnOutputs(t *testing.T) {
 	// given:
 	inputSizes := seq.Of[uint64](100, 200)
-	outputsSizes := seq.Of[uint64](300, 400)
+	outputsSizes := seqerr.Of[uint64](300, 400)
+	outputsSizes = seq2.Append(outputsSizes, 0, fmt.Errorf("error"))
 
 	// when:
-	_, err := TransactionSize(seqerr.FromSeq(inputSizes), withErrAtEnd(outputsSizes))
+	_, err := TransactionSize(seqerr.FromSeq(inputSizes), outputsSizes)
 
 	// then:
 	require.Error(t, err)
-}
-
-func withErrAtEnd(s iter.Seq[uint64]) iter.Seq2[uint64, error] {
-	return func(yield func(uint64, error) bool) {
-		for v := range s {
-			yield(v, nil)
-		}
-		yield(0, fmt.Errorf("error"))
-	}
 }
