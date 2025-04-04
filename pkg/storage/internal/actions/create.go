@@ -3,6 +3,7 @@ package actions
 import (
 	"context"
 	"fmt"
+	"iter"
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
@@ -26,14 +27,15 @@ type FundingResult struct {
 }
 
 type CreateActionParams struct {
-	Outputs []wdk.ValidCreateActionOutput
-	Inputs  []wdk.ValidCreateActionInput
+	Outputs iter.Seq[*wdk.ValidCreateActionOutput]
+	Inputs  iter.Seq[*wdk.ValidCreateActionInput]
 }
 
 func FromValidCreateActionArgs(args *wdk.ValidCreateActionArgs) CreateActionParams {
 	// TODO: use only the necessary fields (no redundant fields)
 	return CreateActionParams{
-		Outputs: args.Outputs,
+		Outputs: seq.PointersFromSlice(args.Outputs),
+		Inputs:  seq.PointersFromSlice(args.Inputs),
 	}
 }
 
@@ -89,11 +91,11 @@ func (c *create) Create(auth wdk.AuthID, args CreateActionParams) (*wdk.StorageC
 }
 
 func (c *create) txSize(args *CreateActionParams) (uint64, error) {
-	outputSizes := seqerr.MapSeq(seq.FromSlice(args.Outputs), func(o wdk.ValidCreateActionOutput) (uint64, error) {
+	outputSizes := seqerr.MapSeq(args.Outputs, func(o *wdk.ValidCreateActionOutput) (uint64, error) {
 		return o.ScriptLength()
 	})
 
-	inputSizes := seqerr.MapSeq(seq.FromSlice(args.Inputs), func(o wdk.ValidCreateActionInput) (uint64, error) {
+	inputSizes := seqerr.MapSeq(args.Inputs, func(o *wdk.ValidCreateActionInput) (uint64, error) {
 		return o.ScriptLength()
 	})
 

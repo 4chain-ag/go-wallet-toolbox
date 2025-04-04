@@ -38,8 +38,8 @@ func TransactionOutputSize(scriptSize uint64) uint64 {
 }
 
 // TransactionSize calculates the total size of a transaction in bytes
-// inputs is a slice of script sizes for each input
-// outputs is a slice of script sizes for each output
+// inputs is a sequence of input script sizes (and possibly error)
+// outputs is a sequence of output script sizes (and possibly error)
 func TransactionSize(inputSizes iter.Seq2[uint64, error], outputSizes iter.Seq2[uint64, error]) (uint64, error) {
 	var inputsCount uint64
 	var inputsSize uint64
