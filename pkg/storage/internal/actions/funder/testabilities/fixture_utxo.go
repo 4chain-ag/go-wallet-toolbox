@@ -7,6 +7,7 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/txutils"
 )
 
 var FirstCreatedAt = time.Date(2006, 02, 01, 15, 4, 5, 7, time.UTC)
@@ -42,7 +43,7 @@ func newUtxoFixture(t testing.TB, parent UTXODatabase, index uint) *userUtxoFixt
 		txID:               txIDTemplated(index),
 		vout:               uint32(index),
 		satoshis:           1,
-		estimatedInputSize: models.EstimatedInputSizeForP2PKH,
+		estimatedInputSize: txutils.P2PKHEstimatedInputSize,
 	}
 }
 
@@ -56,7 +57,7 @@ func (f *userUtxoFixture) OwnedBy(user testusers.User) UserUTXOFixture {
 }
 
 func (f *userUtxoFixture) P2PKH() UserUTXOFixture {
-	f.estimatedInputSize = models.EstimatedInputSizeForP2PKH
+	f.estimatedInputSize = txutils.P2PKHEstimatedInputSize
 	return f
 }
 
