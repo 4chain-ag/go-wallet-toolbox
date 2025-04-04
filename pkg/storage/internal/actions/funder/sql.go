@@ -45,24 +45,20 @@ func NewSQL(logger *slog.Logger, utxoRepository UTXORepository, feeModel defs.Fe
 // @param numberOfDesiredUTXOs - the number of UTXOs in basket #TakeFromBasket
 // @param minimumDesiredUTXOValue - the minimum value of UTXO in basket #TakeFromBasket
 // @param userID - the user ID.
-func (f *SQL) Fund(ctx context.Context, targetSat int64, currentTxSize int64, numberOfDesiredUTXOs int, minimumDesiredUTXOValue uint64, userID int) (*actions.FundingResult, error) {
-	txSize, err := to.UInt64(currentTxSize)
+func (f *SQL) Fund(ctx context.Context, targetSat int64, currentTxSize uint64, numberOfDesiredUTXOs int, minimumDesiredUTXOValue uint64, userID int) (*actions.FundingResult, error) {
+	collector, err := newCollector(targetSat, currentTxSize, f.feeCalculator)
 	if err != nil {
-		return nil, fmt.Errorf("invalid currentTxSize: %w", err)
-	}
-
-	txSats, err := to.UInt64(targetSat)
-	if err != nil {
-		return nil, fmt.Errorf("invalid targetSat: %w", err)
+		return nil, fmt.Errorf("failed to start collecting utxo: %w", err)
 	}
 
 	utxos := f.loadUTXOs(ctx, userID)
 
-	result, err := f.allocate(txSats, txSize, utxos)
+	err = collector.Allocate(utxos)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fund transaction: %w", err)
+		return nil, fmt.Errorf("failed to allocate utxos: %w", err)
 	}
-	return result, nil
+
+	return collector.GetResult()
 
 }
 
@@ -84,59 +80,36 @@ func (f *SQL) loadUTXOs(ctx context.Context, userID int) iter.Seq2[*models.UserU
 	return seqerr.FlattenSlices(batches)
 }
 
-func (f *SQL) allocate(sats uint64, size uint64, utxos iter.Seq2[*models.UserUTXO, error]) (*actions.FundingResult, error) {
-	collector := newCollector(sats, size, f.feeCalculator)
-	for utxo, err := range utxos {
-		if err != nil {
-			return nil, fmt.Errorf("failed to allocate utxo: %w", err)
-		}
-
-		err = collector.Allocate(utxo)
-		if err != nil {
-			return nil, fmt.Errorf("failed to allocate utxo: %w", err)
-		}
-
-		if collector.IsFunded() {
-			break
-		}
-	}
-
-	return collector.GetResult()
-}
-
 type utxoCollector struct {
-	txSats      uint64
-	txSize      uint64
-	satsCovered uint64
-
-	result        *actions.FundingResult
-	feeCalculator *feeCalc
+	txSats         int64
+	txSize         uint64
+	satsCovered    int64
+	fee            int64
+	feeCalculator  *feeCalc
+	allocatedUTXOs []*actions.UTXO
 }
 
-func newCollector(txSats, txSize uint64, feeCalculator *feeCalc) *utxoCollector {
-	return &utxoCollector{
-		txSats:        txSats,
-		txSize:        txSize,
-		feeCalculator: feeCalculator,
-
-		result: &actions.FundingResult{
-			AllocatedUTXOs: make([]*actions.UTXO, 0),
-			ChangeAmount:   0,
-			ChangeCount:    0,
-			Fee:            0,
-		},
-	}
-}
-
-func (c *utxoCollector) Allocate(utxo *models.UserUTXO) (err error) {
-	c.addToAllocated(utxo)
-
-	err = c.increaseSize(utxo.EstimatedInputSize)
+func newCollector(txSats int64, txSize uint64, feeCalculator *feeCalc) (*utxoCollector, error) {
+	fee, err := feeCalculator.Calculate(txSize)
 	if err != nil {
-		return fmt.Errorf("failed to increase tx size: %w", err)
+		return nil, fmt.Errorf("failed to calculate fee: %w", err)
 	}
 
-	c.increaseValue(utxo.Satoshis)
+	return &utxoCollector{
+		txSats:         txSats,
+		txSize:         txSize,
+		feeCalculator:  feeCalculator,
+		fee:            fee,
+		allocatedUTXOs: make([]*actions.UTXO, 0),
+	}, nil
+}
+
+func (c *utxoCollector) Allocate(utxos iter.Seq2[*models.UserUTXO, error]) error {
+	utxos = seqerr.TakeUntilTrue(utxos, c.IsFunded)
+	err := seqerr.ForEach(utxos, c.allocateUTXO)
+	if err != nil {
+		return fmt.Errorf("failed to allocate utxo: %w", err)
+	}
 	return nil
 }
 
@@ -146,13 +119,29 @@ func (c *utxoCollector) IsFunded() bool {
 
 func (c *utxoCollector) GetResult() (*actions.FundingResult, error) {
 	if c.IsFunded() {
-		return c.result, nil
+		return c.prepareResult()
 	}
 	return nil, errfunder.NotEnoughFunds
 }
 
+func (c *utxoCollector) allocateUTXO(utxo *models.UserUTXO) (err error) {
+	c.addToAllocated(utxo)
+
+	err = c.increaseSize(utxo.EstimatedInputSize)
+	if err != nil {
+		return fmt.Errorf("failed to increase tx size: %w", err)
+	}
+
+	err = c.increaseValue(utxo.Satoshis)
+	if err != nil {
+		return fmt.Errorf("failed to increase tx value: %w", err)
+	}
+
+	return nil
+}
+
 func (c *utxoCollector) addToAllocated(utxo *models.UserUTXO) {
-	c.result.AllocatedUTXOs = append(c.result.AllocatedUTXOs, &actions.UTXO{
+	c.allocatedUTXOs = append(c.allocatedUTXOs, &actions.UTXO{
 		TxID:     utxo.TxID,
 		Vout:     utxo.Vout,
 		Satoshis: utxo.Satoshis,
@@ -161,17 +150,41 @@ func (c *utxoCollector) addToAllocated(utxo *models.UserUTXO) {
 
 func (c *utxoCollector) increaseSize(size uint64) (err error) {
 	c.txSize += size
-	c.result.Fee, err = c.feeCalculator.Calculate(c.txSize)
+	c.fee, err = c.feeCalculator.Calculate(c.txSize)
 	if err != nil {
 		return fmt.Errorf("failed to calculate fee: %w", err)
 	}
 	return nil
 }
 
-func (c *utxoCollector) increaseValue(satoshis uint64) {
+func (c *utxoCollector) increaseValue(sats uint64) error {
+	satoshis, err := to.Int64FromUnsigned(sats)
+	if err != nil {
+		return fmt.Errorf("utxo satoshis value int64: %w", err)
+	}
 	c.satsCovered += satoshis
+	return nil
 }
 
-func (c *utxoCollector) satsToCover() uint64 {
-	return c.txSats + c.result.Fee
+func (c *utxoCollector) satsToCover() int64 {
+	return c.txSats + c.fee
+}
+
+func (c *utxoCollector) prepareResult() (*actions.FundingResult, error) {
+	fee, err := to.UInt64(c.fee)
+	if err != nil {
+		return nil, fmt.Errorf("cannot convert fee to uint64: %w", err)
+	}
+
+	changeAmount, err := to.UInt64(c.satsCovered - c.satsToCover())
+	if err != nil {
+		return nil, fmt.Errorf("cannot convert change amount to uint64: %w", err)
+	}
+
+	return &actions.FundingResult{
+		AllocatedUTXOs: c.allocatedUTXOs,
+		Fee:            fee,
+		ChangeAmount:   changeAmount,
+		ChangeCount:    to.IfThen(changeAmount == 0, 0).ElseThen(1),
+	}, nil
 }

@@ -7,7 +7,7 @@ toolchain go1.24.1
 require (
 	github.com/bsv-blockchain/go-sdk v1.1.22
 	github.com/filecoin-project/go-jsonrpc v0.7.1
-	github.com/go-softwarelab/common v0.8.0
+	github.com/go-softwarelab/common v0.10.0
 	github.com/go-viper/mapstructure/v2 v2.2.1
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/spf13/viper v1.20.1
