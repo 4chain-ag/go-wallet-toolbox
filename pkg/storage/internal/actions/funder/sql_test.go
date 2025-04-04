@@ -125,16 +125,6 @@ func TestFunderSQLFundSuccessResult(t *testing.T) {
 			HasFee(2)
 	})
 
-	t.Run("test that assigning the change will increase fee and decrease change", func(t *testing.T) {
-		// TODO
-		t.Skip("not implemented")
-	})
-
-	t.Run("test that if adding change will increase the fee so that there is no need for change, then return higher fee but no change", func(t *testing.T) {
-		// TODO
-		t.Skip("not implemented")
-	})
-
 	t.Run("user has funded by himself more then the transaction and fee", func(t *testing.T) {
 		// given:
 		given, then, cleanup := testabilities.New(t)
@@ -235,6 +225,27 @@ func TestFunderSQLFundSuccessResult(t *testing.T) {
 		then.Result(result).WithError(err)
 	})
 
+	t.Run("adding utxo can increase the fee", func(t *testing.T) {
+		// given:
+		given, then, cleanup := testabilities.New(t)
+		defer cleanup()
+
+		// and:
+		funder := given.NewFunderService()
+
+		// and:
+		given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(102).P2PKH().Stored()
+
+		// when:
+		result, err := funder.Fund(ctx, 100, 999, desiredUTXONumberToPreferSingleChange, testDesiredUTXOValue, testusers.Alice.ID)
+
+		// then:
+		then.Result(result).WithoutError(err).
+			HasAllocatedUTXOs().RowIndexes(0).
+			HasFee(2).
+			HasNoChange()
+	})
+
 	t.Run("user has a lot of small utxo but they will cover the target sats and fee", func(t *testing.T) {
 		// given:
 		given, then, cleanup := testabilities.New(t)
@@ -280,4 +291,90 @@ func TestFunderSQLFundSuccessResult(t *testing.T) {
 			HasChangeCount(1).ForAmount(10000)
 
 	})
+
+	t.Run("allocate biggest utxos first", func(t *testing.T) {
+		// given:
+		given, then, cleanup := testabilities.New(t)
+		defer cleanup()
+
+		// and:
+		funder := given.NewFunderService()
+
+		// and:
+		given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(200).P2PKH().Stored()
+		given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(100).P2PKH().Stored()
+		given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(10101).P2PKH().Stored()
+		given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(1).P2PKH().Stored()
+		given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(300).P2PKH().Stored()
+
+		// when:
+		result, err := funder.Fund(ctx, 100, smallTransactionSize, desiredUTXONumberToPreferSingleChange, testDesiredUTXOValue, testusers.Alice.ID)
+
+		// then:
+		then.Result(result).WithoutError(err).
+			HasAllocatedUTXOs().RowIndexes(2).
+			HasFee(1).
+			HasChangeCount(1).ForAmount(10000)
+
+	})
+
+	t.Run("allocate several utxos and calculate the change from them", func(t *testing.T) {
+		// given:
+		given, then, cleanup := testabilities.New(t)
+		defer cleanup()
+
+		// and:
+		funder := given.NewFunderService()
+
+		// and:
+		given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(200).P2PKH().Stored()
+		given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(100).P2PKH().Stored()
+		given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(1).P2PKH().Stored()
+		given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(300).P2PKH().Stored()
+
+		// when:
+		result, err := funder.Fund(ctx, 549, smallTransactionSize, desiredUTXONumberToPreferSingleChange, testDesiredUTXOValue, testusers.Alice.ID)
+
+		// then:
+		then.Result(result).WithoutError(err).
+			HasAllocatedUTXOs().RowIndexes(0, 1, 3).
+			HasFee(1).
+			HasChangeCount(1).ForAmount(50)
+
+	})
+
+	t.Run("adding change increases the fee", func(t *testing.T) {
+		// given:
+		given, then, cleanup := testabilities.New(t)
+		defer cleanup()
+
+		// and:
+		funder := given.NewFunderService()
+
+		// when:
+		result, err := funder.Fund(ctx, -102, 990, desiredUTXONumberToPreferSingleChange, testDesiredUTXOValue, testusers.Alice.ID)
+
+		// then:
+		then.Result(result).WithoutError(err).
+			HasChangeCount(1).ForAmount(100).
+			HasFee(2)
+	})
+
+	t.Run("adding change will increase the fee so that there won't be any change, so we're giving extra fee to miner", func(t *testing.T) {
+		// given:
+		given, then, cleanup := testabilities.New(t)
+		defer cleanup()
+
+		// and:
+		funder := given.NewFunderService()
+
+		// when:
+		result, err := funder.Fund(ctx, -2, 999, desiredUTXONumberToPreferSingleChange, testDesiredUTXOValue, testusers.Alice.ID)
+
+		// then:
+		then.Result(result).WithoutError(err).
+			HasFee(2).
+			HasNoChange()
+	})
+
 }
