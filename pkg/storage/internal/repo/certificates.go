@@ -2,7 +2,6 @@ package repo
 
 import (
 	"fmt"
-
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/scopes"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/paging"
