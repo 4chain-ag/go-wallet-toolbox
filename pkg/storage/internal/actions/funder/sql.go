@@ -12,9 +12,16 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder/errfunder"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/paging"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/txutils"
 	"github.com/go-softwarelab/common/pkg/seqerr"
 	"github.com/go-softwarelab/common/pkg/to"
 )
+
+// lockingScriptSize is the size of the locking script in bytes.
+// For P2PKH, it is 25 bytes.
+const lockingScriptSize = uint64(25)
+
+var changeOutputSize = txutils.TransactionOutputSize(lockingScriptSize)
 
 const utxoBatchSize = 1000
 
@@ -89,19 +96,26 @@ type utxoCollector struct {
 	allocatedUTXOs []*actions.UTXO
 }
 
-func newCollector(txSats int64, txSize uint64, feeCalculator *feeCalc) (*utxoCollector, error) {
-	fee, err := feeCalculator.Calculate(txSize)
-	if err != nil {
-		return nil, fmt.Errorf("failed to calculate fee: %w", err)
+func newCollector(txSats int64, txSize uint64, feeCalculator *feeCalc) (c *utxoCollector, err error) {
+	c = &utxoCollector{
+		txSats:         txSats,
+		feeCalculator:  feeCalculator,
+		allocatedUTXOs: make([]*actions.UTXO, 0),
 	}
 
-	return &utxoCollector{
-		txSats:         txSats,
-		txSize:         txSize,
-		feeCalculator:  feeCalculator,
-		fee:            fee,
-		allocatedUTXOs: make([]*actions.UTXO, 0),
-	}, nil
+	err = c.increaseSize(txSize)
+	if err != nil {
+		return nil, fmt.Errorf("failed to increase transaction size: %w", err)
+	}
+
+	if c.change() > 0 {
+		err = c.increaseSize(changeOutputSize)
+		if err != nil {
+			return nil, fmt.Errorf("failed to increase transaction size: %w", err)
+		}
+	}
+
+	return c, nil
 }
 
 func (c *utxoCollector) Allocate(utxos iter.Seq2[*models.UserUTXO, error]) error {
@@ -170,13 +184,17 @@ func (c *utxoCollector) satsToCover() int64 {
 	return c.txSats + c.fee
 }
 
+func (c *utxoCollector) change() int64 {
+	return c.satsCovered - c.satsToCover()
+}
+
 func (c *utxoCollector) prepareResult() (*actions.FundingResult, error) {
 	fee, err := to.UInt64(c.fee)
 	if err != nil {
 		return nil, fmt.Errorf("cannot convert fee to uint64: %w", err)
 	}
 
-	changeAmount, err := to.UInt64(c.satsCovered - c.satsToCover())
+	changeAmount, err := to.UInt64(c.change())
 	if err != nil {
 		return nil, fmt.Errorf("cannot convert change amount to uint64: %w", err)
 	}

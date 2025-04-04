@@ -1,10 +1,10 @@
 package testabilities
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions"
+	"github.com/go-softwarelab/common/pkg/slices"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -91,22 +91,15 @@ func (a *funderAssertion) ForTotalAmount(satoshis uint64) SuccessFundingResultAs
 
 func (a *funderAssertion) RowIndexes(indexes ...int) SuccessFundingResultAssertion {
 	a.Helper()
-
-	outpoints := make(map[string]*actions.UTXO, len(a.result.AllocatedUTXOs))
-	for _, utxo := range a.result.AllocatedUTXOs {
-		outpoint := fmt.Sprintf("%s-%d", utxo.TxID, utxo.Vout)
-		outpoints[outpoint] = utxo
-	}
-
-	for _, index := range indexes {
-		record := a.fixture.createdUTXOs[index]
-		outpoint := fmt.Sprintf("%s-%d", record.TxID, record.Vout)
-		utxo, ok := outpoints[outpoint]
-		assert.Truef(a, ok, "Expected utxo from index %d (outpint: %s) to be allocated", index, outpoint)
-		if ok {
-			assert.EqualValuesf(a, record.Satoshis, utxo.Satoshis, "Expected utxo with outpoint %s to have %d satoshis but have %d", outpoint, record.Satoshis, utxo.Satoshis)
+	expected := slices.Map(indexes, func(index int) *actions.UTXO {
+		return &actions.UTXO{
+			TxID:     a.fixture.createdUTXOs[index].TxID,
+			Vout:     a.fixture.createdUTXOs[index].Vout,
+			Satoshis: a.fixture.createdUTXOs[index].Satoshis,
 		}
-	}
+	})
+
+	assert.ElementsMatchf(a, expected, a.result.AllocatedUTXOs, "The allocated elements to match the expected ones")
 
 	return a
 }
