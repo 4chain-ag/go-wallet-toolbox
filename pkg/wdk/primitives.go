@@ -94,8 +94,7 @@ type PubKeyHex HexString
 
 // Validate checks if the string is valid pubkey hexadecimal string
 func (pkh PubKeyHex) Validate() error {
-	// check if pubkey is either compressed or uncompressed length
-	if len(pkh) != PubKeyBytesLenCompressed || len(pkh) != PubKeyBytesLenUncompressed {
+	if len(pkh)/2 != PubKeyBytesLenCompressed && len(pkh)/2 != PubKeyBytesLenUncompressed {
 		return fmt.Errorf("invalid pubKey hex length: %d", len(pkh))
 	}
 
@@ -151,7 +150,6 @@ func (b *BooleanDefaultFalse) Value() bool {
 type PositiveInteger uint
 
 // SatoshiValue Represents a value in Satoshis, constrained by the max supply of Bitcoin (2.1 * 10^15 Satoshis).
-// @minimum 1
 // @maximum 2100000000000000
 type SatoshiValue uint
 
@@ -160,10 +158,6 @@ const MaxSatoshis = 2100000000000000
 
 // Validate checks if the value is less than the maximum number of Satoshis
 func (s SatoshiValue) Validate() error {
-	if s < 1 {
-		return fmt.Errorf("at least 1")
-	}
-
 	if s > MaxSatoshis {
 		return fmt.Errorf("less than %d", MaxSatoshis)
 	}
