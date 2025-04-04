@@ -1,13 +1,13 @@
 package methodtests_test
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/testabilities"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
