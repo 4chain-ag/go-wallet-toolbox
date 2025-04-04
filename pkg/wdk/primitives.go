@@ -9,6 +9,13 @@ import (
 	"github.com/go-softwarelab/common/pkg/to"
 )
 
+const (
+	// pubKeyBytesLenCompressed is the length of the compressed pub key
+	pubKeyBytesLenCompressed = 33
+	// pubKeyBytesLenUncompressed is the length of the uncompressed pub key
+	pubKeyBytesLenUncompressed = 65
+)
+
 // String5to2000Bytes represents a string used for descriptions,
 // with a length between 5 and 2000 characters.
 type String5to2000Bytes string
@@ -94,7 +101,10 @@ type PubKeyHex HexString
 
 // Validate checks if the string is valid pubkey hexadecimal string
 func (pkh PubKeyHex) Validate() error {
-	if len(pkh)/2 != PubKeyBytesLenCompressed && len(pkh)/2 != PubKeyBytesLenUncompressed {
+	// The public key is stored as a hex string, which means each byte is represented by 2 characters.
+	// To get the actual byte length of the public key, we divide the hex string length by 2.
+	pkhHalfLen := len(pkh) / 2
+	if pkhHalfLen != pubKeyBytesLenCompressed && pkhHalfLen != pubKeyBytesLenUncompressed {
 		return fmt.Errorf("invalid pubKey hex length: %d", len(pkh))
 	}
 

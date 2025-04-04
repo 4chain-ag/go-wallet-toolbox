@@ -1,6 +1,7 @@
 package methodtests_test
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
@@ -117,9 +118,8 @@ func TestInsertCertificateAuth(t *testing.T) {
 
 		// then:
 		require.NoError(t, err)
-		require.Equal(t, expectedResult.TotalCertificates, wdk.PositiveIntegerOrZero(2))
-		require.Contains(t, certs.Certificates, expectedResult.Certificates[0])
-		require.Contains(t, certs.Certificates, expectedResult.Certificates[1])
+		assert.Equal(t, expectedResult.TotalCertificates, wdk.PositiveIntegerOrZero(2))
+		require.ElementsMatch(t, certs.Certificates, expectedResult.Certificates)
 	})
 
 	t.Run("should delete a certificate for Bob", func(t *testing.T) {
@@ -163,8 +163,8 @@ func TestInsertCertificateAuth(t *testing.T) {
 
 		// then:
 		require.NoError(t, err)
-		require.Equal(t, expectedResult.TotalCertificates, wdk.PositiveIntegerOrZero(1))
-		require.Contains(t, certs.Certificates, expectedResult.Certificates[0])
+		assert.Equal(t, expectedResult.TotalCertificates, wdk.PositiveIntegerOrZero(1))
+		require.ElementsMatch(t, certs.Certificates, expectedResult.Certificates)
 	})
 }
 
@@ -261,7 +261,7 @@ func TestListCertificates(t *testing.T) {
 
 		// then:
 		require.NoError(t, err)
-		require.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
+		assert.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
 		require.Equal(t, 1, len(certs.Certificates))
 
 		// when: listing certificates with limit 2
@@ -271,7 +271,7 @@ func TestListCertificates(t *testing.T) {
 
 		// then:
 		require.NoError(t, err)
-		require.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
+		assert.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
 		require.Equal(t, 2, len(certs.Certificates))
 
 		// when: listing certificates with limit 1 and offset 2
@@ -281,7 +281,7 @@ func TestListCertificates(t *testing.T) {
 
 		// then:
 		require.NoError(t, err)
-		require.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
+		assert.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
 		require.Equal(t, 1, len(certs.Certificates))
 	})
 }
