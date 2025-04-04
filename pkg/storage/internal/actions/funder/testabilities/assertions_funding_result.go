@@ -24,23 +24,21 @@ type AllocatedUTXOsAssertion interface {
 }
 
 type SuccessFundingResultAssertion interface {
+	DoesNotAllocateUTXOs() SuccessFundingResultAssertion
 	HasAllocatedUTXOs() AllocatedUTXOsAssertion
 	HasNoChange() SuccessFundingResultAssertion
+	HasFee(fee int) SuccessFundingResultAssertion
+	HasChangeCount(i int) ChangeAssertion
+}
+
+type ChangeAssertion interface {
+	ForAmount(satoshis int) SuccessFundingResultAssertion
 }
 
 type funderAssertion struct {
 	testing.TB
 	result  *actions.FundingResult
 	fixture *funderFixture
-}
-
-func (a *funderAssertion) ForTotalAmount(satoshis uint64) SuccessFundingResultAssertion {
-	total := uint64(0)
-	for _, utxo := range a.result.AllocatedUTXOs {
-		total += utxo.Satoshis
-	}
-	assert.EqualValuesf(a, satoshis, total, "Expected allocated UTXO to be for total %d but was %d", satoshis, total)
-	return a
 }
 
 func newFunderAssertion(t testing.TB, fixture *funderFixture) FunderAssertion {
@@ -69,7 +67,25 @@ func (a *funderAssertion) WithoutError(err error) SuccessFundingResultAssertion 
 	return a
 }
 
+func (a *funderAssertion) DoesNotAllocateUTXOs() SuccessFundingResultAssertion {
+	a.Helper()
+	assert.Len(a, a.result.AllocatedUTXOs, 0, "Expected no allocated UTXOs")
+	return a
+}
+
 func (a *funderAssertion) HasAllocatedUTXOs() AllocatedUTXOsAssertion {
+	a.Helper()
+	assert.NotEmptyf(a, a.result.AllocatedUTXOs, "Expected allocated UTXOs")
+	return a
+}
+
+func (a *funderAssertion) ForTotalAmount(satoshis uint64) SuccessFundingResultAssertion {
+	a.Helper()
+	total := uint64(0)
+	for _, utxo := range a.result.AllocatedUTXOs {
+		total += utxo.Satoshis
+	}
+	assert.EqualValuesf(a, satoshis, total, "Expected allocated UTXO to be for total %d but was %d", satoshis, total)
 	return a
 }
 
@@ -95,10 +111,28 @@ func (a *funderAssertion) RowIndexes(indexes ...int) SuccessFundingResultAsserti
 	return a
 }
 
+func (a *funderAssertion) HasFee(fee int) SuccessFundingResultAssertion {
+	a.Helper()
+	assert.EqualValuesf(a, fee, a.result.Fee, "Expected fee to be %d but was %d", fee, a.result.Fee)
+	return a
+}
+
 func (a *funderAssertion) HasNoChange() SuccessFundingResultAssertion {
 	a.Helper()
 
-	assert.Zerof(a, a.result.ChangeCount, "Expected no change count")
-	assert.Zerof(a, a.result.ChangeAmount, "Expected no change amount")
+	assert.Zerof(a, a.result.ChangeCount, "Unexpected number of changes")
+	assert.Zerof(a, a.result.ChangeAmount, "Unexpected amount for changes")
+	return a
+}
+
+func (a *funderAssertion) HasChangeCount(count int) ChangeAssertion {
+	a.Helper()
+	assert.Equalf(a, count, a.result.ChangeCount, "Expected change count to be %d but was %d", count, a.result.ChangeCount)
+	return a
+}
+
+func (a *funderAssertion) ForAmount(satoshis int) SuccessFundingResultAssertion {
+	a.Helper()
+	assert.EqualValuesf(a, satoshis, a.result.ChangeAmount, "Expected change amount to be %d but was %d", satoshis, a.result.ChangeAmount)
 	return a
 }

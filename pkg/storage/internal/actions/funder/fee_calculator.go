@@ -10,7 +10,7 @@ import (
 
 type feeCalc struct {
 	bytes float64
-	value uint64
+	value float64
 }
 
 func newFeeCalculator(model defs.FeeModel) *feeCalc {
@@ -18,28 +18,30 @@ func newFeeCalculator(model defs.FeeModel) *feeCalc {
 		panic("unsupported fee model")
 	}
 
-	feeValue, err := to.UInt64(model.Value)
+	if model.Value < 0 {
+		panic("fee model value cannot be negative")
+	}
+
+	feeValue, err := to.Float64(model.Value)
 	if err != nil {
 		panic("invalid fee model value: " + err.Error())
 	}
+
 	return &feeCalc{
 		value: feeValue,
 		bytes: 1000,
 	}
 }
 
-func (f *feeCalc) Calculate(txSize uint64) (uint64, error) {
+func (f *feeCalc) Calculate(txSize uint64) (int64, error) {
 	size, err := to.Float64FromUnsigned(txSize)
 	if err != nil {
 		return 0, fmt.Errorf("invalid transaction size: %w", err)
 	}
 
-	multiplier, err := to.UInt64(math.Ceil(size / f.bytes))
-	if err != nil {
-		return 0, fmt.Errorf("failed to calculate size / feeModel.bytes: %w", err)
-	}
+	multiplier := math.Ceil(size / f.bytes)
 
-	fee, err := to.UInt64(multiplier * f.value)
+	fee, err := to.Int64(multiplier * f.value)
 	if err != nil {
 		return 0, fmt.Errorf("failed to calculate fee value: %w", err)
 	}
