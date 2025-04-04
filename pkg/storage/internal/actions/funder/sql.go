@@ -17,11 +17,7 @@ import (
 	"github.com/go-softwarelab/common/pkg/to"
 )
 
-// lockingScriptSize is the size of the locking script in bytes.
-// For P2PKH, it is 25 bytes.
-const lockingScriptSize = uint64(25)
-
-var changeOutputSize = txutils.TransactionOutputSize(lockingScriptSize)
+var changeOutputSize = txutils.P2PKHOutputSize
 
 const utxoBatchSize = 1000
 
