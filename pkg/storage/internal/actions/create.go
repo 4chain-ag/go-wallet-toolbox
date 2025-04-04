@@ -11,6 +11,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/go-softwarelab/common/pkg/seqerr"
+	"github.com/go-softwarelab/common/pkg/to"
 )
 
 type UTXO struct {
@@ -82,12 +83,33 @@ func (c *create) Create(auth wdk.AuthID, args CreateActionParams) (*wdk.StorageC
 		return nil, err
 	}
 
-	_, err = c.funder.Fund(context.Background(), 0, initialTxSize, basket.NumberOfDesiredUTXOs, basket.MinimumDesiredUTXOValue, *auth.UserID)
+	targetSat, err := c.targetSat(&args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate target satoshis: %w", err)
+	}
+
+	_, err = c.funder.Fund(context.Background(), targetSat, initialTxSize, basket.NumberOfDesiredUTXOs, basket.MinimumDesiredUTXOValue, *auth.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("funding failed: %w", err)
 	}
 
 	return &wdk.StorageCreateActionResult{}, nil
+}
+
+func (c *create) targetSat(args *CreateActionParams) (int64, error) {
+	providedInputs := int64(0)
+	//TODO: sum provided inputs satoshis - but first the values should be found
+
+	providedOutputs := int64(0)
+	for output := range args.Outputs {
+		satInt64, err := to.Int64FromUnsigned(output.Satoshis)
+		if err != nil {
+			return 0, fmt.Errorf("failed to convert satoshis to int64: %w", err)
+		}
+		providedOutputs += satInt64
+	}
+
+	return providedOutputs - providedInputs, nil
 }
 
 func (c *create) txSize(args *CreateActionParams) (uint64, error) {
