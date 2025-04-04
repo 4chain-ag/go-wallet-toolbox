@@ -130,7 +130,10 @@ func (p *Provider) InsertCertificateAuth(auth wdk.AuthID, certificate *wdk.Table
 		return 0, fmt.Errorf("access is denied due to an authorization error")
 	}
 
-	// TODO: validate arguments?
+	err := validate.TableCertificateX(certificate)
+	if err != nil {
+		return 0, fmt.Errorf("invalid insertCertificateAuth args: %w", err)
+	}
 
 	certModel := &models.Certificate{
 		Type:               string(certificate.Type),
@@ -161,9 +164,13 @@ func (p *Provider) RelinquishCertificate(auth wdk.AuthID, args wdk.RelinquishCer
 	if auth.UserID == nil {
 		return fmt.Errorf("access is denied due to an authorization error")
 	}
-	// TODO: validate args
 
-	err := p.repo.DeleteCertificate(*auth.UserID, args)
+	err := validate.RelinquishCertificateArgs(&args)
+	if err != nil {
+		return fmt.Errorf("invalid relinquishCertificate args: %w", err)
+	}
+
+	err = p.repo.DeleteCertificate(*auth.UserID, args)
 	if err != nil {
 		return fmt.Errorf("failed to relinquish certificate: %w", err)
 	}
@@ -176,7 +183,11 @@ func (p *Provider) ListCertificates(auth wdk.AuthID, args wdk.ListCertificatesAr
 	if auth.UserID == nil {
 		return nil, fmt.Errorf("access is denied due to an authorization error")
 	}
-	// TODO: validate args
+
+	err := validate.ListCertificatesArgs(&args)
+	if err != nil {
+		return nil, fmt.Errorf("invalid listCertificates args: %w", err)
+	}
 
 	// prepare arguments
 	filterOptions := listCertificatesArgsToActionParams(args)

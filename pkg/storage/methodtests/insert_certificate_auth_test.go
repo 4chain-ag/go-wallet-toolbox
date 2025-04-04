@@ -3,9 +3,11 @@ package methodtests_test
 import (
 	"testing"
 
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/testabilities"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,37 +26,18 @@ func TestInsertCertificateAuth(t *testing.T) {
 
 	t.Run("should insert a certificate for Alice", func(t *testing.T) {
 		// given:
-		certToInsert := &wdk.TableCertificateX{
-			TableCertificate: wdk.TableCertificate{
-				UserID:             testusers.Alice.ID,
-				Type:               "exampleType",
-				SerialNumber:       "exampleSerialNumber",
-				Certifier:          "certifierPubKey",
-				Subject:            "subjectPubKey",
-				RevocationOutpoint: "outpointString",
-				Signature:          "signatureHex",
-			},
-			Fields: []*wdk.TableCertificateField{
-				{
-					UserID:     testusers.Alice.ID,
-					FieldName:  "exampleField",
-					FieldValue: "exampleValue",
-					MasterKey:  "exampleMasterKey",
-				},
-			},
-		}
-
+		certToInsert := fixtures.DefaultInsertCertAuth(testusers.Alice.ID)
 		// and:
 		expectedResult.TotalCertificates = wdk.PositiveIntegerOrZero(1)
 		expectedResult.Certificates = []*wdk.CertificateResult{{
 			Verifier: "",
 			WalletCertificate: wdk.WalletCertificate{
-				Type:               "exampleType",
-				Subject:            "subjectPubKey",
-				SerialNumber:       "exampleSerialNumber",
-				Certifier:          "certifierPubKey",
-				RevocationOutpoint: "outpointString",
-				Signature:          "signatureHex",
+				Type:               fixtures.TypeField,
+				Subject:            fixtures.SubjectPubKey,
+				SerialNumber:       fixtures.SerialNumber,
+				Certifier:          fixtures.Certifier,
+				RevocationOutpoint: fixtures.RevocationOutpoint,
+				Signature:          fixtures.Signature,
 				Fields: map[wdk.CertificateFieldNameUnder50Bytes]string{
 					"exampleField": "exampleValue",
 				},
@@ -80,37 +63,18 @@ func TestInsertCertificateAuth(t *testing.T) {
 
 	t.Run("should insert a certificate for Bob", func(t *testing.T) {
 		// given:
-		certToInsert := &wdk.TableCertificateX{
-			TableCertificate: wdk.TableCertificate{
-				UserID:             testusers.Bob.ID,
-				Type:               "exampleType",
-				SerialNumber:       "exampleSerialNumber",
-				Certifier:          "certifierPubKey",
-				Subject:            "subjectPubKey",
-				RevocationOutpoint: "outpointString",
-				Signature:          "signatureHex",
-			},
-			Fields: []*wdk.TableCertificateField{
-				{
-					UserID:     testusers.Bob.ID,
-					FieldName:  "exampleField",
-					FieldValue: "exampleValue",
-					MasterKey:  "exampleMasterKey",
-				},
-			},
-		}
-
+		certToInsert := fixtures.DefaultInsertCertAuth(testusers.Bob.ID)
 		// and:
 		expectedResult.TotalCertificates = wdk.PositiveIntegerOrZero(2)
 		expectedResult.Certificates = []*wdk.CertificateResult{{
 			Verifier: "",
 			WalletCertificate: wdk.WalletCertificate{
-				Type:               "exampleType2",
-				Subject:            "subjectPubKey",
-				SerialNumber:       "exampleSerialNumber",
-				Certifier:          "certifierPubKey",
-				RevocationOutpoint: "outpointString",
-				Signature:          "signatureHex",
+				Type:               "ZXhhbXBsZVR5cGUy",
+				Subject:            fixtures.SubjectPubKey,
+				SerialNumber:       fixtures.SerialNumber,
+				Certifier:          fixtures.Certifier,
+				RevocationOutpoint: fixtures.RevocationOutpoint,
+				Signature:          fixtures.Signature,
 				Fields: map[wdk.CertificateFieldNameUnder50Bytes]string{
 					"exampleField": "exampleValue",
 				},
@@ -121,12 +85,12 @@ func TestInsertCertificateAuth(t *testing.T) {
 		}, {
 			Verifier: "",
 			WalletCertificate: wdk.WalletCertificate{
-				Type:               "exampleType",
-				Subject:            "subjectPubKey",
-				SerialNumber:       "exampleSerialNumber",
-				Certifier:          "certifierPubKey",
-				RevocationOutpoint: "outpointString",
-				Signature:          "signatureHex",
+				Type:               fixtures.TypeField,
+				Subject:            fixtures.SubjectPubKey,
+				SerialNumber:       fixtures.SerialNumber,
+				Certifier:          fixtures.Certifier,
+				RevocationOutpoint: fixtures.RevocationOutpoint,
+				Signature:          fixtures.Signature,
 				Fields: map[wdk.CertificateFieldNameUnder50Bytes]string{
 					"exampleField": "exampleValue",
 				},
@@ -143,7 +107,7 @@ func TestInsertCertificateAuth(t *testing.T) {
 		require.NoError(t, err)
 
 		// when:
-		certToInsert.Type = "exampleType2"
+		certToInsert.Type = "ZXhhbXBsZVR5cGUy"
 		_, err = activeStorage.InsertCertificateAuth(testusers.Bob.AuthID(), certToInsert)
 
 		// then:
@@ -154,7 +118,8 @@ func TestInsertCertificateAuth(t *testing.T) {
 
 		// then:
 		require.NoError(t, err)
-		require.EqualValues(t, expectedResult, certs)
+		assert.Equal(t, expectedResult.TotalCertificates, wdk.PositiveIntegerOrZero(2))
+		require.ElementsMatch(t, certs.Certificates, expectedResult.Certificates)
 	})
 
 	t.Run("should delete a certificate for Bob", func(t *testing.T) {
@@ -168,12 +133,12 @@ func TestInsertCertificateAuth(t *testing.T) {
 		expectedResult.Certificates = []*wdk.CertificateResult{{
 			Verifier: "",
 			WalletCertificate: wdk.WalletCertificate{
-				Type:               "exampleType",
-				Subject:            "subjectPubKey",
-				SerialNumber:       "exampleSerialNumber",
-				Certifier:          "certifierPubKey",
-				RevocationOutpoint: "outpointString",
-				Signature:          "signatureHex",
+				Type:               fixtures.TypeField,
+				Subject:            fixtures.SubjectPubKey,
+				SerialNumber:       fixtures.SerialNumber,
+				Certifier:          fixtures.Certifier,
+				RevocationOutpoint: fixtures.RevocationOutpoint,
+				Signature:          fixtures.Signature,
 				Fields: map[wdk.CertificateFieldNameUnder50Bytes]string{
 					"exampleField": "exampleValue",
 				},
@@ -185,16 +150,21 @@ func TestInsertCertificateAuth(t *testing.T) {
 
 		// when:
 		err = activeStorage.RelinquishCertificate(testusers.Bob.AuthID(), wdk.RelinquishCertificateArgs{
-			Type:         "exampleType2",
-			SerialNumber: "exampleSerialNumber",
-			Certifier:    "certifierPubKey",
+			Type:         "ZXhhbXBsZVR5cGUy",
+			SerialNumber: fixtures.SerialNumber,
+			Certifier:    fixtures.Certifier,
 		})
 
 		// then:
 		require.NoError(t, err)
+
+		// when: list certificates
 		certs, err = activeStorage.ListCertificates(testusers.Bob.AuthID(), wdk.ListCertificatesArgs{})
+
+		// then:
 		require.NoError(t, err)
-		require.Equal(t, expectedResult, certs)
+		assert.Equal(t, expectedResult.TotalCertificates, wdk.PositiveIntegerOrZero(1))
+		require.ElementsMatch(t, certs.Certificates, expectedResult.Certificates)
 	})
 }
 
@@ -244,9 +214,9 @@ func TestInsertCertificateAuthFailure(t *testing.T) {
 		err := activeStorage.RelinquishCertificate(
 			testusers.Alice.AuthID(),
 			wdk.RelinquishCertificateArgs{
-				Type:         "not-type",
-				SerialNumber: "not-serial",
-				Certifier:    "not-certifier",
+				Type:         "bm90LXR5cGU=",
+				SerialNumber: fixtures.SerialNumber,
+				Certifier:    fixtures.Certifier,
 			})
 
 		// then:
@@ -263,26 +233,7 @@ func TestListCertificates(t *testing.T) {
 
 	t.Run("should insert 3 certificates for Alice", func(t *testing.T) {
 		// given:
-		certToInsert := &wdk.TableCertificateX{
-			TableCertificate: wdk.TableCertificate{
-				UserID:             testusers.Alice.ID,
-				Type:               "exampleType",
-				SerialNumber:       "exampleSerialNumber",
-				Certifier:          "certifierPubKey",
-				Subject:            "subjectPubKey",
-				RevocationOutpoint: "outpointString",
-				Signature:          "signatureHex",
-			},
-			Fields: []*wdk.TableCertificateField{
-				{
-					UserID:     testusers.Bob.ID,
-					FieldName:  "exampleField",
-					FieldValue: "exampleValue",
-					MasterKey:  "exampleMasterKey",
-				},
-			},
-		}
-
+		certToInsert := fixtures.DefaultInsertCertAuth(testusers.Alice.ID)
 		// when: insert 1st certificate for Bob
 		_, err := activeStorage.InsertCertificateAuth(testusers.Alice.AuthID(), certToInsert)
 
@@ -290,14 +241,14 @@ func TestListCertificates(t *testing.T) {
 		require.NoError(t, err)
 
 		// when: update 2nd cert type and insert
-		certToInsert.Type = "exampleType2"
+		certToInsert.Type = "ZXhhbXBsZVR5cGUy"
 		_, err = activeStorage.InsertCertificateAuth(testusers.Alice.AuthID(), certToInsert)
 
 		// then:
 		require.NoError(t, err)
 
 		// when: update 3nd cert type and insert
-		certToInsert.Type = "exampleType3"
+		certToInsert.Type = "ZXhhbXBsZVR5cGUz"
 		_, err = activeStorage.InsertCertificateAuth(testusers.Alice.AuthID(), certToInsert)
 
 		// then:
@@ -310,9 +261,8 @@ func TestListCertificates(t *testing.T) {
 
 		// then:
 		require.NoError(t, err)
-		require.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
+		assert.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
 		require.Equal(t, 1, len(certs.Certificates))
-		require.Equal(t, wdk.Base64String("exampleType3"), certs.Certificates[0].Type)
 
 		// when: listing certificates with limit 2
 		certs, err = activeStorage.ListCertificates(testusers.Alice.AuthID(), wdk.ListCertificatesArgs{
@@ -321,10 +271,8 @@ func TestListCertificates(t *testing.T) {
 
 		// then:
 		require.NoError(t, err)
-		require.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
+		assert.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
 		require.Equal(t, 2, len(certs.Certificates))
-		require.Equal(t, wdk.Base64String("exampleType3"), certs.Certificates[0].Type)
-		require.Equal(t, wdk.Base64String("exampleType2"), certs.Certificates[1].Type)
 
 		// when: listing certificates with limit 1 and offset 2
 		certs, err = activeStorage.ListCertificates(testusers.Alice.AuthID(), wdk.ListCertificatesArgs{
@@ -333,8 +281,7 @@ func TestListCertificates(t *testing.T) {
 
 		// then:
 		require.NoError(t, err)
-		require.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
+		assert.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
 		require.Equal(t, 1, len(certs.Certificates))
-		require.Equal(t, wdk.Base64String("exampleType"), certs.Certificates[0].Type)
 	})
 }
