@@ -157,11 +157,11 @@ func (b *BooleanDefaultFalse) Value() bool {
 }
 
 // PositiveInteger represents a positive integer value
-type PositiveInteger uint
+type PositiveInteger uint64
 
 // SatoshiValue Represents a value in Satoshis, constrained by the max supply of Bitcoin (2.1 * 10^15 Satoshis).
 // @maximum 2100000000000000
-type SatoshiValue uint
+type SatoshiValue uint64
 
 // MaxSatoshis is the maximum number of Satoshis in the Bitcoin supply
 const MaxSatoshis = 2100000000000000
