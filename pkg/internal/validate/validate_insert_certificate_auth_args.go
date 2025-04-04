@@ -27,7 +27,7 @@ func TableCertificateX(args *wdk.TableCertificateX) error {
 		return fmt.Errorf("invalid subject argument: %w", err)
 	}
 
-	if args.Verifier != nil {
+	if args.Verifier != nil && *args.Verifier != "" {
 		err = args.Verifier.Validate()
 		if err != nil {
 			return fmt.Errorf("invalid verifier argument: %w", err)
