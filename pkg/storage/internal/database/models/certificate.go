@@ -1,10 +1,10 @@
 package models
 
 import (
-	"gorm.io/gorm/clause"
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // Certificate is the database model of the certificate
