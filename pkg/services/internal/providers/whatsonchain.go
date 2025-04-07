@@ -5,6 +5,6 @@ type WhatsOnChain struct {
 }
 
 func NewWhatsOnChain() *WhatsOnChain {
-	// TOOD: implement me
+	// TODO: implement me
 	return &WhatsOnChain{}
 }
