@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // Certificate is the database model of the certificate
@@ -33,4 +34,16 @@ type CertificateField struct {
 
 	UserID        int
 	CertificateID uint `gorm:"uniqueIndex:idx_field_name_certificate_id"`
+}
+
+func (cf *CertificateField) BeforeCreate(tx *gorm.DB) error {
+	tx.Statement.AddClause(clause.OnConflict{
+		Columns: []clause.Column{
+			{Name: "field_name"},
+			{Name: "certificate_id"},
+		},
+		DoNothing: true,
+	})
+
+	return nil
 }
