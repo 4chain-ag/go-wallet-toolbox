@@ -23,15 +23,15 @@ func NewChangeDistribution(initialValue uint64, randomizer Randomizer) *ChangeDi
 }
 
 func (d *ChangeDistribution) Distribute(count uint64, amount uint64) iter.Seq[uint64] {
-	if count == 0 {
+	if count == 0 || amount == 0 {
 		return seq.Of[uint64]()
 	}
 	if count == 1 {
 		return seq.Of(amount)
 	}
 
-	a := count * d.initialValue
-	if a < amount {
+	saturationThreshold := count * d.initialValue
+	if saturationThreshold < amount {
 		base := amount / count
 		reminder := amount % count
 
@@ -40,16 +40,7 @@ func (d *ChangeDistribution) Distribute(count uint64, amount uint64) iter.Seq[ui
 			seq.Repeat(base, int(count-1)),
 		)
 
-		noise := seq.ToSlice(
-			seq.Map(distribution, func(current uint64) uint64 {
-				randomRange := current - d.initialValue
-				if randomRange == 0 {
-					return 0
-				}
-				return d.randomizer(randomRange)
-			}),
-			make([]uint64, 0, count),
-		)
+		noise := d.randomNoise(count, distribution)
 
 		var i uint64
 		var v uint64
@@ -62,11 +53,11 @@ func (d *ChangeDistribution) Distribute(count uint64, amount uint64) iter.Seq[ui
 		return distribution
 	}
 
-	if a == amount {
+	if saturationThreshold == amount {
 		return seq.Repeat(d.initialValue, int(count))
 	}
 
-	// a > amount
+	// not saturated - at least one output is less than initialValue:
 	for i := uint64(1); i < count; i++ {
 		j := count - i
 		b := j * d.initialValue
@@ -81,7 +72,20 @@ func (d *ChangeDistribution) Distribute(count uint64, amount uint64) iter.Seq[ui
 	return seq.Of(amount)
 }
 
-func random(max uint64) uint64 {
+func (d *ChangeDistribution) randomNoise(count uint64, distribution iter.Seq[uint64]) []uint64 {
+	noise := make([]uint64, 0, count)
+	for current := range distribution {
+		randomRange := current - d.initialValue
+		var randomized uint64
+		if randomRange != 0 {
+			randomized = d.randomizer(randomRange)
+		}
+		noise = append(noise, randomized)
+	}
+	return noise
+}
+
+func Rand(max uint64) uint64 {
 	nBig, err := rand.Int(rand.Reader, big.NewInt(int64(max)))
 	if err != nil {
 		panic(fmt.Errorf("failed to generate random number: %w", err))
