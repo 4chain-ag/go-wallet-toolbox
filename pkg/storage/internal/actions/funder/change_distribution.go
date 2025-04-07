@@ -35,14 +35,13 @@ func (d *ChangeDistribution) Distribute(count uint64, amount uint64) iter.Seq[ui
 	countSignedInt := int(count) //nolint:gosec // count is always > 1 at this point
 
 	saturationThreshold := count * d.initialValue
-	if saturationThreshold < amount {
+	if amount > saturationThreshold {
 		base := amount / count
 		reminder := amount % count
-		countMinusOne := countSignedInt - 1
 
 		distribution := seq.Concat(
 			seq.Of[uint64](base+reminder),
-			seq.Repeat(base, countMinusOne),
+			seq.Repeat(base, countSignedInt-1),
 		)
 
 		noise := d.randomNoise(count, distribution)
@@ -58,17 +57,17 @@ func (d *ChangeDistribution) Distribute(count uint64, amount uint64) iter.Seq[ui
 		return distribution
 	}
 
-	if saturationThreshold == amount {
+	if amount == saturationThreshold {
 		return seq.Repeat(d.initialValue, countSignedInt)
 	}
 
 	// not saturated - at least one output is less than initialValue:
 	for i := uint64(1); i < count; i++ {
 		saturatedOutputs := count - i
-		b := saturatedOutputs * d.initialValue
-		if amount > b {
+		valueOfSatOuts := saturatedOutputs * d.initialValue
+		if amount > valueOfSatOuts {
 			return seq.Concat(
-				seq.Of[uint64](amount-b),
+				seq.Of[uint64](amount-valueOfSatOuts),
 				seq.Repeat(d.initialValue, int(saturatedOutputs)), //nolint:gosec // saturatedOutputs is always > 0 at this point
 			)
 		}
