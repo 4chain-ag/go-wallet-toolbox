@@ -1,11 +1,12 @@
 package funder
 
 import (
+	"slices"
+	"testing"
+
 	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"slices"
-	"testing"
 )
 
 func mockZeroRandomizer(_ uint64) uint64 {

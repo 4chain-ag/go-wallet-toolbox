@@ -3,9 +3,11 @@ package funder
 import (
 	"crypto/rand"
 	"fmt"
-	"github.com/go-softwarelab/common/pkg/seq"
 	"iter"
 	"math/big"
+
+	"github.com/go-softwarelab/common/pkg/seq"
+	"github.com/go-softwarelab/common/pkg/to"
 )
 
 type Randomizer func(max uint64) uint64
@@ -30,14 +32,17 @@ func (d *ChangeDistribution) Distribute(count uint64, amount uint64) iter.Seq[ui
 		return seq.Of(amount)
 	}
 
+	countSignedInt := int(count) //nolint:gosec // count is always > 1 at this point
+
 	saturationThreshold := count * d.initialValue
 	if saturationThreshold < amount {
 		base := amount / count
 		reminder := amount % count
+		countMinusOne := countSignedInt - 1
 
 		distribution := seq.Concat(
 			seq.Of[uint64](base+reminder),
-			seq.Repeat(base, int(count-1)),
+			seq.Repeat(base, countMinusOne),
 		)
 
 		noise := d.randomNoise(count, distribution)
@@ -54,17 +59,17 @@ func (d *ChangeDistribution) Distribute(count uint64, amount uint64) iter.Seq[ui
 	}
 
 	if saturationThreshold == amount {
-		return seq.Repeat(d.initialValue, int(count))
+		return seq.Repeat(d.initialValue, countSignedInt)
 	}
 
 	// not saturated - at least one output is less than initialValue:
 	for i := uint64(1); i < count; i++ {
-		j := count - i
-		b := j * d.initialValue
+		saturatedOutputs := count - i
+		b := saturatedOutputs * d.initialValue
 		if amount > b {
 			return seq.Concat(
 				seq.Of[uint64](amount-b),
-				seq.Repeat(d.initialValue, int(j)),
+				seq.Repeat(d.initialValue, int(saturatedOutputs)), //nolint:gosec // saturatedOutputs is always > 0 at this point
 			)
 		}
 	}
@@ -86,7 +91,11 @@ func (d *ChangeDistribution) randomNoise(count uint64, distribution iter.Seq[uin
 }
 
 func Rand(max uint64) uint64 {
-	nBig, err := rand.Int(rand.Reader, big.NewInt(int64(max)))
+	maxI64, err := to.Int64FromUnsigned(max)
+	if err != nil {
+		panic(fmt.Errorf("rand: cannot convert max value to signed int: %w", err))
+	}
+	nBig, err := rand.Int(rand.Reader, big.NewInt(maxI64))
 	if err != nil {
 		panic(fmt.Errorf("failed to generate random number: %w", err))
 	}
