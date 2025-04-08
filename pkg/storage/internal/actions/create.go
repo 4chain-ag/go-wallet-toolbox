@@ -14,6 +14,10 @@ import (
 	"github.com/go-softwarelab/common/pkg/to"
 )
 
+const (
+	derivationPrefixLength = 16
+)
+
 type UTXO struct {
 	TxID     string
 	Vout     uint32
@@ -93,7 +97,7 @@ func (c *create) Create(auth wdk.AuthID, args CreateActionParams) (*wdk.StorageC
 		return nil, fmt.Errorf("funding failed: %w", err)
 	}
 
-	derivationPrefix, err := txutils.RandomDerivation(16)
+	derivationPrefix, err := txutils.RandomDerivation(derivationPrefixLength)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate random derivation prefix: %w", err)
 	}
