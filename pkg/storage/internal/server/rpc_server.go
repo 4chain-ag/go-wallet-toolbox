@@ -17,7 +17,7 @@ func NewRPCHandler(parentLogger *slog.Logger, name string, handler any) *RPCServ
 	logger := logging.Child(parentLogger, "rpc_server")
 
 	rpcServer := jsonrpc.NewServer(
-		jsonrpc.WithServerMethodNamer(jsonrpc.NoNamespaceDecapitalizedMethodNamer),
+		jsonrpc.WithServerMethodNameFormatter(jsonrpc.NewMethodNameFormatter(false, jsonrpc.LowerFirstCharCase)),
 		jsonrpc.WithTracer(tracer(logger)),
 	)
 
