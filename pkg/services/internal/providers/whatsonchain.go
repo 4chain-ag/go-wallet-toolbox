@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
-
 	"github.com/go-softwarelab/common/pkg/to"
 )
 
