@@ -37,7 +37,7 @@ func TestTracer(t *testing.T) {
 		"MockHandler",
 		[]any{&client},
 		nil,
-		jsonrpc.WithMethodNamer(jsonrpc.NoNamespaceDecapitalizedMethodNamer),
+		jsonrpc.WithMethodNameFormatter(jsonrpc.NewMethodNameFormatter(false, jsonrpc.LowerFirstCharCase)),
 	)
 	require.NoError(t, err)
 	defer closer()

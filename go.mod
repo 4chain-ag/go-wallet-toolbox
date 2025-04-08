@@ -6,7 +6,7 @@ toolchain go1.24.1
 
 require (
 	github.com/bsv-blockchain/go-sdk v1.1.22
-	github.com/filecoin-project/go-jsonrpc v0.7.1
+	github.com/filecoin-project/go-jsonrpc v0.8.0
 	github.com/go-softwarelab/common v0.12.0
 	github.com/go-viper/mapstructure/v2 v2.2.1
 	github.com/mattn/go-sqlite3 v1.14.27
@@ -55,7 +55,5 @@ require (
 	golang.org/x/tools v0.22.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 )
-
-replace github.com/filecoin-project/go-jsonrpc => github.com/chris-4chain/go-jsonrpc v0.0.0-20250317062812-cb17873a64c7
 
 tool go.uber.org/mock/mockgen
