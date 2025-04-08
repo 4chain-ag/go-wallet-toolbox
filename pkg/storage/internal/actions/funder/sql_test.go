@@ -6,6 +6,7 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder/testabilities"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
+	"github.com/go-softwarelab/common/pkg/must"
 )
 
 const smallTransactionSize = 44
@@ -377,99 +378,80 @@ func TestFunderSQLFundSuccessResult(t *testing.T) {
 			HasNoChange()
 	})
 
-	t.Run("split change 1", func(t *testing.T) {
-		// given:
-		given, then, cleanup := testabilities.New(t)
-		defer cleanup()
+	testCasesSplitUserProvidedInputIntoChanges := map[string]struct {
+		expectedChangeValue           int
+		expectedNumberOfChangeOutputs int
+	}{
+		"change (value: 249) below minimum desired utxo creates single output": {
+			expectedChangeValue:           249,
+			expectedNumberOfChangeOutputs: 1,
+		},
+		"change (value: 250) below minimum desired utxo creates single output": {
+			expectedChangeValue:           250,
+			expectedNumberOfChangeOutputs: 1,
+		},
+		"change equal to minimum desired utxo creates single output": {
+			expectedChangeValue:           1000,
+			expectedNumberOfChangeOutputs: 1,
+		},
+		"change (value 1001) below 125% of minimum desired utxo creates single output": {
+			expectedChangeValue:           1001,
+			expectedNumberOfChangeOutputs: 1,
+		},
+		"change (value 1249) below 125% of minimum desired utxo creates single output": {
+			expectedChangeValue:           1249,
+			expectedNumberOfChangeOutputs: 1,
+		},
+		"change equal to 125% of minimum desired utxo creates two outputs": {
+			expectedChangeValue:           1250,
+			expectedNumberOfChangeOutputs: 2,
+		},
+		"change equal to 200% of minimum desired utxo creates two outputs": {
+			expectedChangeValue:           2000,
+			expectedNumberOfChangeOutputs: 2,
+		},
+		"change above 200% but below 225% of minimum desired utxo creates two outputs": {
+			expectedChangeValue:           2249,
+			expectedNumberOfChangeOutputs: 2,
+		},
+		"change above 225% of minimum desired utxo creates three outputs": {
+			expectedChangeValue:           2250,
+			expectedNumberOfChangeOutputs: 3,
+		},
+		"change equal to (minimum desired utxo) times (number of desired utxo) creates desired utxo number of changes": {
+			expectedChangeValue:           3000,
+			expectedNumberOfChangeOutputs: 3,
+		},
+		"change above the (minimum desired utxo) times (number of desired utxo) creates desired utxo number of changes": {
+			expectedChangeValue:           10000,
+			expectedNumberOfChangeOutputs: 3,
+		},
+	}
+	for name, test := range testCasesSplitUserProvidedInputIntoChanges {
+		t.Run(name, func(t *testing.T) {
+			// given:
+			fee := 1
 
-		// and:
-		funder := given.NewFunderService()
+			// and: targetSatoshis should cover the fee and the expected change value
+			// and it must be negative to simulate that user provides by himself the inputs to cover those values.
+			targetSatoshis := must.ConvertToInt64(-(test.expectedChangeValue + fee))
 
-		// when:
-		result, err := funder.Fund(ctx, -1000-1, smallTransactionSize, 10, 1000, testusers.Alice.ID)
+			// and: this is the limit for number of changes we don't want to exceed (in those test cases)
+			const numberOfDesiredUTXOs = 3
 
-		// then:
-		then.Result(result).WithoutError(err).
-			HasChangeCount(1).ForAmount(1000)
-	})
+			// and:
+			given, then, cleanup := testabilities.New(t)
+			defer cleanup()
 
-	t.Run("split change 2", func(t *testing.T) {
-		// given:
-		given, then, cleanup := testabilities.New(t)
-		defer cleanup()
+			// and:
+			funder := given.NewFunderService()
 
-		// and:
-		funder := given.NewFunderService()
+			// when:
+			result, err := funder.Fund(ctx, targetSatoshis, smallTransactionSize, numberOfDesiredUTXOs, testDesiredUTXOValue, testusers.Alice.ID)
 
-		// when:
-		result, err := funder.Fund(ctx, -500-1, smallTransactionSize, 10, testDesiredUTXOValue, testusers.Alice.ID)
-
-		// then:
-		then.Result(result).WithoutError(err).
-			HasChangeCount(1).ForAmount(500)
-	})
-
-	t.Run("split change 3", func(t *testing.T) {
-		// given:
-		given, then, cleanup := testabilities.New(t)
-		defer cleanup()
-
-		// and:
-		funder := given.NewFunderService()
-
-		// when:
-		result, err := funder.Fund(ctx, -1001-1, smallTransactionSize, 10, testDesiredUTXOValue, testusers.Alice.ID)
-
-		// then:
-		then.Result(result).WithoutError(err).
-			HasChangeCount(1).ForAmount(1001)
-	})
-
-	t.Run("split change 4", func(t *testing.T) {
-		// given:
-		given, then, cleanup := testabilities.New(t)
-		defer cleanup()
-
-		// and:
-		funder := given.NewFunderService()
-
-		// when:
-		result, err := funder.Fund(ctx, -2000-1, smallTransactionSize, 10, testDesiredUTXOValue, testusers.Alice.ID)
-
-		// then:
-		then.Result(result).WithoutError(err).
-			HasChangeCount(2).ForAmount(2000)
-	})
-
-	t.Run("split change 5", func(t *testing.T) {
-		// given:
-		given, then, cleanup := testabilities.New(t)
-		defer cleanup()
-
-		// and:
-		funder := given.NewFunderService()
-
-		// when:
-		result, err := funder.Fund(ctx, -2001-1, smallTransactionSize, 10, testDesiredUTXOValue, testusers.Alice.ID)
-
-		// then:
-		then.Result(result).WithoutError(err).
-			HasChangeCount(2).ForAmount(2001)
-	})
-
-	t.Run("split change 6", func(t *testing.T) {
-		// given:
-		given, then, cleanup := testabilities.New(t)
-		defer cleanup()
-
-		// and:
-		funder := given.NewFunderService()
-
-		// when:
-		result, err := funder.Fund(ctx, -2500-1, smallTransactionSize, 10, testDesiredUTXOValue, testusers.Alice.ID)
-
-		// then:
-		then.Result(result).WithoutError(err).
-			HasChangeCount(3).ForAmount(2500)
-	})
+			// then:
+			then.Result(result).WithoutError(err).
+				HasChangeCount(test.expectedNumberOfChangeOutputs).ForAmount(test.expectedChangeValue)
+		})
+	}
 }
