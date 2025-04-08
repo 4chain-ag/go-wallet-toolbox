@@ -34,13 +34,17 @@ func (d *ChangeDistribution) Distribute(count uint64, amount uint64) iter.Seq[ui
 
 	countSignedInt := int(count) //nolint:gosec // count is always > 1 at this point
 
+	// saturation: a moment when all the outputs are equal to initialValue
 	saturationThreshold := count * d.initialValue
 	if amount > saturationThreshold {
 		base := amount / count
-		reminder := amount % count
+		remainder := amount % count
 
+		// e.g. For 3 outputs and 10 amount, we have:
+		// base = 3, remainder = 1, then:
+		// distribution = [4, 3, 3]
 		distribution := seq.Concat(
-			seq.Of[uint64](base+reminder),
+			seq.Of[uint64](base+remainder),
 			seq.Repeat(base, countSignedInt-1),
 		)
 
@@ -49,7 +53,11 @@ func (d *ChangeDistribution) Distribute(count uint64, amount uint64) iter.Seq[ui
 		var i uint64
 		var v uint64
 		distribution = seq.Map(distribution, func(current uint64) uint64 {
-			v = current - noise[i] + noise[count-i-1]
+			// noise[i] - random value for current output (subtraction does not make it less than initialValue)
+			// noise[reverseIndex] - random value subtracted from another output (added to current)
+
+			reverseIndex := count - i - 1
+			v = current - noise[i] + noise[reverseIndex]
 			i++
 			return v
 		})
@@ -76,6 +84,9 @@ func (d *ChangeDistribution) Distribute(count uint64, amount uint64) iter.Seq[ui
 	return seq.Of(amount)
 }
 
+// randomNoise randomizes values for each output in the distribution;
+// each value is meant to be subtracted from one output and added to another;
+// after subtraction, output values are still >= initialValue.
 func (d *ChangeDistribution) randomNoise(count uint64, distribution iter.Seq[uint64]) []uint64 {
 	noise := make([]uint64, 0, count)
 	for current := range distribution {

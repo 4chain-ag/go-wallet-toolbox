@@ -130,7 +130,7 @@ func TestChangeDistribution(t *testing.T) {
 		// below cases that should not happen if count is provided properly
 		"not saturated: 1 + (count-1) * initialValue": {
 			// NOTE: This case should not happen
-			// Change output should not be below "fistValue" argument (which is by default = initialValue / 4)
+			// Change output should not be below "firstValue" argument (which is by default = initialValue / 4)
 			// In real life, provided number of outputs (count) should be decreased
 			initialValue: 1000,
 			randomizer:   mockZeroRandomizer,
