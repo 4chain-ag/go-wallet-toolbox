@@ -42,6 +42,13 @@ func TestChangeDistribution(t *testing.T) {
 			amount:       5500,
 			expected:     []uint64{5500},
 		},
+		"single output with one satoshi": {
+			initialValue: 1000,
+			randomizer:   mockZeroRandomizer,
+			count:        1,
+			amount:       1,
+			expected:     []uint64{1},
+		},
 		"zero outputs": {
 			initialValue: 1000,
 			randomizer:   mockZeroRandomizer,
@@ -127,46 +134,12 @@ func TestChangeDistribution(t *testing.T) {
 			expected:     []uint64{1200, 1200, 1200, 1200, 1200, 1201},
 		},
 
-		// below cases that should not happen if count is provided properly
-		"not saturated: 1 + (count-1) * initialValue": {
-			// NOTE: This case should not happen
-			// Change output should not be below "firstValue" argument (which is by default = initialValue / 4)
-			// In real life, provided number of outputs (count) should be decreased
+		"not saturated, minimal value: 1 + (count-1) * initialValue": {
 			initialValue: 1000,
 			randomizer:   mockZeroRandomizer,
 			count:        6,
 			amount:       5001,
 			expected:     []uint64{1, 1000, 1000, 1000, 1000, 1000},
-		},
-		"reduced count: (count-1) * initialValue": {
-			// NOTE: This case should not happen
-			// Algorithm could not find a solution for target count, and automatically reduced the number of outputs
-			// In real life, provided number of outputs (count) should be decreased
-			initialValue: 1000,
-			randomizer:   mockZeroRandomizer,
-			count:        6,
-			amount:       5000,
-			expected:     []uint64{1000, 1000, 1000, 1000, 1000},
-		},
-		"not saturated, reduced count: (count-1) * initialValue": {
-			// NOTE: This case should not happen
-			// Algorithm could not find a solution for target count, and automatically reduced the number of outputs
-			// In real life, provided number of outputs (count) should be decreased
-			initialValue: 1000,
-			randomizer:   mockZeroRandomizer,
-			count:        6,
-			amount:       4999,
-			expected:     []uint64{999, 1000, 1000, 1000, 1000},
-		},
-		"not saturated, reduced count to one": {
-			// NOTE: This case should not happen
-			// Algorithm could not find a solution for target count, and automatically reduced the number of outputs
-			// In real life, provided number of outputs (count) should be decreased
-			initialValue: 1000,
-			randomizer:   mockZeroRandomizer,
-			count:        6,
-			amount:       1,
-			expected:     []uint64{1},
 		},
 	}
 	for name, test := range tests {
@@ -179,6 +152,48 @@ func TestChangeDistribution(t *testing.T) {
 
 			// then:
 			require.EqualValues(t, test.expected, seq.Collect(values))
+		})
+	}
+}
+
+func TestChangeDistributionPanics(t *testing.T) {
+	tests := map[string]struct {
+		initialValue uint64
+		randomizer   func(uint64) uint64
+		count        uint64
+		amount       uint64
+	}{
+		"reduced count: (count-1) * initialValue": {
+			initialValue: 1000,
+			randomizer:   mockZeroRandomizer,
+			count:        6,
+			amount:       5000,
+		},
+		"not saturated, reduced count: (count-1) * initialValue": {
+			initialValue: 1000,
+			randomizer:   mockZeroRandomizer,
+			count:        6,
+			amount:       4999,
+		},
+		"not saturated, reduced count to one": {
+			initialValue: 1000,
+			randomizer:   mockZeroRandomizer,
+			count:        6,
+			amount:       1,
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			// given:
+			dist := NewChangeDistribution(test.initialValue, test.randomizer)
+
+			f := func() {
+				// when:
+				dist.Distribute(test.count, test.amount)
+			}
+
+			// then:
+			require.Panics(t, f)
 		})
 	}
 }
