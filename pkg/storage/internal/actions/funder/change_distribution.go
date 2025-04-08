@@ -104,7 +104,7 @@ func (d *ChangeDistribution) notSaturatedDistribution(count uint64, amount uint6
 		)
 	}
 
-	panic("Cannot distribute change outputs among given outputs for given amount")
+	panic(fmt.Sprintf("Cannot distribute change outputs among given outputs (count: %d) for given amount (%d)", count, amount))
 }
 
 // randomNoise randomizes values for each output in the distribution;
