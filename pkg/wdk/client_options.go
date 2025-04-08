@@ -17,7 +17,7 @@ type clientOptions struct {
 func defaultClientOptions() clientOptions {
 	return clientOptions{
 		options: []jsonrpc.Option{
-			jsonrpc.WithMethodNamer(jsonrpc.NoNamespaceDecapitalizedMethodNamer),
+			jsonrpc.WithMethodNameFormatter(jsonrpc.NewMethodNameFormatter(false, jsonrpc.LowerFirstCharCase)),
 		},
 	}
 }
