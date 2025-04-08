@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/providers"
 )
 
 // ServicesOptions is a function that can be used to override services options
@@ -14,10 +14,10 @@ type Options = func(*WalletServicesOptions)
 type WalletServicesOptions struct {
 	TaalApiKey                      string
 	BitailsApiKey                   *string
-	WhatsOnChainApiKey              *string
-	BsvExchangeRate                 wdk.BSVExchangeRate
+	WhatsOnChainApiKey              string
+	BsvExchangeRate                 providers.BSVExchangeRate
 	BsvUpdateMsecs                  int
-	FiatExchangeRates               wdk.FiatExchangeRates
+	FiatExchangeRates               FiatExchangeRates
 	FiatUpdateMsecs                 int
 	DisableMapiCallback             bool
 	ExchangeratesApiKey             string
@@ -27,7 +27,7 @@ type WalletServicesOptions struct {
 	ArcConfig                       any // TODO: create *ArcConfig
 }
 
-func defaultServicesOptions(chain defs.BSVNetwork) WalletServicesOptions {
+func defaultServicesOptions(chain defs.BSVNetwork) *WalletServicesOptions {
 	var taalApiKey string
 	var port int
 	var arcUrl string
@@ -42,15 +42,15 @@ func defaultServicesOptions(chain defs.BSVNetwork) WalletServicesOptions {
 		arcUrl = "https://arc-test.taal.com/arc"
 	}
 
-	return WalletServicesOptions{
+	return &WalletServicesOptions{
 		TaalApiKey: taalApiKey,
-		BsvExchangeRate: wdk.BSVExchangeRate{
+		BsvExchangeRate: providers.BSVExchangeRate{
 			Timestamp: time.Date(2023, time.December, 13, 0, 0, 0, 0, time.UTC),
 			Base:      "USD",
 			Rate:      47.52,
 		},
 		BsvUpdateMsecs: 1000 * 60 * 15, // 15 minutes
-		FiatExchangeRates: wdk.FiatExchangeRates{
+		FiatExchangeRates: FiatExchangeRates{
 			Timestamp: time.Date(2023, time.December, 13, 0, 0, 0, 0, time.UTC),
 			Base:      "USD",
 			Rates: map[string]float64{

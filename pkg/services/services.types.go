@@ -1,8 +1,9 @@
-package wdk
+package services
 
 import (
 	"time"
 
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/bsv-blockchain/go-sdk/transaction"
 )
 
@@ -25,13 +26,6 @@ const (
 	HashBE UtxoStatusOutputFormat = "hashBE"
 	Script UtxoStatusOutputFormat = "script"
 )
-
-// BSVExchangeRate is the rate struct for BSV exchange
-type BSVExchangeRate struct {
-	Timestamp time.Time
-	Rate      float64
-	Base      string
-}
 
 // FiatExchangeRates is the rate struct for fiat currency
 type FiatExchangeRates struct {
@@ -86,7 +80,7 @@ type MerklePathResult struct {
 	// one or more orphaned blocks
 	MerklePath *transaction.MerklePath
 	Header     *BlockHeader
-	Notes      []ReqHistoryNote
+	Notes      []wdk.ReqHistoryNote
 }
 
 // UtxoStatusDetails represents details about occurrences of an output script as a UTXO
@@ -137,7 +131,7 @@ type PostTxResultForTxID struct {
 	CompetingTxs []string
 	// TODO: Data type is object | string | PostTxResultForTxidError
 	Data  any
-	Notes []ReqHistoryNote
+	Notes []wdk.ReqHistoryNote
 }
 
 // PostBeefResult are properties on array items of result returned from postBeef method
@@ -147,5 +141,5 @@ type PostBeefResult struct {
 	TxIDResults []PostTxResultForTxID
 	// Data is service response object. Use service name and status to infer type of object.
 	Data  any
-	Notes []ReqHistoryNote
+	Notes []wdk.ReqHistoryNote
 }
