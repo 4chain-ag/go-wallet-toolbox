@@ -93,7 +93,14 @@ func (c *create) Create(auth wdk.AuthID, args CreateActionParams) (*wdk.StorageC
 		return nil, fmt.Errorf("funding failed: %w", err)
 	}
 
-	return &wdk.StorageCreateActionResult{}, nil
+	derivationPrefix, err := txutils.RandomDerivation(16)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate random derivation prefix: %w", err)
+	}
+
+	return &wdk.StorageCreateActionResult{
+		DerivationPrefix: derivationPrefix,
+	}, nil
 }
 
 func (c *create) targetSat(args *CreateActionParams) (int64, error) {
