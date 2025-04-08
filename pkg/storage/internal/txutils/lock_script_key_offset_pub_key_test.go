@@ -1,11 +1,12 @@
 package txutils
 
 import (
+	"testing"
+
 	primitives "github.com/bsv-blockchain/go-sdk/primitives/ec"
 	"github.com/bsv-blockchain/go-sdk/script"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestLockScriptWithKeyOffsetFromPubKey(t *testing.T) {
