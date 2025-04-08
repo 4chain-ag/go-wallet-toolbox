@@ -8,16 +8,20 @@ import (
 	"github.com/bsv-blockchain/go-sdk/transaction/template/p2pkh"
 )
 
+// LockingScriptWithKeyOffset is a tool to generate a locking script with key offset.
 type LockingScriptWithKeyOffset struct {
 	offsetPrivGenerator func() (*primitives.PrivateKey, error)
 }
 
+// NewLockingScriptWithKeyOffset creates a new instance of LockingScriptWithKeyOffset.
 func NewLockingScriptWithKeyOffset() *LockingScriptWithKeyOffset {
 	return &LockingScriptWithKeyOffset{
 		offsetPrivGenerator: randomPrivateKey,
 	}
 }
 
+// Generate creates a locking script and randomizes a key offset (WIF formatted private key) from the given public key.
+// NOTE: It is used to add Service Charge output to the transaction.
 func (l *LockingScriptWithKeyOffset) Generate(pubKey string) (lockingScript string, keyOffset string, err error) {
 	offsetPub, keyOffset, err := l.offsetPubKey(pubKey)
 
