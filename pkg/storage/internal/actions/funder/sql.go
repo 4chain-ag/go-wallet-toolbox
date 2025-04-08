@@ -13,6 +13,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/paging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/txutils"
+	"github.com/go-softwarelab/common/pkg/must"
 	"github.com/go-softwarelab/common/pkg/seqerr"
 	"github.com/go-softwarelab/common/pkg/to"
 )
@@ -49,7 +50,7 @@ func NewSQL(logger *slog.Logger, utxoRepository UTXORepository, feeModel defs.Fe
 // @param minimumDesiredUTXOValue - the minimum value of UTXO in basket #TakeFromBasket
 // @param userID - the user ID.
 func (f *SQL) Fund(ctx context.Context, targetSat int64, currentTxSize uint64, numberOfDesiredUTXOs int, minimumDesiredUTXOValue uint64, userID int) (*actions.FundingResult, error) {
-	collector, err := newCollector(targetSat, currentTxSize, f.feeCalculator)
+	collector, err := newCollector(targetSat, currentTxSize, numberOfDesiredUTXOs, minimumDesiredUTXOValue, f.feeCalculator)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start collecting utxo: %w", err)
 	}
@@ -84,31 +85,45 @@ func (f *SQL) loadUTXOs(ctx context.Context, userID int) iter.Seq2[*models.UserU
 }
 
 type utxoCollector struct {
-	txSats         int64
-	txSize         uint64
+	txSats int64
+	txSize uint64
+
+	fee           int64
+	feeCalculator *feeCalc
+
 	satsCovered    int64
-	fee            int64
-	feeCalculator  *feeCalc
 	allocatedUTXOs []*actions.UTXO
+
+	numberOfDesiredUTXOs    uint64
+	minimumDesiredUTXOValue uint64
+	changeOutputsCount      uint64
+	minimumChange           uint64
 }
 
-func newCollector(txSats int64, txSize uint64, feeCalculator *feeCalc) (c *utxoCollector, err error) {
+func newCollector(txSats int64, txSize uint64, numberOfDesiredUTXOs int, minimumDesiredUTXOValue uint64, feeCalculator *feeCalc) (c *utxoCollector, err error) {
 	c = &utxoCollector{
-		txSats:         txSats,
-		feeCalculator:  feeCalculator,
-		allocatedUTXOs: make([]*actions.UTXO, 0),
+		txSats:                  txSats,
+		minimumDesiredUTXOValue: minimumDesiredUTXOValue,
+		feeCalculator:           feeCalculator,
+		allocatedUTXOs:          make([]*actions.UTXO, 0),
 	}
+
+	if numberOfDesiredUTXOs > 1 {
+		c.numberOfDesiredUTXOs = must.ConvertToUInt64(numberOfDesiredUTXOs)
+	} else {
+		c.numberOfDesiredUTXOs = 1
+	}
+
+	c.minimumChange = minimumDesiredUTXOValue / 4
 
 	err = c.increaseSize(txSize)
 	if err != nil {
 		return nil, fmt.Errorf("failed to increase transaction size: %w", err)
 	}
 
-	if c.change() > 0 {
-		err = c.increaseSize(changeOutputSize)
-		if err != nil {
-			return nil, fmt.Errorf("failed to increase transaction size: %w", err)
-		}
+	err = c.calculateChangeOutputs()
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate change outputs: %w", err)
 	}
 
 	return c, nil
@@ -145,6 +160,11 @@ func (c *utxoCollector) allocateUTXO(utxo *models.UserUTXO) (err error) {
 	err = c.increaseValue(utxo.Satoshis)
 	if err != nil {
 		return fmt.Errorf("failed to increase tx value: %w", err)
+	}
+
+	err = c.calculateChangeOutputs()
+	if err != nil {
+		return fmt.Errorf("failed to calculate change outputs: %w", err)
 	}
 
 	return nil
@@ -195,10 +215,48 @@ func (c *utxoCollector) prepareResult() (*actions.FundingResult, error) {
 		return nil, fmt.Errorf("cannot convert change amount to uint64: %w", err)
 	}
 
+	// if adding change will increase the fee so there is no change anymore,
+	// we're dropping the changes and passing higher fee to miner.
+	if changeAmount == 0 {
+		c.changeOutputsCount = 0
+	}
+
 	return &actions.FundingResult{
 		AllocatedUTXOs: c.allocatedUTXOs,
 		Fee:            fee,
 		ChangeAmount:   changeAmount,
-		ChangeCount:    to.IfThen(changeAmount == 0, 0).ElseThen(1),
+		ChangeCount:    c.changeOutputsCount,
 	}, nil
+}
+
+func (c *utxoCollector) calculateChangeOutputs() error {
+	change := c.change()
+	if change <= 0 {
+		return nil
+	}
+	if c.numberOfDesiredUTXOs == 1 {
+		c.changeOutputsCount = 1
+		err := c.increaseSize(1 * changeOutputSize)
+		if err != nil {
+			return fmt.Errorf("failed to increase transaction size: %w", err)
+		}
+		return nil
+	}
+
+	changeVal := must.ConvertToUInt64(change)
+
+	c.changeOutputsCount = changeVal/c.minimumDesiredUTXOValue + 1
+
+	if changeVal%c.minimumDesiredUTXOValue < c.minimumChange {
+		c.changeOutputsCount -= 1
+	}
+
+	c.changeOutputsCount = to.Clamped(c.changeOutputsCount, 1, c.numberOfDesiredUTXOs)
+
+	err := c.increaseSize(c.changeOutputsCount * changeOutputSize)
+	if err != nil {
+		return fmt.Errorf("failed to increase transaction size: %w", err)
+	}
+
+	return nil
 }

@@ -377,4 +377,99 @@ func TestFunderSQLFundSuccessResult(t *testing.T) {
 			HasNoChange()
 	})
 
+	t.Run("split change 1", func(t *testing.T) {
+		// given:
+		given, then, cleanup := testabilities.New(t)
+		defer cleanup()
+
+		// and:
+		funder := given.NewFunderService()
+
+		// when:
+		result, err := funder.Fund(ctx, -1000-1, smallTransactionSize, 10, 1000, testusers.Alice.ID)
+
+		// then:
+		then.Result(result).WithoutError(err).
+			HasChangeCount(1).ForAmount(1000)
+	})
+
+	t.Run("split change 2", func(t *testing.T) {
+		// given:
+		given, then, cleanup := testabilities.New(t)
+		defer cleanup()
+
+		// and:
+		funder := given.NewFunderService()
+
+		// when:
+		result, err := funder.Fund(ctx, -500-1, smallTransactionSize, 10, testDesiredUTXOValue, testusers.Alice.ID)
+
+		// then:
+		then.Result(result).WithoutError(err).
+			HasChangeCount(1).ForAmount(500)
+	})
+
+	t.Run("split change 3", func(t *testing.T) {
+		// given:
+		given, then, cleanup := testabilities.New(t)
+		defer cleanup()
+
+		// and:
+		funder := given.NewFunderService()
+
+		// when:
+		result, err := funder.Fund(ctx, -1001-1, smallTransactionSize, 10, testDesiredUTXOValue, testusers.Alice.ID)
+
+		// then:
+		then.Result(result).WithoutError(err).
+			HasChangeCount(1).ForAmount(1001)
+	})
+
+	t.Run("split change 4", func(t *testing.T) {
+		// given:
+		given, then, cleanup := testabilities.New(t)
+		defer cleanup()
+
+		// and:
+		funder := given.NewFunderService()
+
+		// when:
+		result, err := funder.Fund(ctx, -2000-1, smallTransactionSize, 10, testDesiredUTXOValue, testusers.Alice.ID)
+
+		// then:
+		then.Result(result).WithoutError(err).
+			HasChangeCount(2).ForAmount(2000)
+	})
+
+	t.Run("split change 5", func(t *testing.T) {
+		// given:
+		given, then, cleanup := testabilities.New(t)
+		defer cleanup()
+
+		// and:
+		funder := given.NewFunderService()
+
+		// when:
+		result, err := funder.Fund(ctx, -2001-1, smallTransactionSize, 10, testDesiredUTXOValue, testusers.Alice.ID)
+
+		// then:
+		then.Result(result).WithoutError(err).
+			HasChangeCount(2).ForAmount(2001)
+	})
+
+	t.Run("split change 6", func(t *testing.T) {
+		// given:
+		given, then, cleanup := testabilities.New(t)
+		defer cleanup()
+
+		// and:
+		funder := given.NewFunderService()
+
+		// when:
+		result, err := funder.Fund(ctx, -2500-1, smallTransactionSize, 10, testDesiredUTXOValue, testusers.Alice.ID)
+
+		// then:
+		then.Result(result).WithoutError(err).
+			HasChangeCount(3).ForAmount(2500)
+	})
 }

@@ -26,7 +26,7 @@ type UTXO struct {
 
 type FundingResult struct {
 	AllocatedUTXOs []*UTXO
-	ChangeCount    int
+	ChangeCount    uint64
 	ChangeAmount   uint64
 	Fee            uint64
 }
@@ -109,7 +109,7 @@ func (c *create) Create(auth wdk.AuthID, args CreateActionParams) (*wdk.StorageC
 
 func (c *create) targetSat(args *CreateActionParams) (int64, error) {
 	providedInputs := int64(0)
-	//TODO: sum provided inputs satoshis - but first the values should be found
+	// TODO: sum provided inputs satoshis - but first the values should be found
 
 	providedOutputs := int64(0)
 	for output := range args.Outputs {
