@@ -108,18 +108,13 @@ func newCollector(txSats int64, txSize uint64, numberOfDesiredUTXOs int, minimum
 		allocatedUTXOs:          make([]*actions.UTXO, 0),
 	}
 
-	if numberOfDesiredUTXOs > 1 {
-		c.numberOfDesiredUTXOs = must.ConvertToUInt64(numberOfDesiredUTXOs)
-	} else {
-		c.numberOfDesiredUTXOs = 1
-	}
-
-	c.minimumChange = minimumDesiredUTXOValue / 4
-
 	err = c.increaseSize(txSize)
 	if err != nil {
 		return nil, fmt.Errorf("failed to increase transaction size: %w", err)
 	}
+
+	c.numberOfDesiredUTXOs = must.ConvertToUInt64(to.NoLessThan(numberOfDesiredUTXOs, 1))
+	c.minimumChange = minimumDesiredUTXOValue / 4
 
 	err = c.calculateChangeOutputs()
 	if err != nil {
@@ -234,24 +229,8 @@ func (c *utxoCollector) calculateChangeOutputs() error {
 	if change <= 0 {
 		return nil
 	}
-	if c.numberOfDesiredUTXOs == 1 {
-		c.changeOutputsCount = 1
-		err := c.increaseSize(1 * changeOutputSize)
-		if err != nil {
-			return fmt.Errorf("failed to increase transaction size: %w", err)
-		}
-		return nil
-	}
 
-	changeVal := must.ConvertToUInt64(change)
-
-	c.changeOutputsCount = changeVal/c.minimumDesiredUTXOValue + 1
-
-	if changeVal%c.minimumDesiredUTXOValue < c.minimumChange {
-		c.changeOutputsCount -= 1
-	}
-
-	c.changeOutputsCount = to.Clamped(c.changeOutputsCount, 1, c.numberOfDesiredUTXOs)
+	c.calculateChangeCount(must.ConvertToUInt64(change))
 
 	err := c.increaseSize(c.changeOutputsCount * changeOutputSize)
 	if err != nil {
@@ -259,4 +238,14 @@ func (c *utxoCollector) calculateChangeOutputs() error {
 	}
 
 	return nil
+}
+
+func (c *utxoCollector) calculateChangeCount(changeVal uint64) {
+	c.changeOutputsCount = changeVal/c.minimumDesiredUTXOValue + 1
+
+	if changeVal%c.minimumDesiredUTXOValue < c.minimumChange {
+		c.changeOutputsCount -= 1
+	}
+
+	c.changeOutputsCount = to.ValueBetween(c.changeOutputsCount, 1, c.numberOfDesiredUTXOs)
 }
