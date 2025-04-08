@@ -18,6 +18,7 @@ func TestLockScriptWithKeyOffsetFromPubKey(t *testing.T) {
 	pubKey := "02f40c35f798e2ece03ae1ebf749545336db8402eb7e620bfe04d50da8ca8b06cc"
 
 	// and:
+	// mocking the offset private key generator
 	generator.offsetPrivGenerator = func() (*primitives.PrivateKey, error) {
 		return primitives.PrivateKeyFromWif(offsetPrivKey)
 	}
@@ -63,4 +64,18 @@ func TestLockScriptWithKeyOffset_Uniqueness(t *testing.T) {
 	// then:
 	assert.Equal(t, iterations, len(lockingScripts), "Locking script should be unique")
 	assert.Equal(t, iterations, len(keyOffsets), "Key offset should be unique")
+}
+
+func TestLockScriptWithKeyOffset_WrongPubKey(t *testing.T) {
+	// given:
+	generator := NewLockingScriptWithKeyOffset()
+
+	// and:
+	pubKey := "wrong_pub_key"
+
+	// when:
+	_, _, err := generator.Generate(pubKey)
+
+	// then:
+	assert.Error(t, err)
 }
