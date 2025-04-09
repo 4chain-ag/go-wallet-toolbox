@@ -9,7 +9,7 @@ import (
 	"github.com/go-softwarelab/common/pkg/must"
 )
 
-func TestRefactoring(t *testing.T) {
+func TestFunderSQLFund(t *testing.T) {
 	const smallTransactionSize = 44
 	const transactionSizeForHigherFee = 1001
 	var ctx = context.Background()
@@ -278,11 +278,6 @@ func TestRefactoring(t *testing.T) {
 
 		})
 	}
-}
-
-func TestFunderSQLFund(t *testing.T) {
-	const smallTransactionSize = 44
-	var ctx = context.Background()
 
 	t.Run("adding change increases the fee", func(t *testing.T) {
 		// given:
