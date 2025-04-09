@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/providers"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/whatsonchain"
 )
 
 // Options is a function that can be used to override services options
@@ -16,7 +16,7 @@ type WalletServicesOptions struct {
 	TaalApiKey                      string
 	BitailsApiKey                   *string
 	WhatsOnChainApiKey              string
-	BsvExchangeRate                 providers.BSVExchangeRate
+	BsvExchangeRate                 whatsonchain.BSVExchangeRate
 	BsvUpdateMsecs                  int
 	FiatExchangeRates               FiatExchangeRates
 	FiatUpdateMsecs                 int
@@ -45,7 +45,7 @@ func defaultServicesOptions(chain defs.BSVNetwork) *WalletServicesOptions {
 
 	return &WalletServicesOptions{
 		TaalApiKey: taalApiKey,
-		BsvExchangeRate: providers.BSVExchangeRate{
+		BsvExchangeRate: whatsonchain.BSVExchangeRate{
 			Timestamp: time.Date(2023, time.December, 13, 0, 0, 0, 0, time.UTC),
 			Base:      "USD",
 			Rate:      47.52,
@@ -92,7 +92,7 @@ func WithWhatsOnChainApiKey(apiKey string) Options {
 }
 
 // WithBsvExchangeRate sets the BSV exchange rate.
-func WithBsvExchangeRate(exchangeRate providers.BSVExchangeRate) Options {
+func WithBsvExchangeRate(exchangeRate whatsonchain.BSVExchangeRate) Options {
 	return func(o *WalletServicesOptions) {
 		o.BsvExchangeRate = exchangeRate
 	}

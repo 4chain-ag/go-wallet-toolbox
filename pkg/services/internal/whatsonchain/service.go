@@ -1,24 +1,24 @@
-package providers
+package whatsonchain
 
 import (
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
+	"github.com/go-resty/resty/v2"
 	"github.com/go-softwarelab/common/pkg/to"
 )
 
 type WhatsOnChain struct {
-	httpClient *http.Client
+	httpClient *resty.Client
 	url        string
 	apiKey     string
 	logger     *slog.Logger
 }
 
-func NewWhatsOnChain(httpClient *http.Client, logger *slog.Logger, apiKey string, network defs.BSVNetwork) *WhatsOnChain {
+func New(httpClient *resty.Client, logger *slog.Logger, apiKey string, network defs.BSVNetwork) *WhatsOnChain {
 	return &WhatsOnChain{
 		httpClient: httpClient,
 		apiKey:     apiKey,
@@ -41,39 +41,29 @@ func (woc *WhatsOnChain) UpdateBsvExchangeRate(exchangeRate *BSVExchangeRate, bs
 	}
 
 	for retry := 0; retry < 2; retry++ {
-		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/exchangerate", woc.url), nil)
-		if err != nil {
-			return BSVExchangeRate{}, fmt.Errorf("failed to prepare request for fetch exchange rate: %w", err)
-		}
-		req.Header.Add("Accept", "application/json")
+		var exchangeRateResponse BSVExchangeRateResponse
+		req := woc.httpClient.R().
+			SetHeader("Accept", "application/json")
 		if woc.apiKey != "" {
-			req.Header.Add("Authorization", woc.apiKey)
+			req.SetHeader("Authorization", woc.apiKey)
 		}
 
-		res, err := woc.httpClient.Do(req)
+		res, err := req.
+			SetResult(&exchangeRateResponse).
+			Get(fmt.Sprintf("%s/exchangerate", woc.url))
 		if err != nil {
 			return BSVExchangeRate{}, fmt.Errorf("failed to fetch exchange rate: %w", err)
 		}
-		defer func() {
-			err := res.Body.Close()
-			if err != nil {
-				woc.logger.Error(err.Error())
-			}
-		}()
 
-		if res.Status == "Too Many Requests" && retry < 2 {
+		if res.Status() == "Too Many Requests" && retry < 2 {
 			time.Sleep(2000 * time.Millisecond)
 			continue
 		}
 
-		if res.StatusCode != http.StatusOK {
-			return BSVExchangeRate{}, fmt.Errorf("failed to retrieve successful response from WOC. Actual status: %d", res.StatusCode)
+		if res.StatusCode() != http.StatusOK {
+			return BSVExchangeRate{}, fmt.Errorf("failed to retrieve successful response from WOC. Actual status: %d", res.StatusCode())
 		}
 
-		exchangeRateResponse := &BSVExchangeRateResponse{}
-		if err := json.NewDecoder(res.Body).Decode(exchangeRateResponse); err != nil {
-			return BSVExchangeRate{}, fmt.Errorf("failed to decode exchange rate response: %w", err)
-		}
 		if exchangeRateResponse.Currency != "USD" {
 			return BSVExchangeRate{}, fmt.Errorf("unsupported currency returned from Whats On Chain")
 		}

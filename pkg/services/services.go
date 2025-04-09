@@ -3,22 +3,22 @@ package services
 import (
 	"fmt"
 	"log/slog"
-	"net/http"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/providers"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/whatsonchain"
 	"github.com/bsv-blockchain/go-sdk/transaction"
 	"github.com/bsv-blockchain/go-sdk/transaction/chaintracker"
+	"github.com/go-resty/resty/v2"
 )
 
 // WalletServices is a struct that contains services used by a wallet
 type WalletServices struct {
-	httpClient   *http.Client
+	httpClient   *resty.Client
 	logger       *slog.Logger
 	chain        defs.BSVNetwork
 	options      *WalletServicesOptions
-	whatsonchain *providers.WhatsOnChain
+	whatsonchain *whatsonchain.WhatsOnChain
 
 	// getMerklePathServices: ServiceCollection<sdk.GetMerklePathService>
 	// getRawTxServices: ServiceCollection<sdk.GetRawTxService>
@@ -28,7 +28,7 @@ type WalletServices struct {
 }
 
 // New will return a new WalletServices
-func New(httpClient *http.Client, logger *slog.Logger, chain defs.BSVNetwork, opts ...Options) *WalletServices {
+func New(httpClient *resty.Client, logger *slog.Logger, chain defs.BSVNetwork, opts ...Options) *WalletServices {
 	if httpClient == nil {
 		panic("httpClient is required")
 	}
@@ -43,7 +43,7 @@ func New(httpClient *http.Client, logger *slog.Logger, chain defs.BSVNetwork, op
 		chain:        chain,
 		options:      options,
 		logger:       logger,
-		whatsonchain: providers.NewWhatsOnChain(httpClient, logging.Child(logger, "service_whats_on_chain"), options.WhatsOnChainApiKey, chain),
+		whatsonchain: whatsonchain.New(httpClient, logging.Child(logger, "service_whats_on_chain"), options.WhatsOnChainApiKey, chain),
 	}
 }
 

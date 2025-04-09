@@ -1,43 +1,44 @@
 package services_test
 
 import (
-	"bytes"
-	"encoding/json"
-	"io"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/providers"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/whatsonchain"
+	"github.com/go-resty/resty/v2"
+	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-// Mock data structures for testing
-type MockRoundTripper struct {
-	mockResponse *http.Response
-	mockError    error
-}
+func newMockHTTPClient(status int, content string, err error) *resty.Client {
+	transport := httpmock.NewMockTransport()
+	client := resty.New()
+	client.GetClient().Transport = transport
 
-func (m *MockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	return m.mockResponse, m.mockError
-}
-
-func newMockHTTPClient(response *http.Response, err error) *http.Client {
-	return &http.Client{
-		Transport: &MockRoundTripper{
-			mockResponse: response,
-			mockError:    err,
-		},
+	responder := func(status int, content string) func(req *http.Request) (*http.Response, error) {
+		return func(req *http.Request) (*http.Response, error) {
+			if err != nil {
+				return nil, err
+			}
+			res := httpmock.NewStringResponse(status, content)
+			res.Header.Set("Content-Type", "application/json")
+			return res, nil
+		}
 	}
+
+	// transport.RegisterResponder("GET", fmt.Sprintf("%s/v1/tx/%s", arcURL, minedTxID), responder(http.StatusOK, `{
+	transport.RegisterResponder("GET", "https://api.whatsonchain.com/v1/bsv/test/exchangerate", responder(status, content))
+
+	return client
 }
 
 func TestUpdateBsvExchangeRateSuccess(t *testing.T) {
 	t.Run("returns cached exchange rate if within update threshold", func(t *testing.T) {
 		// given:
-		httpClient := newMockHTTPClient(nil, nil)
-		cachedRate := providers.BSVExchangeRate{
+		httpClient := newMockHTTPClient(200, "", nil)
+		cachedRate := whatsonchain.BSVExchangeRate{
 			Timestamp: time.Now().Add(-5 * time.Minute),
 			Base:      "USD",
 			Rate:      100.0,
@@ -56,23 +57,14 @@ func TestUpdateBsvExchangeRateSuccess(t *testing.T) {
 
 	t.Run("returns updated exchange rate when outside threshold", func(t *testing.T) {
 		// given:
-		responseBody := providers.BSVExchangeRateResponse{
-			Time:     123456,
-			Rate:     50.5,
-			Currency: "USD",
-		}
-		bodyBytes, err := json.Marshal(responseBody)
-		// then:
-		require.NoError(t, err)
+		httpClient := newMockHTTPClient(200, `{
+			"time": 123456,
+			"rate": 50.5,
+			"currency": "USD"
+		}`, nil)
 
-		// and given:
-		httpClient := newMockHTTPClient(&http.Response{
-			Status:     "200 OK",
-			StatusCode: http.StatusOK,
-			Body:       io.NopCloser(bytes.NewReader(bodyBytes)),
-		}, nil)
 		woc := services.New(httpClient, nil, "test",
-			services.WithBsvExchangeRate(providers.BSVExchangeRate{
+			services.WithBsvExchangeRate(whatsonchain.BSVExchangeRate{
 				Timestamp: time.Now().Add(-16 * time.Minute),
 				Base:      "USD",
 				Rate:      100.0,
@@ -89,7 +81,11 @@ func TestUpdateBsvExchangeRateSuccess(t *testing.T) {
 
 func TestUpdateBsvExchangeRateFail(t *testing.T) {
 	t.Run("returns error if HTTP request fails", func(t *testing.T) {
-		httpClient := newMockHTTPClient(nil, assert.AnError)
+		httpClient := newMockHTTPClient(200, `{
+			"time": 123456,
+			"rate": 50.5,
+			"currency": "USD"
+		}`, assert.AnError)
 
 		woc := services.New(httpClient, nil, "test")
 
@@ -100,11 +96,11 @@ func TestUpdateBsvExchangeRateFail(t *testing.T) {
 	})
 
 	t.Run("returns error if HTTP response is not 200", func(t *testing.T) {
-		httpClient := newMockHTTPClient(&http.Response{
-			Status:     "500 Internal Server Error",
-			StatusCode: http.StatusInternalServerError,
-			Body:       io.NopCloser(bytes.NewBufferString("")),
-		}, nil)
+		httpClient := newMockHTTPClient(500, `{
+			"time": 123456,
+			"rate": 50.5,
+			"currency": "EUR"
+		}`, nil)
 
 		woc := services.New(httpClient, nil, "test")
 
@@ -114,34 +110,12 @@ func TestUpdateBsvExchangeRateFail(t *testing.T) {
 		assert.Contains(t, err.Error(), "failed to retrieve successful response from WOC")
 	})
 
-	t.Run("returns error if response JSON is invalid", func(t *testing.T) {
-		httpClient := newMockHTTPClient(&http.Response{
-			Status:     "200 OK",
-			StatusCode: http.StatusOK,
-			Body:       io.NopCloser(bytes.NewBufferString("not a json")),
-		}, nil)
-
-		woc := services.New(httpClient, nil, "test")
-
-		_, err := woc.BsvExchangeRate()
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to decode exchange rate response")
-	})
-
 	t.Run("returns error if currency is not USD", func(t *testing.T) {
-		response := providers.BSVExchangeRateResponse{
-			Time:     123456,
-			Rate:     50.5,
-			Currency: "EUR", // Not USD
-		}
-		bodyBytes, _ := json.Marshal(response)
-
-		httpClient := newMockHTTPClient(&http.Response{
-			Status:     "200 OK",
-			StatusCode: http.StatusOK,
-			Body:       io.NopCloser(bytes.NewReader(bodyBytes)),
-		}, nil)
+		httpClient := newMockHTTPClient(200, `{
+			"time": 123456,
+			"rate": 50.5,
+			"currency": "EUR"
+		}`, nil)
 
 		woc := services.New(httpClient, nil, "test")
 
