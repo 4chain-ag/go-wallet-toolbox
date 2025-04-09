@@ -13,6 +13,8 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/paging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/txutils"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/go-softwarelab/common/pkg/must"
 	"github.com/go-softwarelab/common/pkg/seqerr"
 	"github.com/go-softwarelab/common/pkg/to"
 )
@@ -48,8 +50,9 @@ func NewSQL(logger *slog.Logger, utxoRepository UTXORepository, feeModel defs.Fe
 // @param numberOfDesiredUTXOs - the number of UTXOs in basket #TakeFromBasket
 // @param minimumDesiredUTXOValue - the minimum value of UTXO in basket #TakeFromBasket
 // @param userID - the user ID.
-func (f *SQL) Fund(ctx context.Context, targetSat int64, currentTxSize uint64, numberOfDesiredUTXOs int, minimumDesiredUTXOValue uint64, userID int) (*actions.FundingResult, error) {
-	collector, err := newCollector(targetSat, currentTxSize, f.feeCalculator)
+func (f *SQL) Fund(ctx context.Context, targetSat int64, currentTxSize uint64, basket *wdk.TableOutputBasket, userID int) (*actions.FundingResult, error) {
+
+	collector, err := newCollector(targetSat, currentTxSize, basket.NumberOfDesiredUTXOs, basket.MinimumDesiredUTXOValue, f.feeCalculator)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start collecting utxo: %w", err)
 	}
@@ -84,19 +87,27 @@ func (f *SQL) loadUTXOs(ctx context.Context, userID int) iter.Seq2[*models.UserU
 }
 
 type utxoCollector struct {
-	txSats         int64
-	txSize         uint64
+	txSats int64
+	txSize uint64
+
+	fee           int64
+	feeCalculator *feeCalc
+
 	satsCovered    int64
-	fee            int64
-	feeCalculator  *feeCalc
 	allocatedUTXOs []*actions.UTXO
+
+	numberOfDesiredUTXOs    uint64
+	minimumDesiredUTXOValue uint64
+	changeOutputsCount      uint64
+	minimumChange           uint64
 }
 
-func newCollector(txSats int64, txSize uint64, feeCalculator *feeCalc) (c *utxoCollector, err error) {
+func newCollector(txSats int64, txSize uint64, numberOfDesiredUTXOs int, minimumDesiredUTXOValue uint64, feeCalculator *feeCalc) (c *utxoCollector, err error) {
 	c = &utxoCollector{
-		txSats:         txSats,
-		feeCalculator:  feeCalculator,
-		allocatedUTXOs: make([]*actions.UTXO, 0),
+		txSats:                  txSats,
+		minimumDesiredUTXOValue: minimumDesiredUTXOValue,
+		feeCalculator:           feeCalculator,
+		allocatedUTXOs:          make([]*actions.UTXO, 0),
 	}
 
 	err = c.increaseSize(txSize)
@@ -104,11 +115,13 @@ func newCollector(txSats int64, txSize uint64, feeCalculator *feeCalc) (c *utxoC
 		return nil, fmt.Errorf("failed to increase transaction size: %w", err)
 	}
 
-	if c.change() > 0 {
-		err = c.increaseSize(changeOutputSize)
-		if err != nil {
-			return nil, fmt.Errorf("failed to increase transaction size: %w", err)
-		}
+	c.numberOfDesiredUTXOs = must.ConvertToUInt64(to.NoLessThan(numberOfDesiredUTXOs, 1))
+
+	c.calculateMinimumChange()
+
+	err = c.calculateChangeOutputs()
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate change outputs: %w", err)
 	}
 
 	return c, nil
@@ -145,6 +158,11 @@ func (c *utxoCollector) allocateUTXO(utxo *models.UserUTXO) (err error) {
 	err = c.increaseValue(utxo.Satoshis)
 	if err != nil {
 		return fmt.Errorf("failed to increase tx value: %w", err)
+	}
+
+	err = c.calculateChangeOutputs()
+	if err != nil {
+		return fmt.Errorf("failed to calculate change outputs: %w", err)
 	}
 
 	return nil
@@ -195,10 +213,49 @@ func (c *utxoCollector) prepareResult() (*actions.FundingResult, error) {
 		return nil, fmt.Errorf("cannot convert change amount to uint64: %w", err)
 	}
 
+	// If adding a change output increases the fee to the point where no change remains,
+	// the change outputs are discarded, and the additional amount is given as a higher fee to the miner.
+	if changeAmount == 0 {
+		c.changeOutputsCount = 0
+	}
+
 	return &actions.FundingResult{
 		AllocatedUTXOs: c.allocatedUTXOs,
 		Fee:            fee,
 		ChangeAmount:   changeAmount,
-		ChangeCount:    to.IfThen(changeAmount == 0, 0).ElseThen(1),
+		ChangeCount:    c.changeOutputsCount,
 	}, nil
+}
+
+func (c *utxoCollector) calculateChangeOutputs() error {
+	change := c.change()
+	if change <= 0 {
+		return nil
+	}
+
+	c.calculateChangeCount(must.ConvertToUInt64(change))
+
+	err := c.increaseSize(c.changeOutputsCount * changeOutputSize)
+	if err != nil {
+		return fmt.Errorf("failed to increase transaction size: %w", err)
+	}
+
+	return nil
+}
+
+func (c *utxoCollector) calculateChangeCount(changeVal uint64) {
+	c.changeOutputsCount = changeVal/c.minimumDesiredUTXOValue + 1
+
+	if changeVal%c.minimumDesiredUTXOValue < c.minimumChange {
+		c.changeOutputsCount -= 1
+	}
+
+	c.changeOutputsCount = to.ValueBetween(c.changeOutputsCount, 1, c.numberOfDesiredUTXOs)
+}
+
+// calculateMinimumChange determines the minimum change amount based on the **Desired** minimum UTXO value.
+// The "desired" minimum UTXO value represents the user's preference for common UTXO values in the basket.
+// In contrast, the minimum change is the threshold below which a new UTXO is not created.
+func (c *utxoCollector) calculateMinimumChange() {
+	c.minimumChange = c.minimumDesiredUTXOValue / 4
 }
