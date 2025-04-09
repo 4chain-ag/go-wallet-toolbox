@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -17,9 +18,9 @@ func NewOutputBaskets(db *gorm.DB) *OutputBaskets {
 	return &OutputBaskets{db: db}
 }
 
-func (u *OutputBaskets) FindByName(userID int, name string) (*wdk.TableOutputBasket, error) {
+func (u *OutputBaskets) FindByName(ctx context.Context, userID int, name string) (*wdk.TableOutputBasket, error) {
 	outputBasket := &models.OutputBasket{}
-	err := u.db.First(&outputBasket, "user_id = ? AND name = ?", userID, name).Error
+	err := u.db.WithContext(ctx).First(&outputBasket, "user_id = ? AND name = ?", userID, name).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
