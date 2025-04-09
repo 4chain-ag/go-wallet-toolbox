@@ -68,3 +68,94 @@ func defaultServicesOptions(chain defs.BSVNetwork) *WalletServicesOptions {
 		ArcConfig:                       nil, // TODO: implement me
 	}
 }
+
+// WithTaalApiKey sets the Taal API key.
+func WithTaalApiKey(apiKey string) Options {
+	return func(o *WalletServicesOptions) {
+		o.TaalApiKey = apiKey
+	}
+}
+
+// WithBitailsApiKey sets the Bitails API key.
+func WithBitailsApiKey(apiKey *string) Options {
+	return func(o *WalletServicesOptions) {
+		o.BitailsApiKey = apiKey
+	}
+}
+
+// WithWhatsOnChainApiKey sets the WhatsOnChain API key.
+func WithWhatsOnChainApiKey(apiKey string) Options {
+	return func(o *WalletServicesOptions) {
+		o.WhatsOnChainApiKey = apiKey
+	}
+}
+
+// WithBsvExchangeRate sets the BSV exchange rate.
+func WithBsvExchangeRate(exchangeRate providers.BSVExchangeRate) Options {
+	return func(o *WalletServicesOptions) {
+		o.BsvExchangeRate = exchangeRate
+	}
+}
+
+// WithBsvUpdateMsecs sets the update interval for BSV exchange rates in milliseconds.
+func WithBsvUpdateMsecs(updateMsecs int) Options {
+	return func(o *WalletServicesOptions) {
+		o.BsvUpdateMsecs = updateMsecs
+	}
+}
+
+// WithFiatExchangeRates sets the fiat exchange rates.
+func WithFiatExchangeRates(fiatRates FiatExchangeRates) Options {
+	return func(o *WalletServicesOptions) {
+		o.FiatExchangeRates = fiatRates
+	}
+}
+
+// WithFiatUpdateMsecs sets the update interval for fiat exchange rates in milliseconds.
+func WithFiatUpdateMsecs(updateMsecs int) Options {
+	return func(o *WalletServicesOptions) {
+		o.FiatUpdateMsecs = updateMsecs
+	}
+}
+
+// WithDisableMapiCallback disables or enables MAPI callbacks.
+func WithDisableMapiCallback(disable bool) Options {
+	return func(o *WalletServicesOptions) {
+		o.DisableMapiCallback = disable
+	}
+}
+
+// WithExchangeratesApiKey sets the ExchangeRates API key.
+func WithExchangeratesApiKey(apiKey string) Options {
+	return func(o *WalletServicesOptions) {
+		o.ExchangeratesApiKey = apiKey
+	}
+}
+
+// WithChaintracksFiatExchangeRatesUrl sets the Chaintracks fiat exchange rates URL.
+func WithChaintracksFiatExchangeRatesUrl(url string) Options {
+	return func(o *WalletServicesOptions) {
+		o.ChaintracksFiatExchangeRatesUrl = url
+	}
+}
+
+// WithChaintracks sets the Chaintracks service client.
+func WithChaintracks(chaintracks any) Options {
+	return func(o *WalletServicesOptions) {
+		o.Chaintracks = chaintracks
+	}
+}
+
+// WithArcUrl sets the ARC URL.
+func WithArcUrl(url string) Options {
+	return func(o *WalletServicesOptions) {
+		o.ArcUrl = url
+	}
+}
+
+// WithArcConfig sets the ARC configuration.
+func WithArcConfig(config any) Options {
+	return func(o *WalletServicesOptions) {
+		o.ArcConfig = config
+	}
+}

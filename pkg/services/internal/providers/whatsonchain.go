@@ -28,7 +28,11 @@ func (woc *WhatsOnChain) UpdateBsvExchangeRate(exchangeRate *BSVExchangeRate, bs
 	if exchangeRate != nil {
 		fifteenMinutesMs := 1000 * 60 * 15
 		updateMscecs := to.IfThen(bsvUpdateMsecs != nil, *bsvUpdateMsecs).ElseThen(fifteenMinutesMs)
-		if time.Since(exchangeRate.Timestamp) < time.Duration(updateMscecs) {
+		// Calculate the threshold time by subtracting updateMsecs from the current time
+		thresholdTime := time.Now().Add(-time.Duration(updateMscecs) * time.Millisecond)
+
+		// Check if the rate timestamp is newer than the threshold time
+		if exchangeRate.Timestamp.After(thresholdTime) {
 			return *exchangeRate, nil
 		}
 	}
@@ -70,7 +74,6 @@ func (woc *WhatsOnChain) UpdateBsvExchangeRate(exchangeRate *BSVExchangeRate, bs
 			Base:      "USD",
 			Rate:      exchangeRateResponse.Rate,
 		}, nil
-
 	}
 
 	return BSVExchangeRate{}, fmt.Errorf("failed to update exchange rate: internal error")
