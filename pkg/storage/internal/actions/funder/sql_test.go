@@ -287,8 +287,11 @@ func TestFunderSQLFund(t *testing.T) {
 		// and:
 		funder := given.NewFunderService()
 
+		// and:
+		basket := given.BasketFor(testusers.Alice).ThatPrefersSingleChange()
+
 		// when:
-		result, err := funder.Fund(ctx, -102, 990, nil, testusers.Alice.ID)
+		result, err := funder.Fund(ctx, -102, 990, basket, testusers.Alice.ID)
 
 		// then:
 		then.Result(result).WithoutError(err).
@@ -304,8 +307,11 @@ func TestFunderSQLFund(t *testing.T) {
 		// and:
 		funder := given.NewFunderService()
 
+		// and:
+		basket := given.BasketFor(testusers.Alice).ThatPrefersSingleChange()
+
 		// when:
-		result, err := funder.Fund(ctx, -2, 999, nil, testusers.Alice.ID)
+		result, err := funder.Fund(ctx, -2, 999, basket, testusers.Alice.ID)
 
 		// then:
 		then.Result(result).WithoutError(err).
@@ -371,9 +377,6 @@ func TestFunderSQLFund(t *testing.T) {
 			// and it must be negative to simulate that user provides by himself the inputs to cover those values.
 			targetSatoshis := must.ConvertToInt64(-(test.expectedChangeValue + fee))
 
-			// and: this is the limit for number of changes we don't want to exceed (in those test cases)
-			const numberOfDesiredUTXOs = 3
-
 			// and:
 			given, then, cleanup := testabilities.New(t)
 			defer cleanup()
@@ -381,8 +384,11 @@ func TestFunderSQLFund(t *testing.T) {
 			// and:
 			funder := given.NewFunderService()
 
+			// and: basket with limit of 3 outputs
+			basket := given.BasketFor(testusers.Alice).WithNumberOfDesiredUTXOs(3)
+
 			// when:
-			result, err := funder.Fund(ctx, targetSatoshis, smallTransactionSize, nil, testusers.Alice.ID)
+			result, err := funder.Fund(ctx, targetSatoshis, smallTransactionSize, basket, testusers.Alice.ID)
 
 			// then:
 			then.Result(result).WithoutError(err).
