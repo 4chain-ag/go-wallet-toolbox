@@ -114,7 +114,8 @@ func newCollector(txSats int64, txSize uint64, numberOfDesiredUTXOs int, minimum
 	}
 
 	c.numberOfDesiredUTXOs = must.ConvertToUInt64(to.NoLessThan(numberOfDesiredUTXOs, 1))
-	c.minimumChange = minimumDesiredUTXOValue / 4
+
+	c.calculateMinimumChange()
 
 	err = c.calculateChangeOutputs()
 	if err != nil {
@@ -248,4 +249,11 @@ func (c *utxoCollector) calculateChangeCount(changeVal uint64) {
 	}
 
 	c.changeOutputsCount = to.ValueBetween(c.changeOutputsCount, 1, c.numberOfDesiredUTXOs)
+}
+
+// calculateMinimumChange determines the minimum change amount based on the **Desired** minimum UTXO value.
+// The "desired" minimum UTXO value represents the user's preference for common UTXO values in the basket.
+// In contrast, the minimum change is the threshold below which a new UTXO is not created.
+func (c *utxoCollector) calculateMinimumChange() {
+	c.minimumChange = c.minimumDesiredUTXOValue / 4
 }
