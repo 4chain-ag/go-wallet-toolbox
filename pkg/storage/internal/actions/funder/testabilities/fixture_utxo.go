@@ -70,6 +70,10 @@ func (f *userUtxoFixture) WithSatoshis(satoshis int64) UserUTXOFixture {
 }
 
 func (f *userUtxoFixture) Stored() {
+	if f.satoshis == 0 {
+		return
+	}
+
 	utxo := &models.UserUTXO{
 		UserID:             f.userID,
 		TxID:               f.txID,
