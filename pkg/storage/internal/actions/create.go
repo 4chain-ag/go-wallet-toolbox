@@ -18,6 +18,7 @@ import (
 
 const (
 	derivationPrefixLength = 16
+	referenceLength        = 12
 )
 
 type UTXO struct {
@@ -33,16 +34,30 @@ type FundingResult struct {
 	Fee            uint64
 }
 
+func (fr *FundingResult) TotalAllocated() uint64 {
+	total := uint64(0)
+	for _, utxo := range fr.AllocatedUTXOs {
+		total += utxo.Satoshis
+	}
+	return total
+}
+
 type CreateActionParams struct {
-	Outputs iter.Seq[*wdk.ValidCreateActionOutput]
-	Inputs  iter.Seq[*wdk.ValidCreateActionInput]
+	Version     int
+	LockTime    int
+	Description string
+	Outputs     iter.Seq[*wdk.ValidCreateActionOutput]
+	Inputs      iter.Seq[*wdk.ValidCreateActionInput]
 }
 
 func FromValidCreateActionArgs(args *wdk.ValidCreateActionArgs) CreateActionParams {
 	// TODO: use only the necessary fields (no redundant fields)
 	return CreateActionParams{
-		Outputs: seq.PointersFromSlice(args.Outputs),
-		Inputs:  seq.PointersFromSlice(args.Inputs),
+		Version:     args.Version,
+		LockTime:    args.LockTime,
+		Description: string(args.Description),
+		Outputs:     seq.PointersFromSlice(args.Outputs),
+		Inputs:      seq.PointersFromSlice(args.Inputs),
 	}
 }
 
@@ -60,20 +75,26 @@ type BasketRepo interface {
 	FindByName(ctx context.Context, userID int, name string) (*wdk.TableOutputBasket, error)
 }
 
+type TxRepo interface {
+	CreateTransaction(ctx context.Context, transaction *wdk.NewTxModel) error
+}
+
 type create struct {
 	logger        *slog.Logger
 	funder        Funder
 	basketRepo    BasketRepo
+	txRepo     TxRepo
 	commission    *commission.ScriptGenerator
 	commissionCfg defs.Commission
 }
 
-func newCreateAction(logger *slog.Logger, funder Funder, commissionCfg defs.Commission, basketRepo BasketRepo) *create {
+func newCreateAction(logger *slog.Logger, funder Funder, commissionCfg defs.Commission, basketRepo BasketRepo, txRepo TxRepo) *create {
 	logger = logging.Child(logger, "createAction")
 	c := &create{
 		logger:        logger,
 		funder:        funder,
 		basketRepo:    basketRepo,
+		txRepo:     txRepo,
 		commissionCfg: commissionCfg,
 	}
 
@@ -84,8 +105,8 @@ func newCreateAction(logger *slog.Logger, funder Funder, commissionCfg defs.Comm
 	return c
 }
 
-func (c *create) Create(auth wdk.AuthID, args CreateActionParams) (*wdk.StorageCreateActionResult, error) {
-	basket, err := c.basketRepo.FindByName(context.TODO(), *auth.UserID, wdk.BasketNameForChange)
+func (c *create) Create(ctx context.Context, userID int, params CreateActionParams) (*wdk.StorageCreateActionResult, error) {
+	basket, err := c.basketRepo.FindByName(ctx, userID, wdk.BasketNameForChange)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find basket: %w", err)
 	}
@@ -95,27 +116,57 @@ func (c *create) Create(auth wdk.AuthID, args CreateActionParams) (*wdk.StorageC
 
 	// TODO: Add commission output if enabled
 
-	initialTxSize, err := c.txSize(&args)
+	initialTxSize, err := c.txSize(&params)
 	if err != nil {
 		return nil, err
 	}
 
-	targetSat, err := c.targetSat(&args)
+	targetSat, err := c.targetSat(&params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to calculate target satoshis: %w", err)
 	}
 
-	_, err = c.funder.Fund(context.Background(), targetSat, initialTxSize, basket, *auth.UserID)
+	funding, err := c.funder.Fund(ctx, targetSat, initialTxSize, basket, userID)
 	if err != nil {
 		return nil, fmt.Errorf("funding failed: %w", err)
 	}
 
-	derivationPrefix, err := txutils.RandomDerivation(derivationPrefixLength)
+	changeDist := txutils.NewChangeDistribution(basket.MinimumDesiredUTXOValue, txutils.Rand).
+		Distribute(funding.ChangeCount, funding.ChangeAmount)
+
+	// TODO: convert change values into outputs
+	_ = changeDist
+
+	derivationPrefix, err := txutils.RandomBase64(derivationPrefixLength)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate random derivation prefix: %w", err)
 	}
 
+	reference, err := txutils.RandomBase64(referenceLength)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate random reference: %w", err)
+	}
+
+	err = c.txRepo.CreateTransaction(&wdk.NewTxModel{
+		UserID:      userID,
+		Version:     params.Version,
+		LockTime:    params.LockTime,
+		Status:      wdk.TxStatusUnsigned,
+		Reference:   reference,
+		IsOutgoing:  true,
+		Description: params.Description,
+		Satoshis:    funding.ChangeAmount - funding.TotalAllocated(),
+
+		// TODO: inputBEEF
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create transaction: %w", err)
+	}
+
 	return &wdk.StorageCreateActionResult{
+		Reference:        reference,
+		Version:          params.Version,
+		LockTime:         params.LockTime,
 		DerivationPrefix: derivationPrefix,
 	}, nil
 }

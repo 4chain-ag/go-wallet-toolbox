@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-func RandomDerivation(length uint64) (string, error) {
+func RandomBase64(length uint64) (string, error) {
 	if length == 0 {
 		return "", fmt.Errorf("length cannot be zero")
 	}
