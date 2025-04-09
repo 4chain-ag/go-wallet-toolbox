@@ -3,6 +3,7 @@ package providers
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -14,13 +15,15 @@ type WhatsOnChain struct {
 	httpClient *http.Client
 	url        string
 	apiKey     string
+	logger     *slog.Logger
 }
 
-func NewWhatsOnChain(httpClient *http.Client, apiKey string, network defs.BSVNetwork) *WhatsOnChain {
+func NewWhatsOnChain(httpClient *http.Client, logger *slog.Logger, apiKey string, network defs.BSVNetwork) *WhatsOnChain {
 	return &WhatsOnChain{
 		httpClient: httpClient,
 		apiKey:     apiKey,
 		url:        fmt.Sprintf("https://api.whatsonchain.com/v1/bsv/%s", network),
+		logger:     logger,
 	}
 }
 
@@ -51,7 +54,12 @@ func (woc *WhatsOnChain) UpdateBsvExchangeRate(exchangeRate *BSVExchangeRate, bs
 		if err != nil {
 			return BSVExchangeRate{}, fmt.Errorf("failed to fetch exchange rate: %w", err)
 		}
-		defer res.Body.Close()
+		defer func() {
+			err := res.Body.Close()
+			if err != nil {
+				woc.logger.Error(err.Error())
+			}
+		}()
 
 		if res.Status == "Too Many Requests" && retry < 2 {
 			time.Sleep(2000 * time.Millisecond)
