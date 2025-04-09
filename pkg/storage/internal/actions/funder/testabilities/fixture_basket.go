@@ -14,6 +14,7 @@ const (
 
 type BasketFixture interface {
 	ThatPrefersSingleChange() *wdk.TableOutputBasket
+	WithNumberOfDesiredUTXOs(i int) *wdk.TableOutputBasket
 }
 
 type basketFixture struct {
@@ -29,12 +30,16 @@ func newBasketFixture(t testing.TB, user testusers.User) *basketFixture {
 }
 
 func (f *basketFixture) ThatPrefersSingleChange() *wdk.TableOutputBasket {
+	return f.WithNumberOfDesiredUTXOs(desiredUTXONumberToPreferSingleChange)
+}
+
+func (f *basketFixture) WithNumberOfDesiredUTXOs(number int) *wdk.TableOutputBasket {
 	return &wdk.TableOutputBasket{
 		BasketID: 1,
 		UserID:   f.user.ID,
 		BasketConfiguration: wdk.BasketConfiguration{
 			Name:                    "default",
-			NumberOfDesiredUTXOs:    desiredUTXONumberToPreferSingleChange,
+			NumberOfDesiredUTXOs:    number,
 			MinimumDesiredUTXOValue: testDesiredUTXOValue,
 		},
 		CreatedAt: exampleDate,
