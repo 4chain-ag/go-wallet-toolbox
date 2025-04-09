@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 
@@ -17,17 +18,17 @@ import (
 
 // Repository is an interface for the actual storage repository.
 type Repository interface {
-	Migrate() error
+	Migrate(context.Context) error
 
-	ReadSettings() (*wdk.TableSettings, error)
-	SaveSettings(settings *wdk.TableSettings) error
+	ReadSettings(ctx context.Context) (*wdk.TableSettings, error)
+	SaveSettings(ctx context.Context, settings *wdk.TableSettings) error
 
-	FindUser(identityKey string) (*wdk.TableUser, error)
-	CreateUser(identityKey, activeStorage string, baskets ...wdk.BasketConfiguration) (*wdk.TableUser, error)
+	FindUser(ctx context.Context, identityKey string) (*wdk.TableUser, error)
+	CreateUser(ctx context.Context, identityKey, activeStorage string, baskets ...wdk.BasketConfiguration) (*wdk.TableUser, error)
 
-	CreateCertificate(certificate *models.Certificate) (uint, error)
-	DeleteCertificate(userID int, args wdk.RelinquishCertificateArgs) error
-	ListAndCountCertificates(userID int, opts repo.ListCertificatesActionParams) ([]*models.Certificate, int64, error)
+	CreateCertificate(ctx context.Context, certificate *models.Certificate) (uint, error)
+	DeleteCertificate(ctx context.Context, userID int, args wdk.RelinquishCertificateArgs) error
+	ListAndCountCertificates(ctx context.Context, userID int, opts repo.ListCertificatesActionParams) ([]*models.Certificate, int64, error)
 }
 
 // Provider is a storage provider.
@@ -89,14 +90,14 @@ func configureDatabase(logger *slog.Logger, dbConfig defs.Database, options *pro
 
 // Migrate migrates the storage and saves the settings.
 func (p *Provider) Migrate(storageName, storageIdentityKey string) (string, error) {
-	err := p.repo.Migrate()
+	err := p.repo.Migrate(context.TODO())
 	if err != nil {
 		return "", fmt.Errorf("failed to migrate: %w", err)
 	}
 
 	// TODO: what if p.Chain != Chain from DB?
 
-	err = p.repo.SaveSettings(&wdk.TableSettings{
+	err = p.repo.SaveSettings(context.TODO(), &wdk.TableSettings{
 		StorageIdentityKey: storageIdentityKey,
 		StorageName:        storageName,
 		Chain:              p.Chain,
@@ -115,7 +116,7 @@ func (p *Provider) Migrate(storageName, storageIdentityKey string) (string, erro
 
 // MakeAvailable reads the settings and makes them available.
 func (p *Provider) MakeAvailable() (*wdk.TableSettings, error) {
-	settings, err := p.repo.ReadSettings()
+	settings, err := p.repo.ReadSettings(context.TODO())
 	if err != nil {
 		return nil, fmt.Errorf("failed to read settings: %w", err)
 	}
@@ -151,7 +152,7 @@ func (p *Provider) InsertCertificateAuth(auth wdk.AuthID, certificate *wdk.Table
 		certModel.Verifier = string(*certificate.Verifier)
 	}
 
-	id, err := p.repo.CreateCertificate(certModel)
+	id, err := p.repo.CreateCertificate(context.TODO(), certModel)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create certificate: %w", err)
 	}
@@ -170,7 +171,7 @@ func (p *Provider) RelinquishCertificate(auth wdk.AuthID, args wdk.RelinquishCer
 		return fmt.Errorf("invalid relinquishCertificate args: %w", err)
 	}
 
-	err = p.repo.DeleteCertificate(*auth.UserID, args)
+	err = p.repo.DeleteCertificate(context.TODO(), *auth.UserID, args)
 	if err != nil {
 		return fmt.Errorf("failed to relinquish certificate: %w", err)
 	}
@@ -192,7 +193,7 @@ func (p *Provider) ListCertificates(auth wdk.AuthID, args wdk.ListCertificatesAr
 	// prepare arguments
 	filterOptions := listCertificatesArgsToActionParams(args)
 
-	certModels, totalCount, err := p.repo.ListAndCountCertificates(*auth.UserID, filterOptions)
+	certModels, totalCount, err := p.repo.ListAndCountCertificates(context.TODO(), *auth.UserID, filterOptions)
 	if err != nil {
 		return nil, fmt.Errorf("error during listing certificates action: %w", err)
 	}
@@ -212,7 +213,7 @@ func (p *Provider) ListCertificates(auth wdk.AuthID, args wdk.ListCertificatesAr
 
 // FindOrInsertUser will find user by their identityKey or inserts a new one if not found
 func (p *Provider) FindOrInsertUser(identityKey string) (*wdk.FindOrInsertUserResponse, error) {
-	user, err := p.repo.FindUser(identityKey)
+	user, err := p.repo.FindUser(context.TODO(), identityKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find user: %w", err)
 	}
@@ -223,12 +224,13 @@ func (p *Provider) FindOrInsertUser(identityKey string) (*wdk.FindOrInsertUserRe
 		}, nil
 	}
 
-	settings, err := p.repo.ReadSettings()
+	settings, err := p.repo.ReadSettings(context.TODO())
 	if err != nil {
 		return nil, fmt.Errorf("failed to read settings: %w", err)
 	}
 
 	user, err = p.repo.CreateUser(
+		context.TODO(),
 		identityKey,
 		settings.StorageIdentityKey,
 		wdk.DefaultBasketConfiguration(),

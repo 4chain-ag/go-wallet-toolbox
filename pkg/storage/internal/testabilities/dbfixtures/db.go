@@ -1,6 +1,7 @@
 package dbfixtures
 
 import (
+	"context"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
@@ -43,7 +44,7 @@ func TestDatabase(t testing.TB) (db *database.Database, cleanup func()) {
 	db, err := database.NewDatabase(dbConfig, logger)
 	require.NoError(t, err)
 	repos := db.CreateRepositories()
-	err = repos.Migrate()
+	err = repos.Migrate(context.Background())
 	require.NoError(t, err)
 	return db, func() {}
 }
