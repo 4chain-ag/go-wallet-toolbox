@@ -46,6 +46,7 @@ type CreateActionParams struct {
 	Version     int
 	LockTime    int
 	Description string
+	Labels      []wdk.IdentifierStringUnder300
 	Outputs     iter.Seq[*wdk.ValidCreateActionOutput]
 	Inputs      iter.Seq[*wdk.ValidCreateActionInput]
 }
@@ -56,6 +57,7 @@ func FromValidCreateActionArgs(args *wdk.ValidCreateActionArgs) CreateActionPara
 		Version:     args.Version,
 		LockTime:    args.LockTime,
 		Description: string(args.Description),
+		Labels:      args.Labels,
 		Outputs:     seq.PointersFromSlice(args.Outputs),
 		Inputs:      seq.PointersFromSlice(args.Inputs),
 	}
@@ -76,7 +78,7 @@ type BasketRepo interface {
 }
 
 type TxRepo interface {
-	CreateTransaction(ctx context.Context, transaction *wdk.NewTxModel) error
+	CreateTransaction(ctx context.Context, transaction *wdk.NewTx) error
 }
 
 type create struct {
@@ -147,7 +149,7 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		return nil, fmt.Errorf("failed to generate random reference: %w", err)
 	}
 
-	err = c.txRepo.CreateTransaction(&wdk.NewTxModel{
+	err = c.txRepo.CreateTransaction(ctx, &wdk.NewTx{
 		UserID:      userID,
 		Version:     params.Version,
 		LockTime:    params.LockTime,
@@ -156,6 +158,7 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		IsOutgoing:  true,
 		Description: params.Description,
 		Satoshis:    funding.ChangeAmount - funding.TotalAllocated(),
+		Labels:      params.Labels,
 
 		// TODO: inputBEEF
 	})

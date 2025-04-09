@@ -31,9 +31,22 @@ func TestCreateActionHappyPath(t *testing.T) {
 	// given:
 	activeStorage := given.GormProvider()
 
+	// and:
+	args := fixtures.DefaultValidCreateActionArgs()
+
 	// when:
-	_, err := activeStorage.CreateAction(context.Background(), wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)}, fixtures.DefaultValidCreateActionArgs())
+	result, err := activeStorage.CreateAction(
+		context.Background(),
+		wdk.AuthID{UserID: to.Ptr(testusers.Bob.ID)},
+		args,
+	)
+
+	// TODO: Test DB state: but after we make actual getter methods, like ListActions
 
 	// then:
 	require.NoError(t, err)
+	require.Equal(t, 24, len(result.DerivationPrefix))
+	require.Equal(t, 16, len(result.Reference))
+	require.Equal(t, args.Version, result.Version)
+	require.Equal(t, args.LockTime, result.LockTime)
 }

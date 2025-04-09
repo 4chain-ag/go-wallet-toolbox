@@ -1,6 +1,6 @@
 package wdk
 
-type NewTxModel struct {
+type NewTx struct {
 	UserID int
 
 	Version     int
@@ -12,5 +12,5 @@ type NewTxModel struct {
 	InputBeef   []byte
 	Description string
 
-	Labels []string
+	Labels []IdentifierStringUnder300
 }

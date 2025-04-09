@@ -8,15 +8,17 @@ import (
 type Transaction struct {
 	gorm.Model
 
-	UserID      uint
+	UserID      int
 	Status      wdk.TxStatus
 	Reference   string
 	IsOutgoing  bool
 	Satoshis    uint64
 	Description string
 	Version     int
-	lockTime    *int
+	LockTime    int
 	TxID        *string
 	InputBeef   []byte
 	RawTx       []byte
+
+	Labels []Label `gorm:"many2many:transaction_labels;"`
 }
