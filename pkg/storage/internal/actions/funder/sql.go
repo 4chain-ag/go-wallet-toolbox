@@ -13,6 +13,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/paging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/txutils"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/go-softwarelab/common/pkg/must"
 	"github.com/go-softwarelab/common/pkg/seqerr"
 	"github.com/go-softwarelab/common/pkg/to"
@@ -49,8 +50,9 @@ func NewSQL(logger *slog.Logger, utxoRepository UTXORepository, feeModel defs.Fe
 // @param numberOfDesiredUTXOs - the number of UTXOs in basket #TakeFromBasket
 // @param minimumDesiredUTXOValue - the minimum value of UTXO in basket #TakeFromBasket
 // @param userID - the user ID.
-func (f *SQL) Fund(ctx context.Context, targetSat int64, currentTxSize uint64, numberOfDesiredUTXOs int, minimumDesiredUTXOValue uint64, userID int) (*actions.FundingResult, error) {
-	collector, err := newCollector(targetSat, currentTxSize, numberOfDesiredUTXOs, minimumDesiredUTXOValue, f.feeCalculator)
+func (f *SQL) Fund(ctx context.Context, targetSat int64, currentTxSize uint64, basket *wdk.TableOutputBasket, userID int) (*actions.FundingResult, error) {
+
+	collector, err := newCollector(targetSat, currentTxSize, basket.NumberOfDesiredUTXOs, basket.MinimumDesiredUTXOValue, f.feeCalculator)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start collecting utxo: %w", err)
 	}
