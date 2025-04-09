@@ -210,8 +210,8 @@ func (c *utxoCollector) prepareResult() (*actions.FundingResult, error) {
 		return nil, fmt.Errorf("cannot convert change amount to uint64: %w", err)
 	}
 
-	// if adding change will increase the fee so there is no change anymore,
-	// we're dropping the changes and passing higher fee to miner.
+	// If adding a change output increases the fee to the point where no change remains,
+	// the change outputs are discarded, and the additional amount is given as a higher fee to the miner.
 	if changeAmount == 0 {
 		c.changeOutputsCount = 0
 	}
