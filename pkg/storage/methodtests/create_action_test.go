@@ -1,6 +1,7 @@
 package methodtests
 
 import (
+	"context"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
@@ -18,7 +19,7 @@ func TestNilAuth(t *testing.T) {
 	activeStorage := given.GormProvider()
 
 	// when:
-	_, err := activeStorage.CreateAction(wdk.AuthID{UserID: nil}, fixtures.DefaultValidCreateActionArgs())
+	_, err := activeStorage.CreateAction(context.Background(), wdk.AuthID{UserID: nil}, fixtures.DefaultValidCreateActionArgs())
 
 	// then:
 	require.Error(t, err)
@@ -31,10 +32,7 @@ func TestCreateActionHappyPath(t *testing.T) {
 	activeStorage := given.GormProvider()
 
 	// when:
-	_, err := activeStorage.CreateAction(
-		wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
-		fixtures.DefaultValidCreateActionArgs(),
-	)
+	_, err := activeStorage.CreateAction(context.Background(), wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)}, fixtures.DefaultValidCreateActionArgs())
 
 	// then:
 	require.NoError(t, err)

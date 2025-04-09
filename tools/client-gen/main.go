@@ -4,6 +4,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"go/parser"
 	"go/token"
 	"log"
@@ -27,6 +28,8 @@ func main() {
 	workingDir := flag.String("cwd", cwd, "Current working directory")
 	flag.Parse()
 
+	fmt.Println("Running from directory:", *workingDir)
+
 	if *outputFile == "" {
 		log.Fatalf("-out cannot be empty")
 	}
@@ -35,6 +38,7 @@ func main() {
 	targetFile := filepath.Join(dir, *outputFile)
 
 	isTheSameDir := dir == filepath.Dir(targetFile)
+
 	// Get the file name from the environment (set by go:generate)
 	fileName := os.Getenv("GOFILE")
 	if fileName == "" {
@@ -51,6 +55,8 @@ func main() {
 	// Combine the directory and file name
 	filePath := filepath.Join(dir, fileName)
 
+	log.Printf("Analyzing %s (file://%s) from package %s (full: %s)\n", fileName, filePath, packageName, fullPackageName)
+
 	// Parse the file
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
@@ -61,10 +67,15 @@ func main() {
 	// Extract interface information
 	interfaces := extractor.ExtractInterfaces(fset, file)
 
-	output := generator.Generate(packageName, fullPackageName, isTheSameDir, interfaces)
+	targetPackageName := packageName
+	if !isTheSameDir {
+		targetPackageName = filepath.Base(filepath.Dir(targetFile))
+	}
+
+	output := generator.Generate(targetPackageName, fullPackageName, isTheSameDir, interfaces)
 
 	// Write the output
-	log.Println("Writing to", targetFile)
+	log.Printf("Writing to file://%s \n", targetFile)
 	//nolint:gosec
 	if err := os.WriteFile(targetFile, output, 0644); err != nil {
 		log.Fatalf("Failed to write output to file: %v", err)
