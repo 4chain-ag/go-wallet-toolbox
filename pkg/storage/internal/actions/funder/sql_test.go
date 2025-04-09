@@ -319,6 +319,44 @@ func TestFunderSQLFund(t *testing.T) {
 			HasNoChange()
 	})
 
+	t.Run("produce single change when basket NumberOfDesiredUTXOs is 0", func(t *testing.T) {
+		// given:
+		given, then, cleanup := testabilities.New(t)
+		defer cleanup()
+
+		// and:
+		funder := given.NewFunderService()
+
+		// and:
+		basket := given.BasketFor(testusers.Alice).WithNumberOfDesiredUTXOs(0)
+
+		// when:
+		result, err := funder.Fund(ctx, -5001, smallTransactionSize, basket, testusers.Alice.ID)
+
+		// then:
+		then.Result(result).WithoutError(err).
+			HasChangeCount(1).ForAmount(5000)
+	})
+
+	t.Run("produce single change when basket NumberOfDesiredUTXOs is negative (value: -5)", func(t *testing.T) {
+		// given:
+		given, then, cleanup := testabilities.New(t)
+		defer cleanup()
+
+		// and:
+		funder := given.NewFunderService()
+
+		// and:
+		basket := given.BasketFor(testusers.Alice).WithNumberOfDesiredUTXOs(-5)
+
+		// when:
+		result, err := funder.Fund(ctx, -5001, smallTransactionSize, basket, testusers.Alice.ID)
+
+		// then:
+		then.Result(result).WithoutError(err).
+			HasChangeCount(1).ForAmount(5000)
+	})
+
 	testCasesSplitUserProvidedInputIntoChanges := map[string]struct {
 		expectedChangeValue           int
 		expectedNumberOfChangeOutputs int
