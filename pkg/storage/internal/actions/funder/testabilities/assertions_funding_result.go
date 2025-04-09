@@ -120,7 +120,7 @@ func (a *funderAssertion) HasNoChange() SuccessFundingResultAssertion {
 
 func (a *funderAssertion) HasChangeCount(count int) ChangeAssertion {
 	a.Helper()
-	assert.Equalf(a, count, a.result.ChangeCount, "Expected change count to be %d but was %d", count, a.result.ChangeCount)
+	assert.EqualValuesf(a, count, a.result.ChangeCount, "Expected change count to be %d but was %d", count, a.result.ChangeCount)
 	return a
 }
 

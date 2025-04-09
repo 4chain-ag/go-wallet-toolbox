@@ -4,8 +4,6 @@ github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZx
 github.com/bsv-blockchain/go-sdk v1.1.22 h1:R5o9spVEfCAt64We1CdyHkCuYT1sdTSfKXp3R10UMkI=
 github.com/bsv-blockchain/go-sdk v1.1.22/go.mod h1:d0HXzhHy21t+7z+LBpDhGyJSBJb8S5HiAmHsBtRKddQ=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
-github.com/chris-4chain/go-jsonrpc v0.0.0-20250317062812-cb17873a64c7 h1:vad6fBN71Kyk5F/VjmroBtSDlrbsA+73yKGZoO1jKB8=
-github.com/chris-4chain/go-jsonrpc v0.0.0-20250317062812-cb17873a64c7/go.mod h1:N+oQyTxOlKO6XxqKt7yt39f61CKSFnQY4W+vMs1qYsI=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -15,12 +13,14 @@ github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymF
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1mIlRU8Am5FuJP05cCM98=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
+github.com/filecoin-project/go-jsonrpc v0.8.0 h1:2yqlN3Vd8Gx5UtA3fib7tQu2aW1cSOJt253LEBWExo4=
+github.com/filecoin-project/go-jsonrpc v0.8.0/go.mod h1:p8WGOwQGYbFugSdK7qKIGhhb1VVcQ2rtBLdEiik1QWI=
 github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHkI4W8=
 github.com/frankban/quicktest v1.14.6/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
 github.com/fsnotify/fsnotify v1.8.0 h1:dAwr6QBTBZIkG8roQaJjGof0pp0EeF+tNV7YBP3F/8M=
 github.com/fsnotify/fsnotify v1.8.0/go.mod h1:8jBTzvmWwFyi3Pb8djgCCO5IBqzKJ/Jwo8TRcHyHii0=
-github.com/go-softwarelab/common v0.12.0 h1:yGQG05SL4kklgZ8TEJNe/p9w3R1eXBENBtW20FC5mto=
-github.com/go-softwarelab/common v0.12.0/go.mod h1:OBlpZUPWzz+YhTt+fQgHGTxgJBq3IDESJSIyOKC0/6Y=
+github.com/go-softwarelab/common v0.14.0 h1:UKnBSaOGOh2VsAIjvzIvJQKlOGvGVrU51zFyRsxpimM=
+github.com/go-softwarelab/common v0.14.0/go.mod h1:OBlpZUPWzz+YhTt+fQgHGTxgJBq3IDESJSIyOKC0/6Y=
 github.com/go-sql-driver/mysql v1.7.0 h1:ueSltNNllEqE3qcWBTD0iQd3IpL/6U+mJxLkazJ7YPc=
 github.com/go-sql-driver/mysql v1.7.0/go.mod h1:OXbVy3sEdcQ2Doequ6Z5BW6fXNQTmx+9S1MCJN5yJMI=
 github.com/go-viper/mapstructure/v2 v2.2.1 h1:ZAaOCxANMuZx5RCeg0mBdEZk7DZasvvZIxtHqx8aGss=

@@ -14,6 +14,10 @@ import (
 	"github.com/go-softwarelab/common/pkg/to"
 )
 
+const (
+	derivationPrefixLength = 16
+)
+
 type UTXO struct {
 	TxID     string
 	Vout     uint32
@@ -22,7 +26,7 @@ type UTXO struct {
 
 type FundingResult struct {
 	AllocatedUTXOs []*UTXO
-	ChangeCount    int
+	ChangeCount    uint64
 	ChangeAmount   uint64
 	Fee            uint64
 }
@@ -47,7 +51,7 @@ type Funder interface {
 	// @param numberOfDesiredUTXOs - the number of UTXOs in basket #TakeFromBasket
 	// @param minimumDesiredUTXOValue - the minimum value of UTXO in basket #TakeFromBasket
 	// @param userID - the user ID
-	Fund(ctx context.Context, targetSat int64, currentTxSize uint64, numberOfDesiredUTXOs int, minimumDesiredUTXOValue uint64, userID int) (*FundingResult, error)
+	Fund(ctx context.Context, targetSat int64, currentTxSize uint64, basket *wdk.TableOutputBasket, userID int) (*FundingResult, error)
 }
 
 type BasketRepo interface {
@@ -88,17 +92,24 @@ func (c *create) Create(auth wdk.AuthID, args CreateActionParams) (*wdk.StorageC
 		return nil, fmt.Errorf("failed to calculate target satoshis: %w", err)
 	}
 
-	_, err = c.funder.Fund(context.Background(), targetSat, initialTxSize, basket.NumberOfDesiredUTXOs, basket.MinimumDesiredUTXOValue, *auth.UserID)
+	_, err = c.funder.Fund(context.Background(), targetSat, initialTxSize, basket, *auth.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("funding failed: %w", err)
 	}
 
-	return &wdk.StorageCreateActionResult{}, nil
+	derivationPrefix, err := txutils.RandomDerivation(derivationPrefixLength)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate random derivation prefix: %w", err)
+	}
+
+	return &wdk.StorageCreateActionResult{
+		DerivationPrefix: derivationPrefix,
+	}, nil
 }
 
 func (c *create) targetSat(args *CreateActionParams) (int64, error) {
 	providedInputs := int64(0)
-	//TODO: sum provided inputs satoshis - but first the values should be found
+	// TODO: sum provided inputs satoshis - but first the values should be found
 
 	providedOutputs := int64(0)
 	for output := range args.Outputs {
