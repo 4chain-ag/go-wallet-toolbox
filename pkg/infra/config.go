@@ -54,6 +54,7 @@ func Defaults() Config {
 			Level:   defs.LogLevelInfo,
 			Handler: defs.JSONHandler,
 		},
+		Commission: defs.DefaultCommission(),
 	}
 }
 

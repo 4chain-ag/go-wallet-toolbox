@@ -1,9 +1,9 @@
 package actions
 
 import (
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"log/slog"
 
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/repo"
 )
 
