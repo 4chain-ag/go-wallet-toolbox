@@ -1,4 +1,4 @@
-package commision
+package commission
 
 import (
 	"fmt"
@@ -9,15 +9,15 @@ import (
 	"github.com/bsv-blockchain/go-sdk/transaction/template/p2pkh"
 )
 
-// LockingScriptWithKeyOffset is a tool to generate a locking script with key offset.
-type LockingScriptWithKeyOffset struct {
+// ScriptGenerator is a tool to generate a locking script with key offset.
+type ScriptGenerator struct {
 	offsetPrivGenerator func() (*primitives.PrivateKey, error)
 	pubKey              string
 }
 
-// NewLockingScriptWithKeyOffset creates a new instance of LockingScriptWithKeyOffset.
-func NewLockingScriptWithKeyOffset(pubKey string) *LockingScriptWithKeyOffset {
-	return &LockingScriptWithKeyOffset{
+// NewScriptGenerator creates a new instance of ScriptGenerator.
+func NewScriptGenerator(pubKey string) *ScriptGenerator {
+	return &ScriptGenerator{
 		offsetPrivGenerator: randomPrivateKey,
 		pubKey:              pubKey,
 	}
@@ -25,13 +25,13 @@ func NewLockingScriptWithKeyOffset(pubKey string) *LockingScriptWithKeyOffset {
 
 // SetOffsetGenerator sets the generator function for the offset private key.
 // Default is a random private key generator.
-func (l *LockingScriptWithKeyOffset) SetOffsetGenerator(generator func() (*primitives.PrivateKey, error)) {
+func (l *ScriptGenerator) SetOffsetGenerator(generator func() (*primitives.PrivateKey, error)) {
 	l.offsetPrivGenerator = generator
 }
 
 // Generate creates a locking script and randomizes a key offset (WIF formatted private key) from the given public key.
 // NOTE: It is used to add Service Charge output to the transaction.
-func (l *LockingScriptWithKeyOffset) Generate() (lockingScript string, keyOffset string, err error) {
+func (l *ScriptGenerator) Generate() (lockingScript string, keyOffset string, err error) {
 	offsetPub, keyOffset, err := l.offsetPubKey()
 	if err != nil {
 		return "", "", err
@@ -51,7 +51,7 @@ func (l *LockingScriptWithKeyOffset) Generate() (lockingScript string, keyOffset
 
 }
 
-func (l *LockingScriptWithKeyOffset) offsetPubKey() (offsetPubKey *primitives.PublicKey, keyOffset string, err error) {
+func (l *ScriptGenerator) offsetPubKey() (offsetPubKey *primitives.PublicKey, keyOffset string, err error) {
 	pub, err := primitives.PublicKeyFromString(l.pubKey)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to parse public key: %w", err)
@@ -73,7 +73,7 @@ func (l *LockingScriptWithKeyOffset) offsetPubKey() (offsetPubKey *primitives.Pu
 	return offsetPubKey, keyOffset, nil
 }
 
-func (l *LockingScriptWithKeyOffset) keyOffsetToHashedSecret(pub *primitives.PublicKey) (hashedSecret []byte, keyOffset string, err error) {
+func (l *ScriptGenerator) keyOffsetToHashedSecret(pub *primitives.PublicKey) (hashedSecret []byte, keyOffset string, err error) {
 	offset, err := l.offsetPrivGenerator()
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create new private key for keyOffset: %w", err)

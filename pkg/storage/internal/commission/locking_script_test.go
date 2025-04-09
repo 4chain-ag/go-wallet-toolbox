@@ -1,7 +1,7 @@
-package commision_test
+package commission_test
 
 import (
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/commision"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/commission"
 	primitives "github.com/bsv-blockchain/go-sdk/primitives/ec"
 	"github.com/bsv-blockchain/go-sdk/script"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +15,7 @@ func TestLockScriptWithKeyOffsetFromPubKey(t *testing.T) {
 	pubKey := "02f40c35f798e2ece03ae1ebf749545336db8402eb7e620bfe04d50da8ca8b06cc"
 
 	// and:
-	generator := commision.NewLockingScriptWithKeyOffset(pubKey)
+	generator := commission.NewScriptGenerator(pubKey)
 
 	// and:
 	// mocking the offset private key generator
@@ -39,7 +39,7 @@ func TestLockScriptWithKeyOffset_Uniqueness(t *testing.T) {
 	pubKey := "02f40c35f798e2ece03ae1ebf749545336db8402eb7e620bfe04d50da8ca8b06cc"
 
 	// and:
-	generator := commision.NewLockingScriptWithKeyOffset(pubKey)
+	generator := commission.NewScriptGenerator(pubKey)
 
 	lockingScripts := make(map[string]struct{})
 	keyOffsets := make(map[string]struct{})
@@ -68,7 +68,7 @@ func TestLockScriptWithKeyOffset_Uniqueness(t *testing.T) {
 
 func TestLockScriptWithKeyOffset_WrongPubKey(t *testing.T) {
 	// given:
-	generator := commision.NewLockingScriptWithKeyOffset("wrong_pub_key")
+	generator := commission.NewScriptGenerator("wrong_pub_key")
 
 	// when:
 	_, _, err := generator.Generate()

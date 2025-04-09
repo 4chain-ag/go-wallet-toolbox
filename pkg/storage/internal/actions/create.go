@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/commission"
 	"iter"
 	"log/slog"
 
@@ -60,19 +61,27 @@ type BasketRepo interface {
 }
 
 type create struct {
-	logger     *slog.Logger
-	funder     Funder
-	basketRepo BasketRepo
-	commission defs.Commission
+	logger        *slog.Logger
+	funder        Funder
+	basketRepo    BasketRepo
+	commission    *commission.ScriptGenerator
+	commissionCfg defs.Commission
 }
 
-func newCreateAction(logger *slog.Logger, funder Funder, commission defs.Commission, basketRepo BasketRepo) *create {
+func newCreateAction(logger *slog.Logger, funder Funder, commissionCfg defs.Commission, basketRepo BasketRepo) *create {
 	logger = logging.Child(logger, "createAction")
-	return &create{
-		logger:     logger,
-		funder:     funder,
-		basketRepo: basketRepo,
+	c := &create{
+		logger:        logger,
+		funder:        funder,
+		basketRepo:    basketRepo,
+		commissionCfg: commissionCfg,
 	}
+
+	if commissionCfg.Enabled() {
+		c.commission = commission.NewScriptGenerator(commissionCfg.PubKeyHex)
+	}
+
+	return c
 }
 
 func (c *create) Create(auth wdk.AuthID, args CreateActionParams) (*wdk.StorageCreateActionResult, error) {
@@ -83,6 +92,8 @@ func (c *create) Create(auth wdk.AuthID, args CreateActionParams) (*wdk.StorageC
 	if basket == nil {
 		return nil, fmt.Errorf("basket for change (%s) not found", wdk.BasketNameForChange)
 	}
+
+	// TODO: Add commission output if enabled
 
 	initialTxSize, err := c.txSize(&args)
 	if err != nil {
