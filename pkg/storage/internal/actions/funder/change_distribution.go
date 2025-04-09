@@ -37,7 +37,7 @@ func (d *ChangeDistribution) Distribute(count uint64, amount uint64) iter.Seq[ui
 
 	switch {
 	case amount == saturationThreshold:
-		return seq.Repeat(d.initialValue, must.ConvertToIntFromUnsigned(count))
+		return seq.Repeat(d.initialValue, count)
 	case amount > saturationThreshold:
 		return d.saturatedRandomDistribution(count, amount)
 	default:
@@ -59,7 +59,7 @@ func (d *ChangeDistribution) saturatedRandomDistribution(count uint64, amount ui
 	// distribution = [8, 6, 6]
 	distribution := seq.Concat(
 		seq.Of[uint64](base+remainder),
-		seq.Repeat(base, must.ConvertToIntFromUnsigned(count)-1),
+		seq.Repeat(base, count-1),
 	)
 
 	// randomize the noise for each output
@@ -95,12 +95,11 @@ func (d *ChangeDistribution) saturatedRandomDistribution(count uint64, amount ui
 // WARNING: panics when amount is less than (1 + (count-1) * initialValue)
 func (d *ChangeDistribution) notSaturatedDistribution(count uint64, amount uint64) iter.Seq[uint64] {
 	saturatedOutputs := count - 1
-	saturatedOutputsSignedInt := must.ConvertToIntFromUnsigned(saturatedOutputs)
 	valueOfSatOuts := saturatedOutputs * d.initialValue
 	if amount > valueOfSatOuts {
 		return seq.Concat(
 			seq.Of[uint64](amount-valueOfSatOuts),
-			seq.Repeat(d.initialValue, saturatedOutputsSignedInt),
+			seq.Repeat(d.initialValue, saturatedOutputs),
 		)
 	}
 
