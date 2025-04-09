@@ -51,6 +51,7 @@ func (woc *WhatsOnChain) UpdateBsvExchangeRate(exchangeRate *BSVExchangeRate, bs
 		if err != nil {
 			return BSVExchangeRate{}, fmt.Errorf("failed to fetch exchange rate: %w", err)
 		}
+		defer res.Body.Close()
 
 		if res.Status == "Too Many Requests" && retry < 2 {
 			time.Sleep(2000 * time.Millisecond)

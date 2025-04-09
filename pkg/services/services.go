@@ -10,6 +10,7 @@ import (
 	"github.com/bsv-blockchain/go-sdk/transaction/chaintracker"
 )
 
+// WalletServices is a struct that contains services used by a wallet
 type WalletServices struct {
 	httpClient   *http.Client
 	chain        defs.BSVNetwork
@@ -23,6 +24,7 @@ type WalletServices struct {
 	// updateFiatExchangeRateServices: ServiceCollection<sdk.UpdateFiatExchangeRateService>
 }
 
+// New will return a new WalletServices
 func New(httpClient *http.Client, chain defs.BSVNetwork, opts ...Options) *WalletServices {
 	if httpClient == nil {
 		panic("httpClient is required")

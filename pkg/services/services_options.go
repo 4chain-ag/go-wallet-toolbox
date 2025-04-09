@@ -8,9 +8,10 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/providers"
 )
 
-// ServicesOptions is a function that can be used to override services options
+// Options is a function that can be used to override services options
 type Options = func(*WalletServicesOptions)
 
+// WalletServicesOptions is a struct that has options for wallet services
 type WalletServicesOptions struct {
 	TaalApiKey                      string
 	BitailsApiKey                   *string
