@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
@@ -18,9 +19,9 @@ func NewSettings(db *gorm.DB) *Settings {
 	return &Settings{db: db}
 }
 
-func (s *Settings) ReadSettings() (*wdk.TableSettings, error) {
+func (s *Settings) ReadSettings(ctx context.Context) (*wdk.TableSettings, error) {
 	var settings models.Setting
-	err := s.db.First(&settings).Error
+	err := s.db.WithContext(ctx).First(&settings).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to read settings: %w", err)
 	}
@@ -40,8 +41,8 @@ func (s *Settings) ReadSettings() (*wdk.TableSettings, error) {
 	}, nil
 }
 
-func (s *Settings) SaveSettings(settings *wdk.TableSettings) error {
-	err := s.db.
+func (s *Settings) SaveSettings(ctx context.Context, settings *wdk.TableSettings) error {
+	err := s.db.WithContext(ctx).
 		Clauses(clause.OnConflict{DoNothing: true}).
 		Create(&models.Setting{
 			StorageIdentityKey: settings.StorageIdentityKey,
