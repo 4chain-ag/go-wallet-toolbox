@@ -3,6 +3,7 @@ package actions
 import (
 	"context"
 	"fmt"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"iter"
 	"log/slog"
 
@@ -62,9 +63,10 @@ type create struct {
 	logger     *slog.Logger
 	funder     Funder
 	basketRepo BasketRepo
+	commission defs.Commission
 }
 
-func newCreateAction(logger *slog.Logger, funder Funder, basketRepo BasketRepo) *create {
+func newCreateAction(logger *slog.Logger, funder Funder, commission defs.Commission, basketRepo BasketRepo) *create {
 	logger = logging.Child(logger, "createAction")
 	return &create{
 		logger:     logger,

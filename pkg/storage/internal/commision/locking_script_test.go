@@ -1,30 +1,30 @@
-package txutils
+package commision_test
 
 import (
-	"testing"
-
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/commision"
 	primitives "github.com/bsv-blockchain/go-sdk/primitives/ec"
 	"github.com/bsv-blockchain/go-sdk/script"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func TestLockScriptWithKeyOffsetFromPubKey(t *testing.T) {
 	// given:
-	generator := NewLockingScriptWithKeyOffset()
-
-	// and:
 	offsetPrivKey := "L1Yz9NvuvDru3Z7f8Kh8CK34U6UoKa6niynPEvqgHpm3AaNZig6z"
 	pubKey := "02f40c35f798e2ece03ae1ebf749545336db8402eb7e620bfe04d50da8ca8b06cc"
 
 	// and:
+	generator := commision.NewLockingScriptWithKeyOffset(pubKey)
+
+	// and:
 	// mocking the offset private key generator
-	generator.offsetPrivGenerator = func() (*primitives.PrivateKey, error) {
+	generator.SetOffsetGenerator(func() (*primitives.PrivateKey, error) {
 		return primitives.PrivateKeyFromWif(offsetPrivKey)
-	}
+	})
 
 	// when:
-	lockingScript, keyOffset, err := generator.Generate(pubKey)
+	lockingScript, keyOffset, err := generator.Generate()
 
 	// then:
 	require.NoError(t, err)
@@ -36,10 +36,10 @@ func TestLockScriptWithKeyOffsetFromPubKey(t *testing.T) {
 
 func TestLockScriptWithKeyOffset_Uniqueness(t *testing.T) {
 	// given:
-	generator := NewLockingScriptWithKeyOffset()
+	pubKey := "02f40c35f798e2ece03ae1ebf749545336db8402eb7e620bfe04d50da8ca8b06cc"
 
 	// and:
-	pubKey := "02f40c35f798e2ece03ae1ebf749545336db8402eb7e620bfe04d50da8ca8b06cc"
+	generator := commision.NewLockingScriptWithKeyOffset(pubKey)
 
 	lockingScripts := make(map[string]struct{})
 	keyOffsets := make(map[string]struct{})
@@ -48,7 +48,7 @@ func TestLockScriptWithKeyOffset_Uniqueness(t *testing.T) {
 
 	// when:
 	for range iterations {
-		lockingScript, keyOffset, err := generator.Generate(pubKey)
+		lockingScript, keyOffset, err := generator.Generate()
 		require.NoError(t, err)
 
 		lockingScripts[lockingScript] = struct{}{}
@@ -68,13 +68,10 @@ func TestLockScriptWithKeyOffset_Uniqueness(t *testing.T) {
 
 func TestLockScriptWithKeyOffset_WrongPubKey(t *testing.T) {
 	// given:
-	generator := NewLockingScriptWithKeyOffset()
-
-	// and:
-	pubKey := "wrong_pub_key"
+	generator := commision.NewLockingScriptWithKeyOffset("wrong_pub_key")
 
 	// when:
-	_, _, err := generator.Generate(pubKey)
+	_, _, err := generator.Generate()
 
 	// then:
 	assert.Error(t, err)

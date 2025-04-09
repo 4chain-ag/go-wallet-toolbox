@@ -17,6 +17,7 @@ type Config struct {
 	DBConfig         defs.Database   `mapstructure:"db"`
 	HTTPConfig       HTTPConfig      `mapstructure:"http"`
 	Logging          LogConfig       `mapstructure:"logging"`
+	Commission       defs.Commission `mapstructure:"commission"`
 }
 
 // DBConfig is the configuration for the database
@@ -75,6 +76,10 @@ func (c *Config) Validate() (err error) {
 
 	if err = c.Logging.Validate(); err != nil {
 		return fmt.Errorf("invalid HTTP config: %w", err)
+	}
+
+	if err = c.Commission.Validate(); err != nil {
+		return fmt.Errorf("invalid commission config: %w", err)
 	}
 
 	return nil

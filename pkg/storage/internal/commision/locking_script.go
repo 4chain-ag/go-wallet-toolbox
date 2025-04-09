@@ -1,4 +1,4 @@
-package txutils
+package commision
 
 import (
 	"fmt"
@@ -12,19 +12,27 @@ import (
 // LockingScriptWithKeyOffset is a tool to generate a locking script with key offset.
 type LockingScriptWithKeyOffset struct {
 	offsetPrivGenerator func() (*primitives.PrivateKey, error)
+	pubKey              string
 }
 
 // NewLockingScriptWithKeyOffset creates a new instance of LockingScriptWithKeyOffset.
-func NewLockingScriptWithKeyOffset() *LockingScriptWithKeyOffset {
+func NewLockingScriptWithKeyOffset(pubKey string) *LockingScriptWithKeyOffset {
 	return &LockingScriptWithKeyOffset{
 		offsetPrivGenerator: randomPrivateKey,
+		pubKey:              pubKey,
 	}
+}
+
+// SetOffsetGenerator sets the generator function for the offset private key.
+// Default is a random private key generator.
+func (l *LockingScriptWithKeyOffset) SetOffsetGenerator(generator func() (*primitives.PrivateKey, error)) {
+	l.offsetPrivGenerator = generator
 }
 
 // Generate creates a locking script and randomizes a key offset (WIF formatted private key) from the given public key.
 // NOTE: It is used to add Service Charge output to the transaction.
-func (l *LockingScriptWithKeyOffset) Generate(pubKey string) (lockingScript string, keyOffset string, err error) {
-	offsetPub, keyOffset, err := l.offsetPubKey(pubKey)
+func (l *LockingScriptWithKeyOffset) Generate() (lockingScript string, keyOffset string, err error) {
+	offsetPub, keyOffset, err := l.offsetPubKey()
 	if err != nil {
 		return "", "", err
 	}
@@ -43,8 +51,8 @@ func (l *LockingScriptWithKeyOffset) Generate(pubKey string) (lockingScript stri
 
 }
 
-func (l *LockingScriptWithKeyOffset) offsetPubKey(pubKey string) (offsetPubKey *primitives.PublicKey, keyOffset string, err error) {
-	pub, err := primitives.PublicKeyFromString(pubKey)
+func (l *LockingScriptWithKeyOffset) offsetPubKey() (offsetPubKey *primitives.PublicKey, keyOffset string, err error) {
+	pub, err := primitives.PublicKeyFromString(l.pubKey)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to parse public key: %w", err)
 	}
@@ -53,6 +61,7 @@ func (l *LockingScriptWithKeyOffset) offsetPubKey(pubKey string) (offsetPubKey *
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to get hashed secret: %w", err)
 	}
+
 	newPointX, newPointY := primitives.S256().ScalarBaseMult(hashedSecret)
 	newPubKeyX, newPubKeyY := primitives.S256().Add(newPointX, newPointY, pub.X, pub.Y)
 	offsetPubKey = &primitives.PublicKey{
@@ -74,6 +83,7 @@ func (l *LockingScriptWithKeyOffset) keyOffsetToHashedSecret(pub *primitives.Pub
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to derive shared secret: %w", err)
 	}
+
 	hashedSecret = crypto.Sha256(sharedSecret.ToDER())
 
 	return hashedSecret, offset.Wif(), nil

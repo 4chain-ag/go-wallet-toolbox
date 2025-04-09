@@ -41,9 +41,10 @@ type Provider struct {
 
 // GORMProviderConfig is a configuration for GORM storage provider.
 type GORMProviderConfig struct {
-	DB       defs.Database
-	Chain    defs.BSVNetwork
-	FeeModel defs.FeeModel
+	DB         defs.Database
+	Chain      defs.BSVNetwork
+	FeeModel   defs.FeeModel
+	Commission defs.Commission
 }
 
 // NewGORMProvider creates a new storage provider with GORM repository.
@@ -71,7 +72,7 @@ func NewGORMProvider(logger *slog.Logger, config GORMProviderConfig, opts ...Pro
 	return &Provider{
 		Chain:   config.Chain,
 		repo:    repos,
-		actions: actions.New(logger, funder, repos),
+		actions: actions.New(logger, funder, config.Commission, repos),
 	}, nil
 }
 
