@@ -44,7 +44,7 @@ func TestUpdateBsvExchangeRateSuccess(t *testing.T) {
 		}
 
 		// and:
-		woc := services.New(httpClient, "test", services.WithBsvExchangeRate(cachedRate))
+		woc := services.New(httpClient, nil, "test", services.WithBsvExchangeRate(cachedRate))
 
 		// when:
 		result, err := woc.BsvExchangeRate()
@@ -71,7 +71,7 @@ func TestUpdateBsvExchangeRateSuccess(t *testing.T) {
 			StatusCode: http.StatusOK,
 			Body:       io.NopCloser(bytes.NewReader(bodyBytes)),
 		}, nil)
-		woc := services.New(httpClient, "test",
+		woc := services.New(httpClient, nil, "test",
 			services.WithBsvExchangeRate(providers.BSVExchangeRate{
 				Timestamp: time.Now().Add(-16 * time.Minute),
 				Base:      "USD",
@@ -91,7 +91,7 @@ func TestUpdateBsvExchangeRateFail(t *testing.T) {
 	t.Run("returns error if HTTP request fails", func(t *testing.T) {
 		httpClient := newMockHTTPClient(nil, assert.AnError)
 
-		woc := services.New(httpClient, "test")
+		woc := services.New(httpClient, nil, "test")
 
 		_, err := woc.BsvExchangeRate()
 
@@ -106,7 +106,7 @@ func TestUpdateBsvExchangeRateFail(t *testing.T) {
 			Body:       io.NopCloser(bytes.NewBufferString("")),
 		}, nil)
 
-		woc := services.New(httpClient, "test")
+		woc := services.New(httpClient, nil, "test")
 
 		_, err := woc.BsvExchangeRate()
 
@@ -121,7 +121,7 @@ func TestUpdateBsvExchangeRateFail(t *testing.T) {
 			Body:       io.NopCloser(bytes.NewBufferString("not a json")),
 		}, nil)
 
-		woc := services.New(httpClient, "test")
+		woc := services.New(httpClient, nil, "test")
 
 		_, err := woc.BsvExchangeRate()
 
@@ -143,7 +143,7 @@ func TestUpdateBsvExchangeRateFail(t *testing.T) {
 			Body:       io.NopCloser(bytes.NewReader(bodyBytes)),
 		}, nil)
 
-		woc := services.New(httpClient, "test")
+		woc := services.New(httpClient, nil, "test")
 
 		_, err := woc.BsvExchangeRate()
 
