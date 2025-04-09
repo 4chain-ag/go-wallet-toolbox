@@ -1,6 +1,7 @@
 package storage_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
@@ -8,6 +9,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func TestRPCCommunication(t *testing.T) {
@@ -27,11 +29,11 @@ func TestRPCCommunication(t *testing.T) {
 	t.Run("Migrate", func(t *testing.T) {
 		// given:
 		mockStorage.EXPECT().
-			Migrate(testabilities.StorageName, testabilities.StorageIdentityKey).
+			Migrate(gomock.Any(), testabilities.StorageName, testabilities.StorageIdentityKey).
 			Return("current-migration-version", nil)
 
 		// when:
-		migrationVersion, err := client.Migrate(testabilities.StorageName, testabilities.StorageIdentityKey)
+		migrationVersion, err := client.Migrate(context.Background(), testabilities.StorageName, testabilities.StorageIdentityKey)
 
 		// then:
 		require.NoError(t, err)
@@ -40,48 +42,48 @@ func TestRPCCommunication(t *testing.T) {
 
 	t.Run("MakeAvailable", func(t *testing.T) {
 		// given:
+		storageResult := &wdk.TableSettings{
+			StorageName:        testabilities.StorageName,
+			StorageIdentityKey: testabilities.StorageIdentityKey,
+			Chain:              defs.NetworkTestnet,
+			MaxOutputScript:    1024,
+		}
+
 		mockStorage.EXPECT().
-			MakeAvailable().
-			Return(&wdk.TableSettings{
-				StorageName:        testabilities.StorageName,
-				StorageIdentityKey: testabilities.StorageIdentityKey,
-				Chain:              defs.NetworkTestnet,
-				MaxOutputScript:    1024,
-			}, nil)
+			MakeAvailable(gomock.Any()).
+			Return(storageResult, nil)
 
 		// when:
-		tableSettings, err := client.MakeAvailable()
+		response, err := client.MakeAvailable(context.Background())
 
 		// then:
 		require.NoError(t, err)
-		assert.Equal(t, testabilities.StorageName, tableSettings.StorageName)
-		assert.Equal(t, testabilities.StorageIdentityKey, tableSettings.StorageIdentityKey)
-		assert.Equal(t, defs.NetworkTestnet, tableSettings.Chain)
-		assert.Equal(t, 1024, tableSettings.MaxOutputScript)
+		assert.EqualValues(t, storageResult, response)
 	})
 
 	t.Run("FindOrInsertUser", func(t *testing.T) {
 		// given:
 		userIdentityKey := "03f17660f611ce531402a2ce1e070380b6fde57aca211d707bfab27bce42d86beb"
 
+		storageResult := &wdk.FindOrInsertUserResponse{
+			User: wdk.TableUser{
+				IdentityKey: userIdentityKey,
+			},
+			IsNew: false,
+		}
+
 		// and:
 		mockStorage.EXPECT().
-			FindOrInsertUser(testabilities.StorageIdentityKey).
-			Return(&wdk.FindOrInsertUserResponse{
-				User: wdk.TableUser{
-					IdentityKey: userIdentityKey,
-				},
-				IsNew: false,
-			}, nil)
+			FindOrInsertUser(gomock.Any(), testabilities.StorageIdentityKey).
+			Return(storageResult, nil)
 
 		// when:
-		tableUser, err := client.FindOrInsertUser(testabilities.StorageIdentityKey)
+		response, err := client.FindOrInsertUser(context.Background(), testabilities.StorageIdentityKey)
 
 		// then:
 		require.NoError(t, err)
-		require.NotNil(t, tableUser)
-		assert.Equal(t, false, tableUser.IsNew)
-		assert.Equal(t, userIdentityKey, tableUser.User.IdentityKey)
+		require.NotNil(t, response)
+		assert.EqualValues(t, storageResult, response)
 	})
 
 	t.Run("CreateAction", func(t *testing.T) {

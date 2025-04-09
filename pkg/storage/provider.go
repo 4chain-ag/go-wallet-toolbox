@@ -89,15 +89,15 @@ func configureDatabase(logger *slog.Logger, dbConfig defs.Database, options *pro
 }
 
 // Migrate migrates the storage and saves the settings.
-func (p *Provider) Migrate(storageName, storageIdentityKey string) (string, error) {
-	err := p.repo.Migrate(context.TODO())
+func (p *Provider) Migrate(ctx context.Context, storageName string, storageIdentityKey string) (string, error) {
+	err := p.repo.Migrate(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to migrate: %w", err)
 	}
 
 	// TODO: what if p.Chain != Chain from DB?
 
-	err = p.repo.SaveSettings(context.TODO(), &wdk.TableSettings{
+	err = p.repo.SaveSettings(ctx, &wdk.TableSettings{
 		StorageIdentityKey: storageIdentityKey,
 		StorageName:        storageName,
 		Chain:              p.Chain,
@@ -115,8 +115,8 @@ func (p *Provider) Migrate(storageName, storageIdentityKey string) (string, erro
 }
 
 // MakeAvailable reads the settings and makes them available.
-func (p *Provider) MakeAvailable() (*wdk.TableSettings, error) {
-	settings, err := p.repo.ReadSettings(context.TODO())
+func (p *Provider) MakeAvailable(ctx context.Context) (*wdk.TableSettings, error) {
+	settings, err := p.repo.ReadSettings(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read settings: %w", err)
 	}
@@ -126,7 +126,7 @@ func (p *Provider) MakeAvailable() (*wdk.TableSettings, error) {
 }
 
 // InsertCertificateAuth inserts certificate to the database for authenticated user
-func (p *Provider) InsertCertificateAuth(auth wdk.AuthID, certificate *wdk.TableCertificateX) (uint, error) {
+func (p *Provider) InsertCertificateAuth(ctx context.Context, auth wdk.AuthID, certificate *wdk.TableCertificateX) (uint, error) {
 	if auth.UserID == nil || certificate.UserID != *auth.UserID {
 		return 0, fmt.Errorf("access is denied due to an authorization error")
 	}
@@ -152,7 +152,7 @@ func (p *Provider) InsertCertificateAuth(auth wdk.AuthID, certificate *wdk.Table
 		certModel.Verifier = string(*certificate.Verifier)
 	}
 
-	id, err := p.repo.CreateCertificate(context.TODO(), certModel)
+	id, err := p.repo.CreateCertificate(ctx, certModel)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create certificate: %w", err)
 	}
@@ -161,7 +161,7 @@ func (p *Provider) InsertCertificateAuth(auth wdk.AuthID, certificate *wdk.Table
 }
 
 // RelinquishCertificate will relinquish existing certificate
-func (p *Provider) RelinquishCertificate(auth wdk.AuthID, args wdk.RelinquishCertificateArgs) error {
+func (p *Provider) RelinquishCertificate(ctx context.Context, auth wdk.AuthID, args wdk.RelinquishCertificateArgs) error {
 	if auth.UserID == nil {
 		return fmt.Errorf("access is denied due to an authorization error")
 	}
@@ -171,7 +171,7 @@ func (p *Provider) RelinquishCertificate(auth wdk.AuthID, args wdk.RelinquishCer
 		return fmt.Errorf("invalid relinquishCertificate args: %w", err)
 	}
 
-	err = p.repo.DeleteCertificate(context.TODO(), *auth.UserID, args)
+	err = p.repo.DeleteCertificate(ctx, *auth.UserID, args)
 	if err != nil {
 		return fmt.Errorf("failed to relinquish certificate: %w", err)
 	}
@@ -180,7 +180,7 @@ func (p *Provider) RelinquishCertificate(auth wdk.AuthID, args wdk.RelinquishCer
 }
 
 // ListCertificates will list certificates with provided args
-func (p *Provider) ListCertificates(auth wdk.AuthID, args wdk.ListCertificatesArgs) (*wdk.ListCertificatesResult, error) {
+func (p *Provider) ListCertificates(ctx context.Context, auth wdk.AuthID, args wdk.ListCertificatesArgs) (*wdk.ListCertificatesResult, error) {
 	if auth.UserID == nil {
 		return nil, fmt.Errorf("access is denied due to an authorization error")
 	}
@@ -193,7 +193,7 @@ func (p *Provider) ListCertificates(auth wdk.AuthID, args wdk.ListCertificatesAr
 	// prepare arguments
 	filterOptions := listCertificatesArgsToActionParams(args)
 
-	certModels, totalCount, err := p.repo.ListAndCountCertificates(context.TODO(), *auth.UserID, filterOptions)
+	certModels, totalCount, err := p.repo.ListAndCountCertificates(ctx, *auth.UserID, filterOptions)
 	if err != nil {
 		return nil, fmt.Errorf("error during listing certificates action: %w", err)
 	}
@@ -212,8 +212,8 @@ func (p *Provider) ListCertificates(auth wdk.AuthID, args wdk.ListCertificatesAr
 }
 
 // FindOrInsertUser will find user by their identityKey or inserts a new one if not found
-func (p *Provider) FindOrInsertUser(identityKey string) (*wdk.FindOrInsertUserResponse, error) {
-	user, err := p.repo.FindUser(context.TODO(), identityKey)
+func (p *Provider) FindOrInsertUser(ctx context.Context, identityKey string) (*wdk.FindOrInsertUserResponse, error) {
+	user, err := p.repo.FindUser(ctx, identityKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find user: %w", err)
 	}
@@ -224,13 +224,13 @@ func (p *Provider) FindOrInsertUser(identityKey string) (*wdk.FindOrInsertUserRe
 		}, nil
 	}
 
-	settings, err := p.repo.ReadSettings(context.TODO())
+	settings, err := p.repo.ReadSettings(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read settings: %w", err)
 	}
 
 	user, err = p.repo.CreateUser(
-		context.TODO(),
+		ctx,
 		identityKey,
 		settings.StorageIdentityKey,
 		wdk.DefaultBasketConfiguration(),
@@ -246,7 +246,7 @@ func (p *Provider) FindOrInsertUser(identityKey string) (*wdk.FindOrInsertUserRe
 }
 
 // CreateAction Storage level processing for wallet `createAction`.
-func (p *Provider) CreateAction(auth wdk.AuthID, args wdk.ValidCreateActionArgs) (*wdk.StorageCreateActionResult, error) {
+func (p *Provider) CreateAction(ctx context.Context, auth wdk.AuthID, args wdk.ValidCreateActionArgs) (*wdk.StorageCreateActionResult, error) {
 	if auth.UserID == nil {
 		return nil, fmt.Errorf("missing user ID")
 	}

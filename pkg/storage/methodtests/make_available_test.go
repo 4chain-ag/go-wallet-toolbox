@@ -1,6 +1,7 @@
 package methodtests_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
@@ -16,7 +17,7 @@ func TestMakeAvailable(t *testing.T) {
 	activeStorage := given.GormProviderWithCleanDatabase()
 
 	// when:
-	tableSettings, err := activeStorage.MakeAvailable()
+	tableSettings, err := activeStorage.MakeAvailable(context.Background())
 
 	// then:
 	require.NoError(t, err)
