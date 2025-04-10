@@ -1,3 +1,13 @@
+- name: "[epic]"
+  color: "0052CC"
+  description: "High-level goals or themes"
+- name: "[feature]"
+  color: "0E8A16"
+  description: "Smaller, deliverable pieces of functionality under each epic"
+- name: "[task]"
+  color: "FBCA04"
+  description: "Specific technical actions needed to complete a feature"
+
 - name: "feature"
   color: "0e8a16"
   description: "Any new significant addition"

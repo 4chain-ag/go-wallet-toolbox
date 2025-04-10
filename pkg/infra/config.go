@@ -7,6 +7,8 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/config"
 )
 
+//go:generate go run ../../cmd/infra_config_gen/main.go -o ../../infra-config.example.yaml
+
 // Config is the configuration for the "remote storage server" service (aka "infra")
 type Config struct {
 	// Name is the human-readable name of this storage server
@@ -17,6 +19,7 @@ type Config struct {
 	DBConfig         defs.Database   `mapstructure:"db"`
 	HTTPConfig       HTTPConfig      `mapstructure:"http"`
 	Logging          LogConfig       `mapstructure:"logging"`
+	Commission       defs.Commission `mapstructure:"commission"`
 }
 
 // DBConfig is the configuration for the database
@@ -53,6 +56,7 @@ func Defaults() Config {
 			Level:   defs.LogLevelInfo,
 			Handler: defs.JSONHandler,
 		},
+		Commission: defs.DefaultCommission(),
 	}
 }
 
@@ -75,6 +79,10 @@ func (c *Config) Validate() (err error) {
 
 	if err = c.Logging.Validate(); err != nil {
 		return fmt.Errorf("invalid HTTP config: %w", err)
+	}
+
+	if err = c.Commission.Validate(); err != nil {
+		return fmt.Errorf("invalid commission config: %w", err)
 	}
 
 	return nil

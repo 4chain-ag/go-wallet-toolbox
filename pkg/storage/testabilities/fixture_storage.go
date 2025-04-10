@@ -1,6 +1,7 @@
 package testabilities
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -66,7 +67,7 @@ func (s *storageFixture) GormProviderWithCleanDatabase() *storage.Provider {
 	}, storage.WithFunder(&MockFunder{}))
 	s.require.NoError(err)
 
-	_, err = activeStorage.Migrate(StorageName, storageIdentityKey)
+	_, err = activeStorage.Migrate(context.Background(), StorageName, storageIdentityKey)
 	s.require.NoError(err)
 
 	s.activeStorage = activeStorage
@@ -101,7 +102,7 @@ func (s *storageFixture) MockProvider() *mocks.MockWalletStorageWriter {
 
 func (s *storageFixture) seedUsers() {
 	for _, user := range testusers.All() {
-		res, err := s.activeStorage.FindOrInsertUser(user.PrivKey)
+		res, err := s.activeStorage.FindOrInsertUser(context.Background(), user.PrivKey)
 		s.require.NoError(err)
 
 		user.ID = res.User.UserID
