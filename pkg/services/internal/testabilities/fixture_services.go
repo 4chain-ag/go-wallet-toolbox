@@ -119,12 +119,10 @@ func servicesCfg(chain defs.BSVNetwork) services.WalletServicesConfiguration {
 	var arcUrl string
 
 	if chain == defs.NetworkMainnet {
-		//nolint:gosec
 		taalApiKey = "mainnet_9596de07e92300c6287e4393594ae39c"
 		port = 8084
 		arcUrl = "https://api.taal.com/arc"
 	} else {
-		//nolint:gosec
 		taalApiKey = "testnet_0e6cf72133b43ea2d7861da2a38684e3"
 		port = 8083
 		arcUrl = "https://arc-test.taal.com/arc"

@@ -12,15 +12,14 @@ import (
 // Config is the configuration for the "remote storage server" service (aka "infra")
 type Config struct {
 	// Name is the human-readable name of this storage server
-	Name             string              `mapstructure:"name"`
-	ServerPrivateKey string              `mapstructure:"server_private_key"`
-	BSVNetwork       defs.BSVNetwork     `mapstructure:"bsv_network"`
-	FeeModel         defs.FeeModel       `mapstructure:"fee_model"`
-	DBConfig         defs.Database       `mapstructure:"db"`
-	HTTPConfig       HTTPConfig          `mapstructure:"http"`
-	Logging          LogConfig           `mapstructure:"logging"`
-	Commission       defs.Commission     `mapstructure:"commission"`
-	Services         defs.ServicesConfig `mapstructure:"services"`
+	Name             string          `mapstructure:"name"`
+	ServerPrivateKey string          `mapstructure:"server_private_key"`
+	BSVNetwork       defs.BSVNetwork `mapstructure:"bsv_network"`
+	FeeModel         defs.FeeModel   `mapstructure:"fee_model"`
+	DBConfig         defs.Database   `mapstructure:"db"`
+	HTTPConfig       HTTPConfig      `mapstructure:"http"`
+	Logging          LogConfig       `mapstructure:"logging"`
+	Commission       defs.Commission `mapstructure:"commission"`
 }
 
 // DBConfig is the configuration for the database

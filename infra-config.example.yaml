@@ -37,21 +37,3 @@ logging:
     level: info
 name: go-storage-server
 server_private_key: ""
-services:
-    arc: null
-    arc_url: ""
-    bitails_api_key: null
-    bsv_exchange_rate: null
-    bsv_update_interval: 0s
-    chain: ""
-    chaintracks: null
-    chaintracks_fiat_exchange_rates_url: ""
-    disable_mapi_callback: false
-    exchangerates_api_key: ""
-    fiat_exchange_rates:
-        base: ""
-        rates: {}
-        timestamp: {}
-    fiat_update_interval: 0s
-    taal_api_key: ""
-    whats_on_chain_api_key: ""
