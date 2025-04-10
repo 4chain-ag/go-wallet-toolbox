@@ -11,7 +11,7 @@ type NewTx struct {
 	LockTime    int
 	Status      TxStatus
 	Reference   string
-	Satoshis    uint64
+	Satoshis    int64
 	IsOutgoing  bool
 	InputBeef   []byte
 	Description string

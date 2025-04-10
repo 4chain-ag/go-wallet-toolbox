@@ -12,6 +12,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/txutils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
+	"github.com/go-softwarelab/common/pkg/must"
 	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/go-softwarelab/common/pkg/seqerr"
 	"github.com/go-softwarelab/common/pkg/to"
@@ -153,7 +154,7 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		Reference:   reference,
 		IsOutgoing:  true,
 		Description: params.Description,
-		Satoshis:    funding.ChangeAmount - funding.TotalAllocated(),
+		Satoshis:    must.ConvertToInt64FromUnsigned(funding.ChangeAmount) - must.ConvertToInt64FromUnsigned(funding.TotalAllocated()),
 		Labels:      params.Labels,
 
 		// TODO: inputBEEF

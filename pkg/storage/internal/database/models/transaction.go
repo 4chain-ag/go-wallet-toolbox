@@ -12,7 +12,7 @@ type Transaction struct {
 	Status      wdk.TxStatus
 	Reference   string
 	IsOutgoing  bool
-	Satoshis    uint64
+	Satoshis    int64
 	Description string
 	Version     int
 	LockTime    int
