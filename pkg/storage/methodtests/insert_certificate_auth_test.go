@@ -7,6 +7,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/testabilities"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,14 +22,14 @@ func TestInsertCertificateAuth(t *testing.T) {
 	// and:
 	expectedResult := &wdk.ListCertificatesResult{
 		Certificates:      make([]*wdk.CertificateResult, 0),
-		TotalCertificates: wdk.PositiveIntegerOrZero(0),
+		TotalCertificates: primitives.PositiveIntegerOrZero(0),
 	}
 
 	t.Run("should insert a certificate for Alice", func(t *testing.T) {
 		// given:
 		certToInsert := fixtures.DefaultInsertCertAuth(testusers.Alice.ID)
 		// and:
-		expectedResult.TotalCertificates = wdk.PositiveIntegerOrZero(1)
+		expectedResult.TotalCertificates = primitives.PositiveIntegerOrZero(1)
 		expectedResult.Certificates = []*wdk.CertificateResult{{
 			Verifier: "",
 			WalletCertificate: wdk.WalletCertificate{
@@ -38,11 +39,11 @@ func TestInsertCertificateAuth(t *testing.T) {
 				Certifier:          fixtures.Certifier,
 				RevocationOutpoint: fixtures.RevocationOutpoint,
 				Signature:          fixtures.Signature,
-				Fields: map[wdk.CertificateFieldNameUnder50Bytes]string{
+				Fields: map[primitives.CertificateFieldNameUnder50Bytes]string{
 					"exampleField": "exampleValue",
 				},
 			},
-			Keyring: map[wdk.CertificateFieldNameUnder50Bytes]wdk.Base64String{
+			Keyring: map[primitives.CertificateFieldNameUnder50Bytes]primitives.Base64String{
 				"exampleField": "exampleValue",
 			},
 		}}
@@ -65,7 +66,7 @@ func TestInsertCertificateAuth(t *testing.T) {
 		// given:
 		certToInsert := fixtures.DefaultInsertCertAuth(testusers.Bob.ID)
 		// and:
-		expectedResult.TotalCertificates = wdk.PositiveIntegerOrZero(2)
+		expectedResult.TotalCertificates = primitives.PositiveIntegerOrZero(2)
 		expectedResult.Certificates = []*wdk.CertificateResult{{
 			Verifier: "",
 			WalletCertificate: wdk.WalletCertificate{
@@ -75,11 +76,11 @@ func TestInsertCertificateAuth(t *testing.T) {
 				Certifier:          fixtures.Certifier,
 				RevocationOutpoint: fixtures.RevocationOutpoint,
 				Signature:          fixtures.Signature,
-				Fields: map[wdk.CertificateFieldNameUnder50Bytes]string{
+				Fields: map[primitives.CertificateFieldNameUnder50Bytes]string{
 					"exampleField": "exampleValue",
 				},
 			},
-			Keyring: map[wdk.CertificateFieldNameUnder50Bytes]wdk.Base64String{
+			Keyring: map[primitives.CertificateFieldNameUnder50Bytes]primitives.Base64String{
 				"exampleField": "exampleValue",
 			},
 		}, {
@@ -91,11 +92,11 @@ func TestInsertCertificateAuth(t *testing.T) {
 				Certifier:          fixtures.Certifier,
 				RevocationOutpoint: fixtures.RevocationOutpoint,
 				Signature:          fixtures.Signature,
-				Fields: map[wdk.CertificateFieldNameUnder50Bytes]string{
+				Fields: map[primitives.CertificateFieldNameUnder50Bytes]string{
 					"exampleField": "exampleValue",
 				},
 			},
-			Keyring: map[wdk.CertificateFieldNameUnder50Bytes]wdk.Base64String{
+			Keyring: map[primitives.CertificateFieldNameUnder50Bytes]primitives.Base64String{
 				"exampleField": "exampleValue",
 			},
 		}}
@@ -118,7 +119,7 @@ func TestInsertCertificateAuth(t *testing.T) {
 
 		// then:
 		require.NoError(t, err)
-		assert.Equal(t, expectedResult.TotalCertificates, wdk.PositiveIntegerOrZero(2))
+		assert.Equal(t, expectedResult.TotalCertificates, primitives.PositiveIntegerOrZero(2))
 		require.ElementsMatch(t, certs.Certificates, expectedResult.Certificates)
 	})
 
@@ -126,10 +127,10 @@ func TestInsertCertificateAuth(t *testing.T) {
 		// given:
 		certs, err := activeStorage.ListCertificates(testusers.Bob.AuthID(), wdk.ListCertificatesArgs{})
 		require.NoError(t, err)
-		require.Equal(t, wdk.PositiveIntegerOrZero(2), certs.TotalCertificates)
+		require.Equal(t, primitives.PositiveIntegerOrZero(2), certs.TotalCertificates)
 
 		// and:
-		expectedResult.TotalCertificates = wdk.PositiveIntegerOrZero(1)
+		expectedResult.TotalCertificates = primitives.PositiveIntegerOrZero(1)
 		expectedResult.Certificates = []*wdk.CertificateResult{{
 			Verifier: "",
 			WalletCertificate: wdk.WalletCertificate{
@@ -139,11 +140,11 @@ func TestInsertCertificateAuth(t *testing.T) {
 				Certifier:          fixtures.Certifier,
 				RevocationOutpoint: fixtures.RevocationOutpoint,
 				Signature:          fixtures.Signature,
-				Fields: map[wdk.CertificateFieldNameUnder50Bytes]string{
+				Fields: map[primitives.CertificateFieldNameUnder50Bytes]string{
 					"exampleField": "exampleValue",
 				},
 			},
-			Keyring: map[wdk.CertificateFieldNameUnder50Bytes]wdk.Base64String{
+			Keyring: map[primitives.CertificateFieldNameUnder50Bytes]primitives.Base64String{
 				"exampleField": "exampleValue",
 			},
 		}}
@@ -163,7 +164,7 @@ func TestInsertCertificateAuth(t *testing.T) {
 
 		// then:
 		require.NoError(t, err)
-		assert.Equal(t, expectedResult.TotalCertificates, wdk.PositiveIntegerOrZero(1))
+		assert.Equal(t, expectedResult.TotalCertificates, primitives.PositiveIntegerOrZero(1))
 		require.ElementsMatch(t, certs.Certificates, expectedResult.Certificates)
 	})
 }
@@ -256,32 +257,32 @@ func TestListCertificates(t *testing.T) {
 
 		// when: listing certificates with limit 1
 		certs, err := activeStorage.ListCertificates(testusers.Alice.AuthID(), wdk.ListCertificatesArgs{
-			Limit: wdk.PositiveIntegerDefault10Max10000(1),
+			Limit: primitives.PositiveIntegerDefault10Max10000(1),
 		})
 
 		// then:
 		require.NoError(t, err)
-		assert.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
+		assert.Equal(t, primitives.PositiveIntegerOrZero(3), certs.TotalCertificates)
 		require.Equal(t, 1, len(certs.Certificates))
 
 		// when: listing certificates with limit 2
 		certs, err = activeStorage.ListCertificates(testusers.Alice.AuthID(), wdk.ListCertificatesArgs{
-			Limit: wdk.PositiveIntegerDefault10Max10000(2),
+			Limit: primitives.PositiveIntegerDefault10Max10000(2),
 		})
 
 		// then:
 		require.NoError(t, err)
-		assert.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
+		assert.Equal(t, primitives.PositiveIntegerOrZero(3), certs.TotalCertificates)
 		require.Equal(t, 2, len(certs.Certificates))
 
 		// when: listing certificates with limit 1 and offset 2
 		certs, err = activeStorage.ListCertificates(testusers.Alice.AuthID(), wdk.ListCertificatesArgs{
-			Offset: wdk.PositiveIntegerOrZero(2),
+			Offset: primitives.PositiveIntegerOrZero(2),
 		})
 
 		// then:
 		require.NoError(t, err)
-		assert.Equal(t, wdk.PositiveIntegerOrZero(3), certs.TotalCertificates)
+		assert.Equal(t, primitives.PositiveIntegerOrZero(3), certs.TotalCertificates)
 		require.Equal(t, 1, len(certs.Certificates))
 	})
 }

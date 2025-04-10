@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/go-softwarelab/common/pkg/to"
 )
 
@@ -19,14 +20,14 @@ func DefaultValidCreateActionArgs() wdk.ValidCreateActionArgs {
 		},
 		LockTime: 0,
 		Version:  1,
-		Labels:   []wdk.IdentifierStringUnder300{"outputbrc29"},
+		Labels:   []primitives.IdentifierStringUnder300{"outputbrc29"},
 		Options: wdk.ValidCreateActionOptions{
 			ValidProcessActionOptions: wdk.ValidProcessActionOptions{
-				AcceptDelayedBroadcast: to.Ptr[wdk.BooleanDefaultTrue](false),
-				SendWith:               []wdk.TXIDHexString{},
+				AcceptDelayedBroadcast: to.Ptr[primitives.BooleanDefaultTrue](false),
+				SendWith:               []primitives.TXIDHexString{},
 			},
 			SignAndProcess:   true,
-			KnownTxids:       []wdk.TXIDHexString{},
+			KnownTxids:       []primitives.TXIDHexString{},
 			NoSendChange:     []wdk.OutPoint{},
 			RandomizeOutputs: false,
 		},

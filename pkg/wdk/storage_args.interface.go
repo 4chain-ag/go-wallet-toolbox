@@ -3,16 +3,17 @@ package wdk
 import (
 	"fmt"
 
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/go-softwarelab/common/pkg/to"
 )
 
 // ValidCreateActionInput represents the input for a transaction action
 type ValidCreateActionInput struct {
-	Outpoint              OutPoint              `json:"outpoint,omitempty"`
-	InputDescription      String5to2000Bytes    `json:"inputDescription,omitempty"`
-	SequenceNumber        PositiveIntegerOrZero `json:"sequenceNumber,omitempty"`
-	UnlockingScript       *HexString            `json:"unlockingScript,omitempty"`
-	UnlockingScriptLength *PositiveInteger      `json:"unlockingScriptLength,omitempty"`
+	Outpoint              OutPoint                         `json:"outpoint,omitempty"`
+	InputDescription      primitives.String5to2000Bytes    `json:"inputDescription,omitempty"`
+	SequenceNumber        primitives.PositiveIntegerOrZero `json:"sequenceNumber,omitempty"`
+	UnlockingScript       *primitives.HexString            `json:"unlockingScript,omitempty"`
+	UnlockingScriptLength *primitives.PositiveInteger      `json:"unlockingScriptLength,omitempty"`
 }
 
 // ScriptLength returns the length of the unlocking script in bytes.
@@ -32,12 +33,12 @@ func (i *ValidCreateActionInput) ScriptLength() (uint64, error) {
 
 // ValidCreateActionOutput represents the output for a transaction action
 type ValidCreateActionOutput struct {
-	LockingScript      HexString                  `json:"lockingScript,omitempty"`
-	Satoshis           SatoshiValue               `json:"satoshis,omitempty"`
-	OutputDescription  String5to2000Bytes         `json:"outputDescription,omitempty"`
-	Basket             *IdentifierStringUnder300  `json:"basket,omitempty"`
-	CustomInstructions *string                    `json:"customInstructions,omitempty"`
-	Tags               []IdentifierStringUnder300 `json:"tags,omitempty"`
+	LockingScript      primitives.HexString                  `json:"lockingScript,omitempty"`
+	Satoshis           primitives.SatoshiValue               `json:"satoshis,omitempty"`
+	OutputDescription  primitives.String5to2000Bytes         `json:"outputDescription,omitempty"`
+	Basket             *primitives.IdentifierStringUnder300  `json:"basket,omitempty"`
+	CustomInstructions *string                               `json:"customInstructions,omitempty"`
+	Tags               []primitives.IdentifierStringUnder300 `json:"tags,omitempty"`
 }
 
 // ScriptLength returns the length of the locking script in bytes.
@@ -51,20 +52,20 @@ func (o *ValidCreateActionOutput) ScriptLength() (uint64, error) {
 
 // ValidProcessActionOptions represents options for processing an action
 type ValidProcessActionOptions struct {
-	AcceptDelayedBroadcast *BooleanDefaultTrue  `json:"acceptDelayedBroadcast,omitempty"`
-	ReturnTXIDOnly         *BooleanDefaultFalse `json:"returnTXIDOnly,omitempty"`
-	NoSend                 *BooleanDefaultFalse `json:"noSend,omitempty"`
-	SendWith               []TXIDHexString      `json:"sendWith,omitempty"`
+	AcceptDelayedBroadcast *primitives.BooleanDefaultTrue  `json:"acceptDelayedBroadcast,omitempty"`
+	ReturnTXIDOnly         *primitives.BooleanDefaultFalse `json:"returnTXIDOnly,omitempty"`
+	NoSend                 *primitives.BooleanDefaultFalse `json:"noSend,omitempty"`
+	SendWith               []primitives.TXIDHexString      `json:"sendWith,omitempty"`
 }
 
 // ValidCreateActionOptions extends ValidProcessActionOptions with additional options
 type ValidCreateActionOptions struct {
 	ValidProcessActionOptions `json:",inline"`
-	SignAndProcess            bool            `json:"signAndProcess,omitempty"`
-	TrustSelf                 *string         `json:"trustSelf,omitempty"`
-	KnownTxids                []TXIDHexString `json:"knownTxids,omitempty"`
-	NoSendChange              []OutPoint      `json:"noSendChange,omitempty"`
-	RandomizeOutputs          bool            `json:"randomizeOutputs,omitempty"`
+	SignAndProcess            bool                       `json:"signAndProcess,omitempty"`
+	TrustSelf                 *string                    `json:"trustSelf,omitempty"`
+	KnownTxids                []primitives.TXIDHexString `json:"knownTxids,omitempty"`
+	NoSendChange              []OutPoint                 `json:"noSendChange,omitempty"`
+	RandomizeOutputs          bool                       `json:"randomizeOutputs,omitempty"`
 }
 
 // ValidProcessActionArgs represents arguments for processing an action.
@@ -87,16 +88,16 @@ type ValidProcessActionArgs struct {
 
 // ValidCreateActionArgs represents the arguments for creating a transaction action
 type ValidCreateActionArgs struct {
-	Description                  String5to2000Bytes         `json:"description,omitempty"`
-	InputBEEF                    BEEF                       `json:"inputBEEF,omitempty"`
-	Inputs                       []ValidCreateActionInput   `json:"inputs,omitempty"`
-	Outputs                      []ValidCreateActionOutput  `json:"outputs,omitempty"`
-	LockTime                     int                        `json:"lockTime,omitempty"`
-	Version                      int                        `json:"version,omitempty"`
-	Labels                       []IdentifierStringUnder300 `json:"labels,omitempty"`
-	IsSignAction                 bool                       `json:"isSignAction,omitempty"`
-	RandomVals                   *[]int                     `json:"randomVals,omitempty"`
-	IncludeAllSourceTransactions bool                       `json:"includeAllSourceTransactions,omitempty"`
+	Description                  primitives.String5to2000Bytes         `json:"description,omitempty"`
+	InputBEEF                    primitives.BEEF                       `json:"inputBEEF,omitempty"`
+	Inputs                       []ValidCreateActionInput              `json:"inputs,omitempty"`
+	Outputs                      []ValidCreateActionOutput             `json:"outputs,omitempty"`
+	LockTime                     int                                   `json:"lockTime,omitempty"`
+	Version                      int                                   `json:"version,omitempty"`
+	Labels                       []primitives.IdentifierStringUnder300 `json:"labels,omitempty"`
+	IsSignAction                 bool                                  `json:"isSignAction,omitempty"`
+	RandomVals                   *[]int                                `json:"randomVals,omitempty"`
+	IncludeAllSourceTransactions bool                                  `json:"includeAllSourceTransactions,omitempty"`
 
 	Options ValidCreateActionOptions `json:"options,omitempty"`
 
@@ -117,27 +118,27 @@ type ValidCreateActionArgs struct {
 
 // RelinquishCertificateArgs represents the arguments for relinquishing certificate
 type RelinquishCertificateArgs struct {
-	Type         Base64String `json:"type"`
-	SerialNumber Base64String `json:"serialNumber"`
-	Certifier    PubKeyHex    `json:"certifier"`
+	Type         primitives.Base64String `json:"type"`
+	SerialNumber primitives.Base64String `json:"serialNumber"`
+	Certifier    primitives.PubKeyHex    `json:"certifier"`
 }
 
 // ListCertificatesArgsPartial is
 type ListCertificatesArgsPartial struct {
-	Type               *Base64String   `json:"type"`
-	Certifier          *PubKeyHex      `json:"certifier"`
-	SerialNumber       *Base64String   `json:"serialNumber"`
-	Subject            *PubKeyHex      `json:"subject"`
-	RevocationOutpoint *OutpointString `json:"revocationOutpoint"`
-	Signature          *HexString      `json:"signature"`
+	Type               *primitives.Base64String   `json:"type"`
+	Certifier          *primitives.PubKeyHex      `json:"certifier"`
+	SerialNumber       *primitives.Base64String   `json:"serialNumber"`
+	Subject            *primitives.PubKeyHex      `json:"subject"`
+	RevocationOutpoint *primitives.OutpointString `json:"revocationOutpoint"`
+	Signature          *primitives.HexString      `json:"signature"`
 }
 
 // ListCertificatesArgs represents the arguments for listing certificates
 type ListCertificatesArgs struct {
 	Partial *ListCertificatesArgsPartial `json:"partial"`
 
-	Certifiers []PubKeyHex                      `json:"certifiers"`
-	Types      []Base64String                   `json:"types"`
-	Limit      PositiveIntegerDefault10Max10000 `json:"limit"`
-	Offset     PositiveIntegerOrZero            `json:"offset"`
+	Certifiers []primitives.PubKeyHex                      `json:"certifiers"`
+	Types      []primitives.Base64String                   `json:"types"`
+	Limit      primitives.PositiveIntegerDefault10Max10000 `json:"limit"`
+	Offset     primitives.PositiveIntegerOrZero            `json:"offset"`
 }

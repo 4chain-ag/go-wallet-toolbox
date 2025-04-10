@@ -11,6 +11,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/repo"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/go-softwarelab/common/pkg/slices"
 	"github.com/go-softwarelab/common/pkg/to"
 )
@@ -204,7 +205,7 @@ func (p *Provider) ListCertificates(auth wdk.AuthID, args wdk.ListCertificatesAr
 	}
 
 	result := &wdk.ListCertificatesResult{
-		TotalCertificates: wdk.PositiveIntegerOrZero(tc),
+		TotalCertificates: primitives.PositiveIntegerOrZero(tc),
 		Certificates:      slices.Map(certModels, certModelToResult),
 	}
 
