@@ -1,6 +1,7 @@
 package methodtests_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/testabilities"
@@ -18,7 +19,7 @@ func TestFindOrInsertUser(t *testing.T) {
 	activeStorage := given.GormProviderWithCleanDatabase()
 
 	// when:
-	tableUser, err := activeStorage.FindOrInsertUser(userIdentityKey)
+	tableUser, err := activeStorage.FindOrInsertUser(context.Background(), userIdentityKey)
 
 	// then:
 	require.NoError(t, err)
@@ -27,7 +28,7 @@ func TestFindOrInsertUser(t *testing.T) {
 	assert.Equal(t, userIdentityKey, tableUser.User.IdentityKey)
 
 	// and when:
-	tableUser, err = activeStorage.FindOrInsertUser(userIdentityKey)
+	tableUser, err = activeStorage.FindOrInsertUser(context.Background(), userIdentityKey)
 
 	// then:
 	require.NoError(t, err)

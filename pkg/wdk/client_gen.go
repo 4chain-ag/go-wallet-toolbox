@@ -2,50 +2,48 @@
 
 package wdk
 
+import (
+	"context"
+)
+
 type WalletStorageWriterClient struct {
 	client *rpcWalletStorageWriter
 }
 
-func (c *WalletStorageWriterClient) Migrate(storageName string, storageIdentityKey string) (string, error) {
-	return c.client.Migrate(storageName, storageIdentityKey)
+func (c *WalletStorageWriterClient) Migrate(ctx context.Context, storageName string, storageIdentityKey string) (string, error) {
+	return c.client.Migrate(ctx, storageName, storageIdentityKey)
 }
 
-func (c *WalletStorageWriterClient) MakeAvailable() (*TableSettings, error) {
-	return c.client.MakeAvailable()
+func (c *WalletStorageWriterClient) MakeAvailable(ctx context.Context) (*TableSettings, error) {
+	return c.client.MakeAvailable(ctx)
 }
 
-func (c *WalletStorageWriterClient) FindOrInsertUser(identityKey string) (*FindOrInsertUserResponse, error) {
-	return c.client.FindOrInsertUser(identityKey)
+func (c *WalletStorageWriterClient) FindOrInsertUser(ctx context.Context, identityKey string) (*FindOrInsertUserResponse, error) {
+	return c.client.FindOrInsertUser(ctx, identityKey)
 }
 
-func (c *WalletStorageWriterClient) CreateAction(auth AuthID, args ValidCreateActionArgs) (*StorageCreateActionResult, error) {
-	return c.client.CreateAction(auth, args)
+func (c *WalletStorageWriterClient) CreateAction(ctx context.Context, auth AuthID, args ValidCreateActionArgs) (*StorageCreateActionResult, error) {
+	return c.client.CreateAction(ctx, auth, args)
 }
 
-func (c *WalletStorageWriterClient) InsertCertificateAuth(auth AuthID, certificate *TableCertificateX) (uint, error) {
-	return c.client.InsertCertificateAuth(auth, certificate)
+func (c *WalletStorageWriterClient) InsertCertificateAuth(ctx context.Context, auth AuthID, certificate *TableCertificateX) (uint, error) {
+	return c.client.InsertCertificateAuth(ctx, auth, certificate)
 }
 
-func (c *WalletStorageWriterClient) RelinquishCertificate(auth AuthID, args RelinquishCertificateArgs) error {
-	return c.client.RelinquishCertificate(auth, args)
+func (c *WalletStorageWriterClient) RelinquishCertificate(ctx context.Context, auth AuthID, args RelinquishCertificateArgs) error {
+	return c.client.RelinquishCertificate(ctx, auth, args)
 }
 
-func (c *WalletStorageWriterClient) ListCertificates(auth AuthID, args ListCertificatesArgs) (*ListCertificatesResult, error) {
-	return c.client.ListCertificates(auth, args)
+func (c *WalletStorageWriterClient) ListCertificates(ctx context.Context, auth AuthID, args ListCertificatesArgs) (*ListCertificatesResult, error) {
+	return c.client.ListCertificates(ctx, auth, args)
 }
 
 type rpcWalletStorageWriter struct {
-	Migrate func(string, string) (string, error)
-
-	MakeAvailable func() (*TableSettings, error)
-
-	FindOrInsertUser func(string) (*FindOrInsertUserResponse, error)
-
-	CreateAction func(AuthID, ValidCreateActionArgs) (*StorageCreateActionResult, error)
-
-	InsertCertificateAuth func(AuthID, *TableCertificateX) (uint, error)
-
-	RelinquishCertificate func(AuthID, RelinquishCertificateArgs) error
-
-	ListCertificates func(AuthID, ListCertificatesArgs) (*ListCertificatesResult, error)
+	Migrate               func(context.Context, string, string) (string, error)
+	MakeAvailable         func(context.Context) (*TableSettings, error)
+	FindOrInsertUser      func(context.Context, string) (*FindOrInsertUserResponse, error)
+	CreateAction          func(context.Context, AuthID, ValidCreateActionArgs) (*StorageCreateActionResult, error)
+	InsertCertificateAuth func(context.Context, AuthID, *TableCertificateX) (uint, error)
+	RelinquishCertificate func(context.Context, AuthID, RelinquishCertificateArgs) error
+	ListCertificates      func(context.Context, AuthID, ListCertificatesArgs) (*ListCertificatesResult, error)
 }

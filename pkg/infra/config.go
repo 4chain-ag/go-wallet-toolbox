@@ -7,6 +7,8 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/config"
 )
 
+//go:generate go run ../../cmd/infra_config_gen/main.go -o ../../infra-config.example.yaml
+
 // Config is the configuration for the "remote storage server" service (aka "infra")
 type Config struct {
 	// Name is the human-readable name of this storage server
