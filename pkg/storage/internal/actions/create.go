@@ -57,7 +57,7 @@ type Funder interface {
 }
 
 type BasketRepo interface {
-	FindByName(userID int, name string) (*wdk.TableOutputBasket, error)
+	FindByName(ctx context.Context, userID int, name string) (*wdk.TableOutputBasket, error)
 }
 
 type create struct {
@@ -85,7 +85,7 @@ func newCreateAction(logger *slog.Logger, funder Funder, commissionCfg defs.Comm
 }
 
 func (c *create) Create(auth wdk.AuthID, args CreateActionParams) (*wdk.StorageCreateActionResult, error) {
-	basket, err := c.basketRepo.FindByName(*auth.UserID, wdk.BasketNameForChange)
+	basket, err := c.basketRepo.FindByName(context.TODO(), *auth.UserID, wdk.BasketNameForChange)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find basket: %w", err)
 	}

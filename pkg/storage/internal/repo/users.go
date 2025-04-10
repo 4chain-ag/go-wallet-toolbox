@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -20,9 +21,9 @@ func NewUsers(db *gorm.DB, settings *Settings, outputBaskets *OutputBaskets) *Us
 	return &Users{db: db, settings: settings, outputBaskets: outputBaskets}
 }
 
-func (u *Users) FindUser(identityKey string) (*wdk.TableUser, error) {
+func (u *Users) FindUser(ctx context.Context, identityKey string) (*wdk.TableUser, error) {
 	user := &models.User{}
-	err := u.db.First(&user, "identity_key = ?", identityKey).Error
+	err := u.db.WithContext(ctx).First(&user, "identity_key = ?", identityKey).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -39,7 +40,7 @@ func (u *Users) FindUser(identityKey string) (*wdk.TableUser, error) {
 	}, nil
 }
 
-func (u *Users) CreateUser(identityKey, activeStorage string, baskets ...wdk.BasketConfiguration) (*wdk.TableUser, error) {
+func (u *Users) CreateUser(ctx context.Context, identityKey, activeStorage string, baskets ...wdk.BasketConfiguration) (*wdk.TableUser, error) {
 	user := models.User{
 		IdentityKey:   identityKey,
 		ActiveStorage: activeStorage,
@@ -51,7 +52,7 @@ func (u *Users) CreateUser(identityKey, activeStorage string, baskets ...wdk.Bas
 			}
 		})),
 	}
-	err := u.db.Create(&user).Error
+	err := u.db.WithContext(ctx).Create(&user).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}

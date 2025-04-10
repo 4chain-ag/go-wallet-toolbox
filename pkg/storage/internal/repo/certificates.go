@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
@@ -31,16 +32,16 @@ func NewCertificates(db *gorm.DB) *Certificates {
 	return &Certificates{db: db}
 }
 
-func (c *Certificates) CreateCertificate(certificate *models.Certificate) (uint, error) {
-	err := c.db.Create(certificate).Error
+func (c *Certificates) CreateCertificate(ctx context.Context, certificate *models.Certificate) (uint, error) {
+	err := c.db.WithContext(ctx).Create(certificate).Error
 	if err != nil {
 		return 0, fmt.Errorf("failed to create certificate model: %w", err)
 	}
 	return certificate.ID, nil
 }
 
-func (c *Certificates) DeleteCertificate(userID int, args wdk.RelinquishCertificateArgs) error {
-	tx := c.db.Delete(&models.Certificate{}, "type = ? AND serial_number = ? AND certifier = ? AND user_id = ?", args.Type, args.SerialNumber, args.Certifier, userID)
+func (c *Certificates) DeleteCertificate(ctx context.Context, userID int, args wdk.RelinquishCertificateArgs) error {
+	tx := c.db.WithContext(ctx).Delete(&models.Certificate{}, "type = ? AND serial_number = ? AND certifier = ? AND user_id = ?", args.Type, args.SerialNumber, args.Certifier, userID)
 	if tx.RowsAffected == 0 {
 		return fmt.Errorf("failed to delete certificate model: certificate not found")
 	}
@@ -51,8 +52,8 @@ func (c *Certificates) DeleteCertificate(userID int, args wdk.RelinquishCertific
 	return nil
 }
 
-func (c *Certificates) ListAndCountCertificates(userID int, opts ListCertificatesActionParams) (certificates []*models.Certificate, totalRows int64, err error) {
-	err = c.db.Transaction(func(tx *gorm.DB) error {
+func (c *Certificates) ListAndCountCertificates(ctx context.Context, userID int, opts ListCertificatesActionParams) (certificates []*models.Certificate, totalRows int64, err error) {
+	err = c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		page := &paging.Page{}
 
 		// parse offset and limit

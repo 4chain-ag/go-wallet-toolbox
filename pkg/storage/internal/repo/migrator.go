@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
@@ -15,8 +16,8 @@ func NewMigrator(db *gorm.DB) *Migrator {
 	return &Migrator{db: db}
 }
 
-func (m *Migrator) Migrate() error {
-	err := m.db.AutoMigrate(
+func (m *Migrator) Migrate(ctx context.Context) error {
+	err := m.db.WithContext(ctx).AutoMigrate(
 		&models.Setting{},
 		&models.User{},
 		&models.OutputBasket{},
