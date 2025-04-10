@@ -1,4 +1,7 @@
 bsv_network: main
+commission:
+    pub_key_hex: ""
+    satoshis: 0
 db:
     engine: sqlite
     max_connection_idle_time: 6m0s
