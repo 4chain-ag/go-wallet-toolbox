@@ -7,6 +7,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/validate"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/stretchr/testify/require"
 )
 
@@ -45,7 +46,7 @@ func TestWrongInsertCertificateAuthArgs(t *testing.T) {
 		},
 		"Invalid Certifier (too long)": {
 			modifier: func(args *wdk.TableCertificateX) *wdk.TableCertificateX {
-				args.Certifier = wdk.PubKeyHex(strings.Repeat("a", 301))
+				args.Certifier = primitives.PubKeyHex(strings.Repeat("a", 301))
 				return args
 			},
 		},
@@ -57,7 +58,7 @@ func TestWrongInsertCertificateAuthArgs(t *testing.T) {
 		},
 		"Invalid Verifier (non-hex)": {
 			modifier: func(args *wdk.TableCertificateX) *wdk.TableCertificateX {
-				invalid := wdk.PubKeyHex("zzzz")
+				invalid := primitives.PubKeyHex("zzzz")
 				args.Verifier = &invalid
 				return args
 			},
@@ -70,7 +71,7 @@ func TestWrongInsertCertificateAuthArgs(t *testing.T) {
 		},
 		"Invalid Signature (odd length)": {
 			modifier: func(args *wdk.TableCertificateX) *wdk.TableCertificateX {
-				args.Signature = wdk.HexString("abc")
+				args.Signature = primitives.HexString("abc")
 				return args
 			},
 		},
@@ -88,7 +89,7 @@ func TestWrongInsertCertificateAuthArgs(t *testing.T) {
 		},
 		"Verifier with odd length": {
 			modifier: func(args *wdk.TableCertificateX) *wdk.TableCertificateX {
-				oddLength := wdk.PubKeyHex("abc")
+				oddLength := primitives.PubKeyHex("abc")
 				args.Verifier = &oddLength
 				return args
 			},

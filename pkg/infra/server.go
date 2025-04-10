@@ -52,9 +52,10 @@ func NewServer(opts ...InitOption) (*Server, error) {
 	}
 
 	activeStorage, err := storage.NewGORMProvider(logger, storage.GORMProviderConfig{
-		DB:       cfg.DBConfig,
-		Chain:    cfg.BSVNetwork,
-		FeeModel: cfg.FeeModel,
+		DB:         cfg.DBConfig,
+		Chain:      cfg.BSVNetwork,
+		FeeModel:   cfg.FeeModel,
+		Commission: cfg.Commission,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create storage provider: %w", err)

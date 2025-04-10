@@ -4,6 +4,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/repo"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 )
 
 func tableCertificateXFieldsToModelFields(userID int) func(*wdk.TableCertificateField) *models.CertificateField {
@@ -51,30 +52,30 @@ func certModelToResult(model *models.Certificate) *wdk.CertificateResult {
 		Verifier: model.Verifier,
 		Keyring:  certificateModelFieldsToKeyringResult(model.CertificateFields),
 		WalletCertificate: wdk.WalletCertificate{
-			Type:               wdk.Base64String(model.Type),
-			Subject:            wdk.PubKeyHex(model.Subject),
-			SerialNumber:       wdk.Base64String(model.SerialNumber),
-			Certifier:          wdk.PubKeyHex(model.Certifier),
-			RevocationOutpoint: wdk.OutpointString(model.RevocationOutpoint),
-			Signature:          wdk.HexString(model.Signature),
+			Type:               primitives.Base64String(model.Type),
+			Subject:            primitives.PubKeyHex(model.Subject),
+			SerialNumber:       primitives.Base64String(model.SerialNumber),
+			Certifier:          primitives.PubKeyHex(model.Certifier),
+			RevocationOutpoint: primitives.OutpointString(model.RevocationOutpoint),
+			Signature:          primitives.HexString(model.Signature),
 			Fields:             certificateModelFieldsToFieldsResult(model.CertificateFields),
 		},
 	}
 }
 
-func certificateModelFieldsToKeyringResult(fields []*models.CertificateField) map[wdk.CertificateFieldNameUnder50Bytes]wdk.Base64String {
-	result := make(map[wdk.CertificateFieldNameUnder50Bytes]wdk.Base64String, len(fields))
+func certificateModelFieldsToKeyringResult(fields []*models.CertificateField) map[primitives.StringUnder50Bytes]primitives.Base64String {
+	result := make(map[primitives.StringUnder50Bytes]primitives.Base64String, len(fields))
 	for _, field := range fields {
-		result[wdk.CertificateFieldNameUnder50Bytes(field.FieldName)] = wdk.Base64String(field.FieldValue)
+		result[primitives.StringUnder50Bytes(field.FieldName)] = primitives.Base64String(field.FieldValue)
 	}
 
 	return result
 }
 
-func certificateModelFieldsToFieldsResult(fields []*models.CertificateField) map[wdk.CertificateFieldNameUnder50Bytes]string {
-	result := make(map[wdk.CertificateFieldNameUnder50Bytes]string, len(fields))
+func certificateModelFieldsToFieldsResult(fields []*models.CertificateField) map[primitives.StringUnder50Bytes]string {
+	result := make(map[primitives.StringUnder50Bytes]string, len(fields))
 	for _, field := range fields {
-		result[wdk.CertificateFieldNameUnder50Bytes(field.FieldName)] = field.FieldValue
+		result[primitives.StringUnder50Bytes(field.FieldName)] = field.FieldValue
 	}
 
 	return result

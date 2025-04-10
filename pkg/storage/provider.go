@@ -12,6 +12,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/repo"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/go-softwarelab/common/pkg/slices"
 	"github.com/go-softwarelab/common/pkg/to"
 )
@@ -42,9 +43,10 @@ type Provider struct {
 
 // GORMProviderConfig is a configuration for GORM storage provider.
 type GORMProviderConfig struct {
-	DB       defs.Database
-	Chain    defs.BSVNetwork
-	FeeModel defs.FeeModel
+	DB         defs.Database
+	Chain      defs.BSVNetwork
+	FeeModel   defs.FeeModel
+	Commission defs.Commission
 }
 
 // NewGORMProvider creates a new storage provider with GORM repository.
@@ -72,7 +74,7 @@ func NewGORMProvider(logger *slog.Logger, config GORMProviderConfig, opts ...Pro
 	return &Provider{
 		Chain:   config.Chain,
 		repo:    repos,
-		actions: actions.New(logger, funder, repos),
+		actions: actions.New(logger, funder, config.Commission, repos),
 	}, nil
 }
 
@@ -204,7 +206,7 @@ func (p *Provider) ListCertificates(ctx context.Context, auth wdk.AuthID, args w
 	}
 
 	result := &wdk.ListCertificatesResult{
-		TotalCertificates: wdk.PositiveIntegerOrZero(tc),
+		TotalCertificates: primitives.PositiveInteger(tc),
 		Certificates:      slices.Map(certModels, certModelToResult),
 	}
 

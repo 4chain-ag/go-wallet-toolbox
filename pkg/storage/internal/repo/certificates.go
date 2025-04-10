@@ -8,6 +8,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/scopes"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/paging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/go-softwarelab/common/pkg/to"
 	"gorm.io/gorm"
 )
@@ -17,14 +18,14 @@ type Certificates struct {
 }
 
 type ListCertificatesActionParams struct {
-	SerialNumber       *wdk.Base64String
-	Subject            *wdk.PubKeyHex
-	RevocationOutpoint *wdk.OutpointString
-	Signature          *wdk.HexString
-	Certifiers         []wdk.PubKeyHex
-	Types              []wdk.Base64String
-	Limit              wdk.PositiveIntegerDefault10Max10000
-	Offset             wdk.PositiveIntegerOrZero
+	SerialNumber       *primitives.Base64String
+	Subject            *primitives.PubKeyHex
+	RevocationOutpoint *primitives.OutpointString
+	Signature          *primitives.HexString
+	Certifiers         []primitives.PubKeyHex
+	Types              []primitives.Base64String
+	Limit              primitives.PositiveIntegerDefault10Max10000
+	Offset             primitives.PositiveInteger
 }
 
 func NewCertificates(db *gorm.DB) *Certificates {
