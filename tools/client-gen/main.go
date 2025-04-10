@@ -9,6 +9,7 @@ import (
 	"go/token"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -131,5 +132,6 @@ func getFullPackageName(dir string) string {
 	}
 
 	// Otherwise, join the module path and the relative path
-	return filepath.Join(modulePath, relPath)
+	p := path.Join(modulePath, relPath)
+	return strings.ReplaceAll(p, "\\", "/")
 }
