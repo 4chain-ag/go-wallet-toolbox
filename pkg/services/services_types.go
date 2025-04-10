@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/bsv-blockchain/go-sdk/transaction"
 )
 
@@ -71,7 +71,7 @@ type MerklePathResult struct {
 	// one or more orphaned blocks
 	MerklePath *transaction.MerklePath
 	Header     *BlockHeader
-	Notes      []wdk.ReqHistoryNote
+	Notes      []primitives.ReqHistoryNote
 }
 
 // UtxoStatusDetails represents details about occurrences of an output script as a UTXO
@@ -122,7 +122,7 @@ type PostTxResultForTxID struct {
 	CompetingTxs []string
 	// TODO: Data type is object | string | PostTxResultForTxidError
 	Data  any
-	Notes []wdk.ReqHistoryNote
+	Notes []primitives.ReqHistoryNote
 }
 
 // PostBeefResult are properties on array items of result returned from postBeef method
@@ -132,5 +132,5 @@ type PostBeefResult struct {
 	TxIDResults []PostTxResultForTxID
 	// Data is service response object. Use service name and status to infer type of object.
 	Data  any
-	Notes []wdk.ReqHistoryNote
+	Notes []primitives.ReqHistoryNote
 }
