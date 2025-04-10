@@ -276,7 +276,7 @@ func TestListCertificates(t *testing.T) {
 
 		// when: listing certificates with limit 1 and offset 2
 		certs, err = activeStorage.ListCertificates(context.Background(), testusers.Alice.AuthID(), wdk.ListCertificatesArgs{
-			Offset: primitives.PositiveIntegerOrZero(2),
+			Offset: primitives.PositiveInteger(2),
 		})
 
 		// then:
