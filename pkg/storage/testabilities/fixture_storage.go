@@ -31,7 +31,7 @@ type StorageFixture interface {
 	GormProviderWithCleanDatabase() *storage.Provider
 
 	StartedRPCServerFor(provider wdk.WalletStorageWriter) (cleanup func())
-	RPCClient() (*wdk.WalletStorageWriterClient, func())
+	RPCClient() (*storage.WalletStorageWriterClient, func())
 
 	MockProvider() *mocks.MockWalletStorageWriter
 }
@@ -86,9 +86,9 @@ func (s *storageFixture) StartedRPCServerFor(provider wdk.WalletStorageWriter) (
 	return s.testServer.Close
 }
 
-func (s *storageFixture) RPCClient() (client *wdk.WalletStorageWriterClient, cleanup func()) {
+func (s *storageFixture) RPCClient() (client *storage.WalletStorageWriterClient, cleanup func()) {
 	s.t.Helper()
-	client, cleanup, err := wdk.NewClient(s.testServer.URL, wdk.WithHttpClient(s.testServer.Client()))
+	client, cleanup, err := storage.NewClient(s.testServer.URL, storage.WithHttpClient(s.testServer.Client()))
 	s.require.NoError(err)
 	return client, cleanup
 }
