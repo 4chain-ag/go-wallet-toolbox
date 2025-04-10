@@ -5,7 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/whatsonchain"
 	"github.com/bsv-blockchain/go-sdk/transaction"
 	"github.com/bsv-blockchain/go-sdk/transaction/chaintracker"
@@ -17,7 +17,7 @@ type WalletServices struct {
 	httpClient   *resty.Client
 	logger       *slog.Logger
 	chain        defs.BSVNetwork
-	options      *WalletServicesOptions
+	options      *WalletServicesConfiguration
 	whatsonchain *whatsonchain.WhatsOnChain
 
 	// getMerklePathServices: ServiceCollection<sdk.GetMerklePathService>
@@ -43,22 +43,22 @@ func New(httpClient *resty.Client, logger *slog.Logger, chain defs.BSVNetwork, o
 		chain:        chain,
 		options:      options,
 		logger:       logger,
-		whatsonchain: whatsonchain.New(httpClient, logging.Child(logger, "service_whats_on_chain"), options.WhatsOnChainApiKey, chain),
+		whatsonchain: whatsonchain.New(httpClient, logger, options.WhatsOnChainApiKey, chain),
 	}
 }
 
-// ChainTracker returns service which requires `options.chaintracks` be valid.
+// ChainTracker returns service, which requires `options.chaintracks` be valid.
 func (s *WalletServices) ChainTracker() chaintracker.ChainTracker {
 	panic("Not implemented yet")
 }
 
 // HeaderForHeight returns serialized block header for height on active chain
-func (s *WalletServices) HeaderForHeight(height int) ([]int, error) {
+func (s *WalletServices) HeaderForHeight(height int64) ([]int64, error) {
 	panic("Not implemented yet")
 }
 
 // Height returns the height of the active chain
-func (s *WalletServices) Height() int {
+func (s *WalletServices) Height() int64 {
 	panic("Not implemented yet")
 }
 
@@ -66,19 +66,19 @@ func (s *WalletServices) Height() int {
 // This is the US Dollar price of one BSV
 func (s *WalletServices) BsvExchangeRate() (float64, error) {
 	bsvExchangeRate, err := s.whatsonchain.UpdateBsvExchangeRate(
-		&s.options.BsvExchangeRate,
-		&s.options.BsvUpdateMsecs,
+		s.options.BsvExchangeRate,
+		&s.options.BsvUpdateInterval,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("error during bsvExchangeRate: %w", err)
 	}
 
-	s.options.BsvExchangeRate = bsvExchangeRate
+	s.options.BsvExchangeRate = &bsvExchangeRate
 	return bsvExchangeRate.Rate, nil
 }
 
-// FiatExchangeRate returns  approximate exchange rate currency per base.
-func (s *WalletServices) FiatExchangeRate(currency Currency, base *Currency) float64 {
+// FiatExchangeRate returns approximate exchange rate currency per base.
+func (s *WalletServices) FiatExchangeRate(currency internal.Currency, base *internal.Currency) float64 {
 	panic("Not implemented yet")
 }
 
