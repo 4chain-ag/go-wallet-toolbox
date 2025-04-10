@@ -1,5 +1,7 @@
 package wdk
 
+import "github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
+
 type NewTx struct {
 	UserID int
 
@@ -12,5 +14,5 @@ type NewTx struct {
 	InputBeef   []byte
 	Description string
 
-	Labels []IdentifierStringUnder300
+	Labels []primitives.StringUnder300
 }

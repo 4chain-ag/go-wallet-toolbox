@@ -3,6 +3,7 @@ package actions
 import (
 	"context"
 	"fmt"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"iter"
 	"log/slog"
 
@@ -46,7 +47,7 @@ type CreateActionParams struct {
 	Version     int
 	LockTime    int
 	Description string
-	Labels      []wdk.IdentifierStringUnder300
+	Labels      []primitives.StringUnder300
 	Outputs     iter.Seq[*wdk.ValidCreateActionOutput]
 	Inputs      iter.Seq[*wdk.ValidCreateActionInput]
 }
@@ -85,7 +86,7 @@ type create struct {
 	logger        *slog.Logger
 	funder        Funder
 	basketRepo    BasketRepo
-	txRepo     TxRepo
+	txRepo        TxRepo
 	commission    *commission.ScriptGenerator
 	commissionCfg defs.Commission
 }
@@ -96,7 +97,7 @@ func newCreateAction(logger *slog.Logger, funder Funder, commissionCfg defs.Comm
 		logger:        logger,
 		funder:        funder,
 		basketRepo:    basketRepo,
-		txRepo:     txRepo,
+		txRepo:        txRepo,
 		commissionCfg: commissionCfg,
 	}
 
