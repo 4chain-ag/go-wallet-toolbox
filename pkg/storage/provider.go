@@ -205,7 +205,7 @@ func (p *Provider) ListCertificates(auth wdk.AuthID, args wdk.ListCertificatesAr
 	}
 
 	result := &wdk.ListCertificatesResult{
-		TotalCertificates: primitives.PositiveIntegerOrZero(tc),
+		TotalCertificates: primitives.PositiveInteger(tc),
 		Certificates:      slices.Map(certModels, certModelToResult),
 	}
 

@@ -63,19 +63,19 @@ func certModelToResult(model *models.Certificate) *wdk.CertificateResult {
 	}
 }
 
-func certificateModelFieldsToKeyringResult(fields []*models.CertificateField) map[primitives.CertificateFieldNameUnder50Bytes]primitives.Base64String {
-	result := make(map[primitives.CertificateFieldNameUnder50Bytes]primitives.Base64String, len(fields))
+func certificateModelFieldsToKeyringResult(fields []*models.CertificateField) map[primitives.StringUnder50Bytes]primitives.Base64String {
+	result := make(map[primitives.StringUnder50Bytes]primitives.Base64String, len(fields))
 	for _, field := range fields {
-		result[primitives.CertificateFieldNameUnder50Bytes(field.FieldName)] = primitives.Base64String(field.FieldValue)
+		result[primitives.StringUnder50Bytes(field.FieldName)] = primitives.Base64String(field.FieldValue)
 	}
 
 	return result
 }
 
-func certificateModelFieldsToFieldsResult(fields []*models.CertificateField) map[primitives.CertificateFieldNameUnder50Bytes]string {
-	result := make(map[primitives.CertificateFieldNameUnder50Bytes]string, len(fields))
+func certificateModelFieldsToFieldsResult(fields []*models.CertificateField) map[primitives.StringUnder50Bytes]string {
+	result := make(map[primitives.StringUnder50Bytes]string, len(fields))
 	for _, field := range fields {
-		result[primitives.CertificateFieldNameUnder50Bytes(field.FieldName)] = field.FieldValue
+		result[primitives.StringUnder50Bytes(field.FieldName)] = field.FieldValue
 	}
 
 	return result

@@ -24,7 +24,7 @@ type ListCertificatesActionParams struct {
 	Certifiers         []primitives.PubKeyHex
 	Types              []primitives.Base64String
 	Limit              primitives.PositiveIntegerDefault10Max10000
-	Offset             primitives.PositiveIntegerOrZero
+	Offset             primitives.PositiveInteger
 }
 
 func NewCertificates(db *gorm.DB) *Certificates {

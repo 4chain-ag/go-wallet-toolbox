@@ -19,6 +19,6 @@ func DefaultValidListCertificatesArgs() *wdk.ListCertificatesArgs {
 		Certifiers: []primitives.PubKeyHex{Certifier},
 		Types:      []primitives.Base64String{TypeField},
 		Limit:      primitives.PositiveIntegerDefault10Max10000(4),
-		Offset:     primitives.PositiveIntegerOrZero(5),
+		Offset:     primitives.PositiveInteger(5),
 	}
 }

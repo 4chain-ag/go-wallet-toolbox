@@ -82,13 +82,13 @@ func TestWrongCreateActionArgs(t *testing.T) {
 		},
 		"Label empty": {
 			modifier: func(args wdk.ValidCreateActionArgs) wdk.ValidCreateActionArgs {
-				args.Labels = []primitives.IdentifierStringUnder300{""}
+				args.Labels = []primitives.StringUnder300{""}
 				return args
 			},
 		},
 		"Label too long": {
 			modifier: func(args wdk.ValidCreateActionArgs) wdk.ValidCreateActionArgs {
-				args.Labels = []primitives.IdentifierStringUnder300{primitives.IdentifierStringUnder300(bytes.Repeat([]byte{'a'}, 301))}
+				args.Labels = []primitives.StringUnder300{primitives.StringUnder300(bytes.Repeat([]byte{'a'}, 301))}
 				return args
 			},
 		},
@@ -118,25 +118,25 @@ func TestWrongCreateActionArgs(t *testing.T) {
 		},
 		"Output's basket too long": {
 			modifier: func(args wdk.ValidCreateActionArgs) wdk.ValidCreateActionArgs {
-				args.Outputs[0].Basket = to.Ptr(primitives.IdentifierStringUnder300(bytes.Repeat([]byte{'a'}, 301)))
+				args.Outputs[0].Basket = to.Ptr(primitives.StringUnder300(bytes.Repeat([]byte{'a'}, 301)))
 				return args
 			},
 		},
 		"Output's basket empty": {
 			modifier: func(args wdk.ValidCreateActionArgs) wdk.ValidCreateActionArgs {
-				args.Outputs[0].Basket = to.Ptr(primitives.IdentifierStringUnder300(""))
+				args.Outputs[0].Basket = to.Ptr(primitives.StringUnder300(""))
 				return args
 			},
 		},
 		"Output's tag too long": {
 			modifier: func(args wdk.ValidCreateActionArgs) wdk.ValidCreateActionArgs {
-				args.Outputs[0].Tags = []primitives.IdentifierStringUnder300{primitives.IdentifierStringUnder300(bytes.Repeat([]byte{'a'}, 301))}
+				args.Outputs[0].Tags = []primitives.StringUnder300{primitives.StringUnder300(bytes.Repeat([]byte{'a'}, 301))}
 				return args
 			},
 		},
 		"Output's tag empty": {
 			modifier: func(args wdk.ValidCreateActionArgs) wdk.ValidCreateActionArgs {
-				args.Outputs[0].Tags = []primitives.IdentifierStringUnder300{""}
+				args.Outputs[0].Tags = []primitives.StringUnder300{""}
 				return args
 			},
 		},

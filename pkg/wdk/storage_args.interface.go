@@ -9,11 +9,11 @@ import (
 
 // ValidCreateActionInput represents the input for a transaction action
 type ValidCreateActionInput struct {
-	Outpoint              OutPoint                         `json:"outpoint,omitempty"`
-	InputDescription      primitives.String5to2000Bytes    `json:"inputDescription,omitempty"`
-	SequenceNumber        primitives.PositiveIntegerOrZero `json:"sequenceNumber,omitempty"`
-	UnlockingScript       *primitives.HexString            `json:"unlockingScript,omitempty"`
-	UnlockingScriptLength *primitives.PositiveInteger      `json:"unlockingScriptLength,omitempty"`
+	Outpoint              OutPoint                      `json:"outpoint,omitempty"`
+	InputDescription      primitives.String5to2000Bytes `json:"inputDescription,omitempty"`
+	SequenceNumber        primitives.PositiveInteger    `json:"sequenceNumber,omitempty"`
+	UnlockingScript       *primitives.HexString         `json:"unlockingScript,omitempty"`
+	UnlockingScriptLength *primitives.PositiveInteger   `json:"unlockingScriptLength,omitempty"`
 }
 
 // ScriptLength returns the length of the unlocking script in bytes.
@@ -33,12 +33,12 @@ func (i *ValidCreateActionInput) ScriptLength() (uint64, error) {
 
 // ValidCreateActionOutput represents the output for a transaction action
 type ValidCreateActionOutput struct {
-	LockingScript      primitives.HexString                  `json:"lockingScript,omitempty"`
-	Satoshis           primitives.SatoshiValue               `json:"satoshis,omitempty"`
-	OutputDescription  primitives.String5to2000Bytes         `json:"outputDescription,omitempty"`
-	Basket             *primitives.IdentifierStringUnder300  `json:"basket,omitempty"`
-	CustomInstructions *string                               `json:"customInstructions,omitempty"`
-	Tags               []primitives.IdentifierStringUnder300 `json:"tags,omitempty"`
+	LockingScript      primitives.HexString          `json:"lockingScript,omitempty"`
+	Satoshis           primitives.SatoshiValue       `json:"satoshis,omitempty"`
+	OutputDescription  primitives.String5to2000Bytes `json:"outputDescription,omitempty"`
+	Basket             *primitives.StringUnder300    `json:"basket,omitempty"`
+	CustomInstructions *string                       `json:"customInstructions,omitempty"`
+	Tags               []primitives.StringUnder300   `json:"tags,omitempty"`
 }
 
 // ScriptLength returns the length of the locking script in bytes.
@@ -88,16 +88,16 @@ type ValidProcessActionArgs struct {
 
 // ValidCreateActionArgs represents the arguments for creating a transaction action
 type ValidCreateActionArgs struct {
-	Description                  primitives.String5to2000Bytes         `json:"description,omitempty"`
-	InputBEEF                    primitives.BEEF                       `json:"inputBEEF,omitempty"`
-	Inputs                       []ValidCreateActionInput              `json:"inputs,omitempty"`
-	Outputs                      []ValidCreateActionOutput             `json:"outputs,omitempty"`
-	LockTime                     int                                   `json:"lockTime,omitempty"`
-	Version                      int                                   `json:"version,omitempty"`
-	Labels                       []primitives.IdentifierStringUnder300 `json:"labels,omitempty"`
-	IsSignAction                 bool                                  `json:"isSignAction,omitempty"`
-	RandomVals                   *[]int                                `json:"randomVals,omitempty"`
-	IncludeAllSourceTransactions bool                                  `json:"includeAllSourceTransactions,omitempty"`
+	Description                  primitives.String5to2000Bytes `json:"description,omitempty"`
+	InputBEEF                    primitives.BEEF               `json:"inputBEEF,omitempty"`
+	Inputs                       []ValidCreateActionInput      `json:"inputs,omitempty"`
+	Outputs                      []ValidCreateActionOutput     `json:"outputs,omitempty"`
+	LockTime                     int                           `json:"lockTime,omitempty"`
+	Version                      int                           `json:"version,omitempty"`
+	Labels                       []primitives.StringUnder300   `json:"labels,omitempty"`
+	IsSignAction                 bool                          `json:"isSignAction,omitempty"`
+	RandomVals                   *[]int                        `json:"randomVals,omitempty"`
+	IncludeAllSourceTransactions bool                          `json:"includeAllSourceTransactions,omitempty"`
 
 	Options ValidCreateActionOptions `json:"options,omitempty"`
 
@@ -140,5 +140,5 @@ type ListCertificatesArgs struct {
 	Certifiers []primitives.PubKeyHex                      `json:"certifiers"`
 	Types      []primitives.Base64String                   `json:"types"`
 	Limit      primitives.PositiveIntegerDefault10Max10000 `json:"limit"`
-	Offset     primitives.PositiveIntegerOrZero            `json:"offset"`
+	Offset     primitives.PositiveInteger                  `json:"offset"`
 }

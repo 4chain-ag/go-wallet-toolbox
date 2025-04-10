@@ -20,7 +20,7 @@ func DefaultValidCreateActionArgs() wdk.ValidCreateActionArgs {
 		},
 		LockTime: 0,
 		Version:  1,
-		Labels:   []primitives.IdentifierStringUnder300{"outputbrc29"},
+		Labels:   []primitives.StringUnder300{"outputbrc29"},
 		Options: wdk.ValidCreateActionOptions{
 			ValidProcessActionOptions: wdk.ValidProcessActionOptions{
 				AcceptDelayedBroadcast: to.Ptr[primitives.BooleanDefaultTrue](false),

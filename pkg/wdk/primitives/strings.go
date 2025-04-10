@@ -46,31 +46,48 @@ func (s Base64String) Validate() error {
 	return nil
 }
 
-// DescriptionString5to50Bytes is a string used for descriptions, with a length between 5 and 50 characters.
-type DescriptionString5to50Bytes string
-
-// Validate checks if the string is between 5 and 50 characters long
-func (s DescriptionString5to50Bytes) Validate() error {
-	if len(s) < 5 {
-		return fmt.Errorf("at least 5 length")
-	}
-	if len(s) > 50 {
-		return fmt.Errorf("no more than 50 length")
-	}
-	return nil
-}
-
-// CertificateFieldNameUnder50Bytes Represents a certificate field name with a maximum length of 50 characters
-type CertificateFieldNameUnder50Bytes string
+// StringUnder50Bytes Represents a certificate field name with a maximum length of 50 characters
+type StringUnder50Bytes string
 
 // Validate checks if the string is under 50 length
-func (s CertificateFieldNameUnder50Bytes) Validate() error {
+func (s StringUnder50Bytes) Validate() error {
 	if len(s) < 1 {
 		return fmt.Errorf("at least 1 length")
 	}
 
 	if len(s) > 50 {
 		return fmt.Errorf("no more than 50 length")
+	}
+	return nil
+}
+
+// StringUnder300 is a string used for basket names, with a length under 300 bytes
+type StringUnder300 string
+
+// Validate checks if the string is under 300 bytes long and not empty
+func (b StringUnder300) Validate() error {
+	if len(b) > 300 {
+		return fmt.Errorf("no more than 300 length")
+	}
+	if len(b) == 0 {
+		return fmt.Errorf("at least 1 length")
+	}
+	return nil
+}
+
+// HexString is a string in hexadecimal format
+type HexString string
+
+var hexRegex = regexp.MustCompile("^[0-9a-fA-F]+$")
+
+// Validate checks if the string is a valid hexadecimal string
+func (h HexString) Validate() error {
+	if len(h)%2 != 0 {
+		return fmt.Errorf("even length, not %d", len(h))
+	}
+
+	if !hexRegex.MatchString(string(h)) {
+		return fmt.Errorf("hexadecimal string")
 	}
 	return nil
 }
@@ -100,23 +117,6 @@ func (pkh PubKeyHex) Validate() error {
 		return fmt.Errorf("invalid pubKey hex string: %w", err)
 	}
 
-	return nil
-}
-
-// HexString is a string in hexadecimal format
-type HexString string
-
-var hexRegex = regexp.MustCompile("^[0-9a-fA-F]+$")
-
-// Validate checks if the string is a valid hexadecimal string
-func (h HexString) Validate() error {
-	if len(h)%2 != 0 {
-		return fmt.Errorf("even length, not %d", len(h))
-	}
-
-	if !hexRegex.MatchString(string(h)) {
-		return fmt.Errorf("hexadecimal string")
-	}
 	return nil
 }
 

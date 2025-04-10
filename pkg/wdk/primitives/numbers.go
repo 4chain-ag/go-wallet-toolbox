@@ -31,20 +31,3 @@ func (s SatoshiValue) Validate() error {
 	}
 	return nil
 }
-
-// PositiveIntegerOrZero represents a positive integer or zero value
-type PositiveIntegerOrZero uint
-
-// IdentifierStringUnder300 is a string used for basket names, with a length under 300 bytes
-type IdentifierStringUnder300 string
-
-// Validate checks if the string is under 300 bytes long and not empty
-func (b IdentifierStringUnder300) Validate() error {
-	if len(b) > 300 {
-		return fmt.Errorf("no more than 300 length")
-	}
-	if len(b) == 0 {
-		return fmt.Errorf("at least 1 length")
-	}
-	return nil
-}
