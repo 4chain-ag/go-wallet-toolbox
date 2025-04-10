@@ -72,7 +72,9 @@ func main() {
 		targetPackageName = filepath.Base(filepath.Dir(targetFile))
 	}
 
-	output := generator.Generate(targetPackageName, fullPackageName, isTheSameDir, interfaces)
+	pkg := generator.NewPackage(targetPackageName, packageName, fullPackageName, isTheSameDir)
+
+	output := generator.Generate(pkg, interfaces)
 
 	// Write the output
 	log.Printf("Writing to file://%s \n", targetFile)

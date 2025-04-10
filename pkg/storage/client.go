@@ -1,4 +1,4 @@
-package wdk
+package storage
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 )
 
 // NewClient returns WalletStorageWriterClient that allows connection to rpc server
-func NewClient(addr string, overrideOptions ...StorageClientOptions) (*WalletStorageWriterClient, func(), error) {
+func NewClient(addr string, overrideOptions ...ClientOptions) (*WalletStorageWriterClient, func(), error) {
 	opts := defaultClientOptions()
 	client := &WalletStorageWriterClient{
 		client: &rpcWalletStorageWriter{},
