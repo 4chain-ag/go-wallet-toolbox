@@ -78,7 +78,7 @@ func newCreateAction(logger *slog.Logger, funder Funder, commissionCfg defs.Comm
 	}
 
 	if commissionCfg.Enabled() {
-		c.commission = commission.NewScriptGenerator(commissionCfg.PubKeyHex)
+		c.commission = commission.NewScriptGenerator(string(commissionCfg.PubKeyHex))
 	}
 
 	return c

@@ -1,10 +1,16 @@
 package defs
 
+import (
+	"fmt"
+
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
+)
+
 // Commission represents the commission configuration for a storage provider.
 // If satoshis is greater than 0, it means that the commission is enabled.
 type Commission struct {
-	Satoshis  uint64 `mapstructure:"satoshis"`
-	PubKeyHex string `mapstructure:"pub_key_hex"`
+	Satoshis  uint64               `mapstructure:"satoshis"`
+	PubKeyHex primitives.PubKeyHex `mapstructure:"pub_key_hex"`
 }
 
 // Enabled checks if the commission is enabled.
@@ -18,7 +24,9 @@ func (c *Commission) Validate() error {
 		return nil
 	}
 
-	// TODO: Validate PubKeyHex
+	if err := c.PubKeyHex.Validate(); err != nil {
+		return fmt.Errorf("invalid pubkey: %w", err)
+	}
 
 	return nil
 }
