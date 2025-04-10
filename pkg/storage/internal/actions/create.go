@@ -140,14 +140,9 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 	// TODO: convert change values into outputs
 	_ = changeDist
 
-	derivationPrefix, err := txutils.RandomBase64(derivationPrefixLength)
+	derivationPrefix, reference, err := c.randomValues()
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate random derivation prefix: %w", err)
-	}
-
-	reference, err := txutils.RandomBase64(referenceLength)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate random reference: %w", err)
+		return nil, err
 	}
 
 	err = c.txRepo.CreateTransaction(ctx, &wdk.NewTx{
@@ -206,4 +201,20 @@ func (c *create) txSize(args *CreateActionParams) (uint64, error) {
 	}
 
 	return txSize, nil
+}
+
+func (c *create) randomValues() (derivationPrefix string, reference string, err error) {
+	derivationPrefix, err = txutils.RandomBase64(derivationPrefixLength)
+	if err != nil {
+		err = fmt.Errorf("failed to generate random derivation prefix: %w", err)
+		return
+	}
+
+	reference, err = txutils.RandomBase64(referenceLength)
+	if err != nil {
+		err = fmt.Errorf("failed to generate random reference: %w", err)
+		return
+	}
+
+	return
 }
