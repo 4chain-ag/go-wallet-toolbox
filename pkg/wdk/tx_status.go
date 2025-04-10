@@ -1,7 +1,9 @@
 package wdk
 
+// TxStatus Transaction status stored in database
 type TxStatus string
 
+// Possible transaction statuses stored in database
 const (
 	TxStatusCompleted   TxStatus = "completed"
 	TxStatusFailed      TxStatus = "failed"

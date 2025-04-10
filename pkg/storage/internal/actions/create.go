@@ -3,7 +3,6 @@ package actions
 import (
 	"context"
 	"fmt"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"iter"
 	"log/slog"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/commission"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/txutils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/go-softwarelab/common/pkg/seqerr"
 	"github.com/go-softwarelab/common/pkg/to"
