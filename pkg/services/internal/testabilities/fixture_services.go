@@ -1,13 +1,16 @@
 package testabilities
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/go-resty/resty/v2"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/require"
@@ -15,30 +18,61 @@ import (
 
 type ServicesFixture interface {
 	WhatsOnChain() WhatsOnChainFixture
-	NewServices(opts ...services.Options) *services.WalletServices
+
+	Services() WalletServicesFixture
+	NewServicesWithConfig(config services.WalletServicesConfiguration) *services.WalletServices
 }
 
+type WalletServicesFixture interface {
+	WithDefaultConfig() *services.WalletServices
+
+	WithBsvExchangeRate(exchangeRate *defs.BSVExchangeRate) *services.WalletServices
+}
 type WhatsOnChainFixture interface {
 	WillRespondWithRates(status int, content string, err error) WhatsOnChainFixture
 }
 
 type servicesFixture struct {
-	t          testing.TB
-	require    *require.Assertions
-	logger     *slog.Logger
-	services   *services.WalletServices
-	httpClient *resty.Client
-	transport  *httpmock.MockTransport
+	t                    testing.TB
+	require              *require.Assertions
+	logger               *slog.Logger
+	services             *services.WalletServices
+	httpClient           *resty.Client
+	transport            *httpmock.MockTransport
+	walletServicesConfig *services.WalletServicesConfiguration
 }
 
 func (s *servicesFixture) WhatsOnChain() WhatsOnChainFixture {
 	return s
 }
 
-func (s *servicesFixture) NewServices(opts ...services.Options) *services.WalletServices {
+func (s *servicesFixture) WithDefaultConfig() *services.WalletServices {
 	s.t.Helper()
 
-	walletServices := services.New(s.httpClient, s.logger, defs.NetworkTestnet, opts...)
+	walletServices := services.New(s.httpClient, s.logger, *s.walletServicesConfig)
+	s.services = walletServices
+
+	return s.services
+}
+
+func (s *servicesFixture) WithBsvExchangeRate(exchangeRate *defs.BSVExchangeRate) *services.WalletServices {
+	s.t.Helper()
+	s.walletServicesConfig.BsvExchangeRate = exchangeRate
+
+	walletServices := services.New(s.httpClient, s.logger, *s.walletServicesConfig)
+	s.services = walletServices
+
+	return s.services
+}
+
+func (s *servicesFixture) Services() WalletServicesFixture {
+	return s
+}
+
+func (s *servicesFixture) NewServicesWithConfig(config services.WalletServicesConfiguration) *services.WalletServices {
+	s.t.Helper()
+
+	walletServices := services.New(s.httpClient, s.logger, config)
 
 	s.services = walletServices
 
@@ -67,11 +101,55 @@ func Given(t testing.TB) ServicesFixture {
 	client := resty.New()
 	client.GetClient().Transport = transport
 
+	servicesConfig := servicesCfg(defs.NetworkTestnet)
+
 	return &servicesFixture{
-		t:          t,
-		require:    require.New(t),
-		logger:     logging.NewTestLogger(t),
-		httpClient: client,
-		transport:  transport,
+		t:                    t,
+		require:              require.New(t),
+		logger:               logging.NewTestLogger(t),
+		httpClient:           client,
+		transport:            transport,
+		walletServicesConfig: &servicesConfig,
+	}
+}
+
+func servicesCfg(chain defs.BSVNetwork) services.WalletServicesConfiguration {
+	var taalApiKey string
+	var port int
+	var arcUrl string
+
+	if chain == defs.NetworkMainnet {
+		//nolint:gosec
+		taalApiKey = "mainnet_9596de07e92300c6287e4393594ae39c"
+		port = 8084
+		arcUrl = "https://api.taal.com/arc"
+	} else {
+		//nolint:gosec
+		taalApiKey = "testnet_0e6cf72133b43ea2d7861da2a38684e3"
+		port = 8083
+		arcUrl = "https://arc-test.taal.com/arc"
+	}
+
+	return services.WalletServicesConfiguration{
+		Chain:             chain,
+		TaalApiKey:        taalApiKey,
+		BsvExchangeRate:   nil,
+		BsvUpdateInterval: defs.FifteenMinutes,
+		FiatExchangeRates: defs.FiatExchangeRates{
+			Timestamp: time.Date(2023, time.December, 13, 0, 0, 0, 0, time.UTC),
+			Base:      primitives.USD,
+			Rates: map[primitives.Currency]float64{
+				primitives.USD: 1,
+				primitives.GBP: 0.8,
+				primitives.EUR: 0.93,
+			},
+		},
+		FiatUpdateInterval:              defs.TwentyFourHours,
+		DisableMapiCallback:             true, // rely on WalletMonitor by default
+		ExchangeratesApiKey:             "bd539d2ff492bcb5619d5f27726a766f",
+		ChaintracksFiatExchangeRatesUrl: fmt.Sprintf("https://npm-registry.babbage.systems:%d/getFiatExchangeRates", port),
+		Chaintracks:                     nil, // TODO: implement me
+		ArcUrl:                          arcUrl,
+		ArcConfig:                       nil, // TODO: implement me
 	}
 }

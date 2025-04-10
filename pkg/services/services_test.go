@@ -4,9 +4,8 @@ import (
 	"testing"
 	"time"
 
-	walletServices "github.com/4chain-ag/go-wallet-toolbox/pkg/services"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/testabilities"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/whatsonchain"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,14 +16,14 @@ func TestUpdateBsvExchangeRateSuccess(t *testing.T) {
 		given.WhatsOnChain().WillRespondWithRates(500, "", nil)
 
 		// and:
-		cachedRate := &whatsonchain.BSVExchangeRate{
+		cachedRate := &defs.BSVExchangeRate{
 			Timestamp: time.Now().Add(-5 * time.Minute),
 			Base:      "USD",
 			Rate:      100.0,
 		}
 
 		// and:
-		services := given.NewServices(walletServices.WithBsvExchangeRate(cachedRate))
+		services := given.Services().WithBsvExchangeRate(cachedRate)
 
 		// when:
 		result, err := services.BsvExchangeRate()
@@ -44,11 +43,11 @@ func TestUpdateBsvExchangeRateSuccess(t *testing.T) {
 		}`, nil)
 
 		// and:
-		services := given.NewServices(walletServices.WithBsvExchangeRate(&whatsonchain.BSVExchangeRate{
+		services := given.Services().WithBsvExchangeRate(&defs.BSVExchangeRate{
 			Timestamp: time.Now().Add(-16 * time.Minute),
 			Base:      "USD",
 			Rate:      100.0,
-		}))
+		})
 
 		// when:
 		result, err := services.BsvExchangeRate()
@@ -66,7 +65,7 @@ func TestUpdateBsvExchangeRateFail(t *testing.T) {
 		given.WhatsOnChain().WillRespondWithRates(200, "", assert.AnError)
 
 		// and:
-		services := given.NewServices()
+		services := given.Services().WithDefaultConfig()
 
 		// when:
 		_, err := services.BsvExchangeRate()
@@ -82,7 +81,7 @@ func TestUpdateBsvExchangeRateFail(t *testing.T) {
 		given.WhatsOnChain().WillRespondWithRates(500, "", nil)
 
 		// and:
-		services := given.NewServices()
+		services := given.Services().WithDefaultConfig()
 
 		// when:
 		_, err := services.BsvExchangeRate()
@@ -102,7 +101,7 @@ func TestUpdateBsvExchangeRateFail(t *testing.T) {
       }`, nil)
 
 		// and:
-		services := given.NewServices()
+		services := given.Services().WithDefaultConfig()
 
 		_, err := services.BsvExchangeRate()
 

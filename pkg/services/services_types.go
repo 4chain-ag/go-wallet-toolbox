@@ -1,9 +1,6 @@
 package services
 
 import (
-	"time"
-
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/bsv-blockchain/go-sdk/transaction"
 )
@@ -17,13 +14,6 @@ const (
 	HashBE UtxoStatusOutputFormat = "hashBE"
 	Script UtxoStatusOutputFormat = "script"
 )
-
-// FiatExchangeRates is the rate struct for fiat currency
-type FiatExchangeRates struct {
-	Timestamp time.Time
-	Rates     map[internal.Currency]float64
-	Base      internal.Currency
-}
 
 // RawTxResult is result from RawTx method
 type RawTxResult struct {

@@ -1,4 +1,4 @@
-package internal
+package primitives
 
 // Currency represents supported currency types
 type Currency string

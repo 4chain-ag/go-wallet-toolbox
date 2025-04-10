@@ -5,8 +5,8 @@ import (
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/whatsonchain"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/bsv-blockchain/go-sdk/transaction"
 	"github.com/bsv-blockchain/go-sdk/transaction/chaintracker"
 	"github.com/go-resty/resty/v2"
@@ -17,7 +17,7 @@ type WalletServices struct {
 	httpClient   *resty.Client
 	logger       *slog.Logger
 	chain        defs.BSVNetwork
-	options      *WalletServicesConfiguration
+	config       *WalletServicesConfiguration
 	whatsonchain *whatsonchain.WhatsOnChain
 
 	// getMerklePathServices: ServiceCollection<sdk.GetMerklePathService>
@@ -28,22 +28,17 @@ type WalletServices struct {
 }
 
 // New will return a new WalletServices
-func New(httpClient *resty.Client, logger *slog.Logger, chain defs.BSVNetwork, opts ...Options) *WalletServices {
+func New(httpClient *resty.Client, logger *slog.Logger, config WalletServicesConfiguration) *WalletServices {
 	if httpClient == nil {
 		panic("httpClient is required")
 	}
 
-	options := defaultServicesOptions(chain)
-	for _, opt := range opts {
-		opt(options)
-	}
-
 	return &WalletServices{
 		httpClient:   httpClient,
-		chain:        chain,
-		options:      options,
+		chain:        config.Chain,
+		config:       &config,
 		logger:       logger,
-		whatsonchain: whatsonchain.New(httpClient, logger, options.WhatsOnChainApiKey, chain),
+		whatsonchain: whatsonchain.New(httpClient, logger, config.WhatsOnChainApiKey, config.Chain),
 	}
 }
 
@@ -66,19 +61,19 @@ func (s *WalletServices) Height() int64 {
 // This is the US Dollar price of one BSV
 func (s *WalletServices) BsvExchangeRate() (float64, error) {
 	bsvExchangeRate, err := s.whatsonchain.UpdateBsvExchangeRate(
-		s.options.BsvExchangeRate,
-		&s.options.BsvUpdateInterval,
+		s.config.BsvExchangeRate,
+		&s.config.BsvUpdateInterval,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("error during bsvExchangeRate: %w", err)
 	}
 
-	s.options.BsvExchangeRate = &bsvExchangeRate
+	s.config.BsvExchangeRate = &bsvExchangeRate
 	return bsvExchangeRate.Rate, nil
 }
 
 // FiatExchangeRate returns approximate exchange rate currency per base.
-func (s *WalletServices) FiatExchangeRate(currency internal.Currency, base *internal.Currency) float64 {
+func (s *WalletServices) FiatExchangeRate(currency primitives.Currency, base *primitives.Currency) float64 {
 	panic("Not implemented yet")
 }
 

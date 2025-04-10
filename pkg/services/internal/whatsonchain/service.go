@@ -8,7 +8,7 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/go-resty/resty/v2"
 	"github.com/go-softwarelab/common/pkg/to"
 )
@@ -41,9 +41,9 @@ func (woc *WhatsOnChain) prepareRequest(req *resty.Request) *resty.Request {
 	return req
 }
 
-func (woc *WhatsOnChain) UpdateBsvExchangeRate(exchangeRate *BSVExchangeRate, bsvUpdateDuration *time.Duration) (BSVExchangeRate, error) {
+func (woc *WhatsOnChain) UpdateBsvExchangeRate(exchangeRate *defs.BSVExchangeRate, bsvUpdateDuration *time.Duration) (defs.BSVExchangeRate, error) {
 	if exchangeRate != nil {
-		updateInterval := to.IfThen(bsvUpdateDuration != nil, *bsvUpdateDuration).ElseThen(internal.FifteenMinutes)
+		updateInterval := to.IfThen(bsvUpdateDuration != nil, *bsvUpdateDuration).ElseThen(defs.FifteenMinutes)
 		// Calculate the threshold time by subtracting updateMsecs from the current time
 		thresholdTime := time.Now().Add(-updateInterval)
 
@@ -53,11 +53,11 @@ func (woc *WhatsOnChain) UpdateBsvExchangeRate(exchangeRate *BSVExchangeRate, bs
 		}
 	}
 
-	var exchangeRateResponse BSVExchangeRateResponse
+	var exchangeRateResponse defs.BSVExchangeRateResponse
 	req := woc.httpClient.Clone().
-		SetRetryCount(internal.Retries).
-		SetRetryWaitTime(internal.RetriesWaitTime).
-		SetRetryMaxWaitTime(internal.Retries * internal.RetriesWaitTime).
+		SetRetryCount(defs.Retries).
+		SetRetryWaitTime(defs.RetriesWaitTime).
+		SetRetryMaxWaitTime(defs.Retries * defs.RetriesWaitTime).
 		AddRetryCondition(func(res *resty.Response, err error) bool {
 			return res.Status() == "Too Many Requests"
 		}).
@@ -68,20 +68,20 @@ func (woc *WhatsOnChain) UpdateBsvExchangeRate(exchangeRate *BSVExchangeRate, bs
 		SetResult(&exchangeRateResponse).
 		Get(fmt.Sprintf("%s/exchangerate", woc.url))
 	if err != nil {
-		return BSVExchangeRate{}, fmt.Errorf("failed to fetch exchange rate: %w", err)
+		return defs.BSVExchangeRate{}, fmt.Errorf("failed to fetch exchange rate: %w", err)
 	}
 
 	if res.StatusCode() != http.StatusOK {
-		return BSVExchangeRate{}, fmt.Errorf("failed to retrieve successful response from WOC. Actual status: %d", res.StatusCode())
+		return defs.BSVExchangeRate{}, fmt.Errorf("failed to retrieve successful response from WOC. Actual status: %d", res.StatusCode())
 	}
 
-	if exchangeRateResponse.Currency != string(internal.USD) {
-		return BSVExchangeRate{}, fmt.Errorf("unsupported currency returned from Whats On Chain")
+	if exchangeRateResponse.Currency != string(primitives.USD) {
+		return defs.BSVExchangeRate{}, fmt.Errorf("unsupported currency returned from Whats On Chain")
 	}
 
-	return BSVExchangeRate{
+	return defs.BSVExchangeRate{
 		Timestamp: time.Now(),
-		Base:      internal.USD,
+		Base:      primitives.USD,
 		Rate:      exchangeRateResponse.Rate,
 	}, nil
 }
