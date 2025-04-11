@@ -59,7 +59,7 @@ func (s *servicesFixture) WithDefaultConfig() *services.WalletServices {
 
 func (s *servicesFixture) WithBsvExchangeRate(exchangeRate *wdk.BSVExchangeRate) *services.WalletServices {
 	s.t.Helper()
-	s.walletServicesConfig.BsvExchangeRate = exchangeRate
+	s.walletServicesConfig.WhatsOnChainConfiguration.BsvExchangeRate = exchangeRate
 
 	walletServices := services.New(s.httpClient, s.logger, *s.walletServicesConfig)
 	s.services = walletServices
@@ -131,10 +131,12 @@ func servicesCfg(chain defs.BSVNetwork) services.WalletServicesConfiguration {
 	}
 
 	return services.WalletServicesConfiguration{
-		Chain:             chain,
-		TaalApiKey:        taalApiKey,
-		BsvExchangeRate:   nil,
-		BsvUpdateInterval: to.Ptr(whatsonchain.DefaultBSVExchangeUpdateInterval),
+		Chain:      chain,
+		TaalApiKey: taalApiKey,
+		WhatsOnChainConfiguration: whatsonchain.WhatsOnChainConfiguration{
+			BsvExchangeRate:   nil,
+			BsvUpdateInterval: to.Ptr(whatsonchain.DefaultBSVExchangeUpdateInterval),
+		},
 		FiatExchangeRates: wdk.FiatExchangeRates{
 			Timestamp: time.Date(2023, time.December, 13, 0, 0, 0, 0, time.UTC),
 			Base:      wdk.USD,

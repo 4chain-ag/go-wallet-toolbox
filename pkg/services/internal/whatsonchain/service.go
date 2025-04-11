@@ -25,9 +25,12 @@ type WhatsOnChain struct {
 	url        string
 	apiKey     string
 	logger     *slog.Logger
+
+	bsvExchangeRate   *wdk.BSVExchangeRate // TODO: possibly handle by some caching structure/redis
+	bsvUpdateInterval *time.Duration
 }
 
-func New(httpClient *resty.Client, logger *slog.Logger, apiKey string, network defs.BSVNetwork) *WhatsOnChain {
+func New(httpClient *resty.Client, logger *slog.Logger, network defs.BSVNetwork, config WhatsOnChainConfiguration) *WhatsOnChain {
 	if httpClient == nil {
 		panic("httpClient is required")
 	}
@@ -39,10 +42,12 @@ func New(httpClient *resty.Client, logger *slog.Logger, apiKey string, network d
 		SetRetryMaxWaitTime(Retries * RetriesWaitTime)
 
 	return &WhatsOnChain{
-		httpClient: client,
-		apiKey:     apiKey,
-		url:        fmt.Sprintf("https://api.whatsonchain.com/v1/bsv/%s", network),
-		logger:     logger,
+		httpClient:        client,
+		apiKey:            config.ApiKey,
+		url:               fmt.Sprintf("https://api.whatsonchain.com/v1/bsv/%s", network),
+		logger:            logger,
+		bsvExchangeRate:   config.BsvExchangeRate,
+		bsvUpdateInterval: config.BsvUpdateInterval,
 	}
 }
 
@@ -56,15 +61,15 @@ func (woc *WhatsOnChain) prepareRequest(req *resty.Request) *resty.Request {
 	return req
 }
 
-func (woc *WhatsOnChain) UpdateBsvExchangeRate(exchangeRate *wdk.BSVExchangeRate, bsvUpdateDuration *time.Duration) (wdk.BSVExchangeRate, error) {
-	if exchangeRate != nil {
-		updateInterval := to.IfThen(bsvUpdateDuration != nil, *bsvUpdateDuration).ElseThen(DefaultBSVExchangeUpdateInterval)
+func (woc *WhatsOnChain) UpdateBsvExchangeRate() (wdk.BSVExchangeRate, error) {
+	if woc.bsvExchangeRate != nil {
+		updateInterval := to.IfThen(woc.bsvUpdateInterval != nil, *woc.bsvUpdateInterval).ElseThen(DefaultBSVExchangeUpdateInterval)
 		// Calculate the threshold time by subtracting updateMsecs from the current time
 		thresholdTime := time.Now().Add(-updateInterval)
 
 		// Check if the rate timestamp is newer than the threshold time
-		if exchangeRate.Timestamp.After(thresholdTime) {
-			return *exchangeRate, nil
+		if woc.bsvExchangeRate.Timestamp.After(thresholdTime) {
+			return *woc.bsvExchangeRate, nil
 		}
 	}
 
@@ -91,9 +96,11 @@ func (woc *WhatsOnChain) UpdateBsvExchangeRate(exchangeRate *wdk.BSVExchangeRate
 		return wdk.BSVExchangeRate{}, fmt.Errorf("unsupported currency returned from Whats On Chain")
 	}
 
-	return wdk.BSVExchangeRate{
+	woc.bsvExchangeRate = &wdk.BSVExchangeRate{
 		Timestamp: time.Now(),
 		Base:      wdk.USD,
 		Rate:      exchangeRateResponse.Rate,
-	}, nil
+	}
+
+	return *woc.bsvExchangeRate, nil
 }
