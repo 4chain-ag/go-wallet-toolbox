@@ -6,39 +6,39 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRandomDerivation(t *testing.T) {
+func TestRandomBase64(t *testing.T) {
 	// when:
-	derivation, err := RandomDerivation(16)
+	randomized, err := RandomBase64(16)
 
 	// then:
 	require.NoError(t, err)
-	require.NotEmpty(t, derivation)
+	require.NotEmpty(t, randomized)
 }
 
-func TestRandomDerivationUniqueness(t *testing.T) {
+func TestRandomBase64Uniqueness(t *testing.T) {
 	// when:
-	derivation1, err := RandomDerivation(16)
+	randomized1, err := RandomBase64(16)
 	require.NoError(t, err)
 
-	derivation2, err := RandomDerivation(16)
+	randomized2, err := RandomBase64(16)
 	require.NoError(t, err)
 
 	// then:
-	require.NotEqual(t, derivation1, derivation2)
+	require.NotEqual(t, randomized1, randomized2)
 }
 
-func TestRandomDerivationOnZeroLength(t *testing.T) {
+func TestRandomBase64OnZeroLength(t *testing.T) {
 	// when:
-	_, err := RandomDerivation(0)
+	_, err := RandomBase64(0)
 
 	// then:
 	require.Error(t, err)
 }
 
-func TestRandomDerivationLengths(t *testing.T) {
+func TestRandomBase64Lengths(t *testing.T) {
 	for length := uint64(1); length <= 100; length++ {
 		// when:
-		derivation, err := RandomDerivation(length)
+		randomized, err := RandomBase64(length)
 
 		// then:
 		require.NoError(t, err)
@@ -54,6 +54,6 @@ func TestRandomDerivationLengths(t *testing.T) {
 		// 7 -> 12
 		// ...
 		expectedBase64Length := ((length-1)/3 + 1) * 4
-		require.Equal(t, expectedBase64Length, uint64(len(derivation)))
+		require.Equal(t, expectedBase64Length, uint64(len(randomized)))
 	}
 }

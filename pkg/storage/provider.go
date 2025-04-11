@@ -256,7 +256,7 @@ func (p *Provider) CreateAction(ctx context.Context, auth wdk.AuthID, args wdk.V
 		return nil, fmt.Errorf("invalid createAction args: %w", err)
 	}
 
-	res, err := p.actions.Create(auth, actions.FromValidCreateActionArgs(&args))
+	res, err := p.actions.Create(context.Background(), *auth.UserID, actions.FromValidCreateActionArgs(&args))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create action: %w", err)
 	}

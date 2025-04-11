@@ -13,6 +13,6 @@ type Actions struct {
 
 func New(logger *slog.Logger, funder Funder, commission defs.Commission, repos *repo.Repositories) *Actions {
 	return &Actions{
-		create: newCreateAction(logger, funder, commission, repos.OutputBaskets),
+		create: newCreateAction(logger, funder, commission, repos.OutputBaskets, repos.Transactions),
 	}
 }
