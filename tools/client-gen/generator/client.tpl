@@ -1,4 +1,4 @@
-package {{ .Package }}
+package {{ .Package.Name }}
 
 {{- if .Imports }}
 import (
@@ -7,9 +7,9 @@ import (
     {{- end }}
 )
 {{- end }}
-{{- if not .IsSamePackage }}
-import "{{ .FullPackage }}"
-{{- end }}
+
+{{ .Package.OriginalPkgImportStatement }}
+
 {{- range .Interfaces }}
 {{- $clientName := printf "%sClient" .Name }}
 
@@ -18,14 +18,14 @@ type {{ $clientName }} struct {
 }
 
 	{{- range .Methods }}
-func (c *{{ $clientName }}) {{ .Name }}({{ range .Arguments }}{{ .Name }} {{ .Type }}, {{ end }}) ({{ range .Results }}{{ .Type }},{{ end }}) {
+func (c *{{ $clientName }}) {{ .Name }}({{ range .Arguments }}{{ .Name }} {{ .Type | printType }}, {{ end }}) ({{ range .Results }}{{ .Type | printType }},{{ end }}) {
 	{{ if gt (len .Results) 0 }} return {{ end }} c.client.{{ .Name }}({{ range .Arguments }}{{ .Name }}, {{ end }})
 }
 	{{ end }}
 
 type rpc{{ .Name }} struct {
 	{{- range .Methods }}
-	{{ .Name }} func({{ range .Arguments }}{{ .Type }}, {{ end }}) ({{ range .Results }}{{ .Type }},{{ end }})
+	{{ .Name }} func({{ range .Arguments }}{{ .Type | printType }}, {{ end }}) ({{ range .Results }}{{ .Type | printType }},{{ end }})
 	{{- end }}
 }
 
