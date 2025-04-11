@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 )
 
 // WalletServicesConfiguration is a struct that has options for wallet services
@@ -12,10 +13,10 @@ type WalletServicesConfiguration struct {
 	TaalApiKey                      string
 	BitailsApiKey                   *string
 	WhatsOnChainApiKey              string
-	BsvExchangeRate                 *defs.BSVExchangeRate
-	BsvUpdateInterval               time.Duration
-	FiatExchangeRates               defs.FiatExchangeRates
-	FiatUpdateInterval              time.Duration
+	BsvExchangeRate                 *wdk.BSVExchangeRate
+	BsvUpdateInterval               *time.Duration
+	FiatExchangeRates               wdk.FiatExchangeRates
+	FiatUpdateInterval              *time.Duration
 	DisableMapiCallback             bool
 	ExchangeratesApiKey             string
 	ChaintracksFiatExchangeRatesUrl string

@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/testabilities"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,7 +16,7 @@ func TestUpdateBsvExchangeRateSuccess(t *testing.T) {
 		given.WhatsOnChain().WillRespondWithRates(500, "", nil)
 
 		// and:
-		cachedRate := &defs.BSVExchangeRate{
+		cachedRate := &wdk.BSVExchangeRate{
 			Timestamp: time.Now().Add(-5 * time.Minute),
 			Base:      "USD",
 			Rate:      100.0,
@@ -43,7 +43,7 @@ func TestUpdateBsvExchangeRateSuccess(t *testing.T) {
 		}`, nil)
 
 		// and:
-		services := given.Services().WithBsvExchangeRate(&defs.BSVExchangeRate{
+		services := given.Services().WithBsvExchangeRate(&wdk.BSVExchangeRate{
 			Timestamp: time.Now().Add(-16 * time.Minute),
 			Base:      "USD",
 			Rate:      100.0,

@@ -10,8 +10,10 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/whatsonchain"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/go-resty/resty/v2"
+	"github.com/go-softwarelab/common/pkg/to"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/require"
 )
@@ -26,7 +28,7 @@ type ServicesFixture interface {
 type WalletServicesFixture interface {
 	WithDefaultConfig() *services.WalletServices
 
-	WithBsvExchangeRate(exchangeRate *defs.BSVExchangeRate) *services.WalletServices
+	WithBsvExchangeRate(exchangeRate *wdk.BSVExchangeRate) *services.WalletServices
 }
 type WhatsOnChainFixture interface {
 	WillRespondWithRates(status int, content string, err error) WhatsOnChainFixture
@@ -55,7 +57,7 @@ func (s *servicesFixture) WithDefaultConfig() *services.WalletServices {
 	return s.services
 }
 
-func (s *servicesFixture) WithBsvExchangeRate(exchangeRate *defs.BSVExchangeRate) *services.WalletServices {
+func (s *servicesFixture) WithBsvExchangeRate(exchangeRate *wdk.BSVExchangeRate) *services.WalletServices {
 	s.t.Helper()
 	s.walletServicesConfig.BsvExchangeRate = exchangeRate
 
@@ -132,17 +134,17 @@ func servicesCfg(chain defs.BSVNetwork) services.WalletServicesConfiguration {
 		Chain:             chain,
 		TaalApiKey:        taalApiKey,
 		BsvExchangeRate:   nil,
-		BsvUpdateInterval: defs.FifteenMinutes,
-		FiatExchangeRates: defs.FiatExchangeRates{
+		BsvUpdateInterval: to.Ptr(whatsonchain.DefaultBSVExchangeUpdateInterval),
+		FiatExchangeRates: wdk.FiatExchangeRates{
 			Timestamp: time.Date(2023, time.December, 13, 0, 0, 0, 0, time.UTC),
-			Base:      primitives.USD,
-			Rates: map[primitives.Currency]float64{
-				primitives.USD: 1,
-				primitives.GBP: 0.8,
-				primitives.EUR: 0.93,
+			Base:      wdk.USD,
+			Rates: map[wdk.Currency]float64{
+				wdk.USD: 1,
+				wdk.GBP: 0.8,
+				wdk.EUR: 0.93,
 			},
 		},
-		FiatUpdateInterval:              defs.TwentyFourHours,
+		FiatUpdateInterval:              to.Ptr(whatsonchain.DefaultFiatExchangeUpdateInterval),
 		DisableMapiCallback:             true, // rely on WalletMonitor by default
 		ExchangeratesApiKey:             "bd539d2ff492bcb5619d5f27726a766f",
 		ChaintracksFiatExchangeRatesUrl: fmt.Sprintf("https://npm-registry.babbage.systems:%d/getFiatExchangeRates", port),

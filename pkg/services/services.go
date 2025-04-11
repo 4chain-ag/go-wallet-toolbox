@@ -6,7 +6,7 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/whatsonchain"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/bsv-blockchain/go-sdk/transaction"
 	"github.com/bsv-blockchain/go-sdk/transaction/chaintracker"
 	"github.com/go-resty/resty/v2"
@@ -62,7 +62,7 @@ func (s *WalletServices) Height() int64 {
 func (s *WalletServices) BsvExchangeRate() (float64, error) {
 	bsvExchangeRate, err := s.whatsonchain.UpdateBsvExchangeRate(
 		s.config.BsvExchangeRate,
-		&s.config.BsvUpdateInterval,
+		s.config.BsvUpdateInterval,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("error during bsvExchangeRate: %w", err)
@@ -73,7 +73,7 @@ func (s *WalletServices) BsvExchangeRate() (float64, error) {
 }
 
 // FiatExchangeRate returns approximate exchange rate currency per base.
-func (s *WalletServices) FiatExchangeRate(currency primitives.Currency, base *primitives.Currency) float64 {
+func (s *WalletServices) FiatExchangeRate(currency wdk.Currency, base *wdk.Currency) float64 {
 	panic("Not implemented yet")
 }
 
