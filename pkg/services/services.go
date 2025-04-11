@@ -38,7 +38,7 @@ func New(httpClient *resty.Client, logger *slog.Logger, config WalletServicesCon
 		chain:        config.Chain,
 		config:       &config,
 		logger:       logger,
-		whatsonchain: whatsonchain.New(httpClient, logger, config.WhatsOnChainApiKey, config.Chain),
+		whatsonchain: whatsonchain.New(httpClient, logger, config.Chain, config.WhatsOnChainConfiguration),
 	}
 }
 
@@ -60,15 +60,11 @@ func (s *WalletServices) Height() int64 {
 // BsvExchangeRate returns approximate exchange rate US Dollar / BSV, USD / BSV
 // This is the US Dollar price of one BSV
 func (s *WalletServices) BsvExchangeRate() (float64, error) {
-	bsvExchangeRate, err := s.whatsonchain.UpdateBsvExchangeRate(
-		s.config.BsvExchangeRate,
-		s.config.BsvUpdateInterval,
-	)
+	bsvExchangeRate, err := s.whatsonchain.UpdateBsvExchangeRate()
 	if err != nil {
 		return 0, fmt.Errorf("error during bsvExchangeRate: %w", err)
 	}
 
-	s.config.BsvExchangeRate = &bsvExchangeRate
 	return bsvExchangeRate.Rate, nil
 }
 
