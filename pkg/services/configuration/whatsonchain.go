@@ -8,7 +8,7 @@ import (
 
 // WhatsOnChain is a struct that configures WhatsOnChain service
 type WhatsOnChain struct {
-	ApiKey            string
-	BsvExchangeRate   wdk.BSVExchangeRate
-	BsvUpdateInterval *time.Duration
+	APIKey            string              `mapstructure:"api_key"`
+	BSVExchangeRate   wdk.BSVExchangeRate `mapstructure:"bsv_exchange_rate"`
+	BSVUpdateInterval *time.Duration      `mapstructure:"bsv_update_interval"`
 }

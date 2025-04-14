@@ -9,17 +9,17 @@ import (
 
 // WalletServices is a struct that has options for wallet services
 type WalletServices struct {
-	Chain                           defs.BSVNetwork
-	TaalApiKey                      string
-	BitailsApiKey                   *string
-	FiatExchangeRates               wdk.FiatExchangeRates
-	FiatUpdateInterval              *time.Duration
-	DisableMapiCallback             bool
-	ExchangeratesApiKey             string
-	ChaintracksFiatExchangeRatesUrl string
-	Chaintracks                     any // TODO: create *ChaintracksServiceClient
-	ArcUrl                          string
-	ArcConfig                       any // TODO: create *ArcConfig
+	Chain                           defs.BSVNetwork       `mapstructure:"chain"`
+	TaalAPIKey                      string                `mapstructure:"taal_api_key"`
+	BitailsAPIKey                   *string               `mapstructure:"bitails_api_key"`
+	FiatExchangeRates               wdk.FiatExchangeRates `mapstructure:"fiat_exchange_rates"`
+	FiatUpdateInterval              *time.Duration        `mapstructure:"fiat_update_interval"`
+	DisableMapiCallback             bool                  `mapstructure:"disable_mapi_callback"`
+	ExchangeratesApiKey             string                `mapstructure:"exchangerates_api_key"`
+	ChaintracksFiatExchangeRatesUrl string                `mapstructure:"chaintracks_fiat_exchange_rates_url"`
+	Chaintracks                     any                   `mapstructure:"chaintracks"` // TODO: create *ChaintracksServiceClient
+	ArcURL                          string                `mapstructure:"arc_url"`
+	ArcConfig                       any                   `mapstructure:"arc"` // TODO: create *ArcConfig
 
-	WhatsOnChain WhatsOnChain
+	WhatsOnChain WhatsOnChain `mapstructure:"whats_on_chain"`
 }

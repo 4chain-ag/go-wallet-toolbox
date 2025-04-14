@@ -60,7 +60,7 @@ func (s *servicesFixture) WithDefaultConfig() *services.WalletServices {
 
 func (s *servicesFixture) WithBsvExchangeRate(exchangeRate wdk.BSVExchangeRate) *services.WalletServices {
 	s.t.Helper()
-	s.walletServicesConfig.WhatsOnChain.BsvExchangeRate = exchangeRate
+	s.walletServicesConfig.WhatsOnChain.BSVExchangeRate = exchangeRate
 
 	walletServices := services.New(s.httpClient, s.logger, *s.walletServicesConfig)
 	s.services = walletServices
@@ -133,9 +133,9 @@ func servicesCfg(chain defs.BSVNetwork) configuration.WalletServices {
 
 	return configuration.WalletServices{
 		Chain:      chain,
-		TaalApiKey: taalApiKey,
+		TaalAPIKey: taalApiKey,
 		WhatsOnChain: configuration.WhatsOnChain{
-			BsvUpdateInterval: to.Ptr(whatsonchain.DefaultBSVExchangeUpdateInterval),
+			BSVUpdateInterval: to.Ptr(whatsonchain.DefaultBSVExchangeUpdateInterval),
 		},
 		FiatExchangeRates: wdk.FiatExchangeRates{
 			Timestamp: time.Date(2023, time.December, 13, 0, 0, 0, 0, time.UTC),
@@ -151,7 +151,7 @@ func servicesCfg(chain defs.BSVNetwork) configuration.WalletServices {
 		ExchangeratesApiKey:             "bd539d2ff492bcb5619d5f27726a766f",
 		ChaintracksFiatExchangeRatesUrl: fmt.Sprintf("https://npm-registry.babbage.systems:%d/getFiatExchangeRates", port),
 		Chaintracks:                     nil, // TODO: implement me
-		ArcUrl:                          arcUrl,
+		ArcURL:                          arcUrl,
 		ArcConfig:                       nil, // TODO: implement me
 	}
 }

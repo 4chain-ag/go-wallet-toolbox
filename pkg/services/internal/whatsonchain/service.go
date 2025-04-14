@@ -44,11 +44,11 @@ func New(httpClient *resty.Client, logger *slog.Logger, network defs.BSVNetwork,
 
 	return &WhatsOnChain{
 		httpClient:        client,
-		apiKey:            config.ApiKey,
+		apiKey:            config.APIKey,
 		url:               fmt.Sprintf("https://api.whatsonchain.com/v1/bsv/%s", network),
 		logger:            logger,
-		bsvExchangeRate:   config.BsvExchangeRate,
-		bsvUpdateInterval: to.IfThen(config.BsvUpdateInterval != nil, *config.BsvUpdateInterval).ElseThen(DefaultBSVExchangeUpdateInterval),
+		bsvExchangeRate:   config.BSVExchangeRate,
+		bsvUpdateInterval: to.IfThen(config.BSVUpdateInterval != nil, *config.BSVUpdateInterval).ElseThen(DefaultBSVExchangeUpdateInterval),
 	}
 }
 
