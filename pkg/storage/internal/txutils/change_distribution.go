@@ -1,4 +1,4 @@
-package funder
+package txutils
 
 import (
 	"crypto/rand"
