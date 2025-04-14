@@ -48,7 +48,6 @@ func (l *ScriptGenerator) Generate() (lockingScript string, keyOffset string, er
 	}
 
 	return lockingScriptObj.String(), keyOffset, nil
-
 }
 
 func (l *ScriptGenerator) offsetPubKey() (offsetPubKey *primitives.PublicKey, keyOffset string, err error) {

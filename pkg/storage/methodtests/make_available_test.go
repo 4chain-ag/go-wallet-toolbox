@@ -14,7 +14,7 @@ func TestMakeAvailable(t *testing.T) {
 	given := testabilities.Given(t)
 
 	// given:
-	activeStorage := given.GormProviderWithCleanDatabase()
+	activeStorage := given.Provider().GORMWithCleanDatabase()
 
 	// when:
 	tableSettings, err := activeStorage.MakeAvailable(context.Background())
