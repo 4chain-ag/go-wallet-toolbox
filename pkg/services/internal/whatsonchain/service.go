@@ -27,8 +27,8 @@ type WhatsOnChain struct {
 	apiKey     string
 	logger     *slog.Logger
 
-	bsvExchangeRate   *wdk.BSVExchangeRate // TODO: possibly handle by some caching structure/redis
-	bsvUpdateInterval *time.Duration
+	bsvExchangeRate   wdk.BSVExchangeRate // TODO: possibly handle by some caching structure/redis
+	bsvUpdateInterval time.Duration
 }
 
 func New(httpClient *resty.Client, logger *slog.Logger, network defs.BSVNetwork, config configuration.WhatsOnChain) *WhatsOnChain {
@@ -48,7 +48,7 @@ func New(httpClient *resty.Client, logger *slog.Logger, network defs.BSVNetwork,
 		url:               fmt.Sprintf("https://api.whatsonchain.com/v1/bsv/%s", network),
 		logger:            logger,
 		bsvExchangeRate:   config.BsvExchangeRate,
-		bsvUpdateInterval: config.BsvUpdateInterval,
+		bsvUpdateInterval: to.IfThen(config.BsvUpdateInterval != nil, *config.BsvUpdateInterval).ElseThen(DefaultBSVExchangeUpdateInterval),
 	}
 }
 
@@ -63,15 +63,11 @@ func (woc *WhatsOnChain) prepareRequest(req *resty.Request) *resty.Request {
 }
 
 func (woc *WhatsOnChain) UpdateBsvExchangeRate() (wdk.BSVExchangeRate, error) {
-	if woc.bsvExchangeRate != nil {
-		updateInterval := to.IfThen(woc.bsvUpdateInterval != nil, *woc.bsvUpdateInterval).ElseThen(DefaultBSVExchangeUpdateInterval)
-		// Calculate the threshold time by subtracting updateMsecs from the current time
-		thresholdTime := time.Now().Add(-updateInterval)
+	nextUpdate := woc.bsvExchangeRate.Timestamp.Add(woc.bsvUpdateInterval)
 
-		// Check if the rate timestamp is newer than the threshold time
-		if woc.bsvExchangeRate.Timestamp.After(thresholdTime) {
-			return *woc.bsvExchangeRate, nil
-		}
+	// Check if the rate timestamp is newer than the threshold time
+	if nextUpdate.After(time.Now()) {
+		return woc.bsvExchangeRate, nil
 	}
 
 	var exchangeRateResponse bsvExchangeRateResponse
@@ -97,11 +93,11 @@ func (woc *WhatsOnChain) UpdateBsvExchangeRate() (wdk.BSVExchangeRate, error) {
 		return wdk.BSVExchangeRate{}, fmt.Errorf("unsupported currency returned from Whats On Chain")
 	}
 
-	woc.bsvExchangeRate = &wdk.BSVExchangeRate{
+	woc.bsvExchangeRate = wdk.BSVExchangeRate{
 		Timestamp: time.Now(),
 		Base:      wdk.USD,
 		Rate:      exchangeRateResponse.Rate,
 	}
 
-	return *woc.bsvExchangeRate, nil
+	return woc.bsvExchangeRate, nil
 }

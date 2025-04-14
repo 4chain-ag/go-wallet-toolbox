@@ -9,6 +9,6 @@ import (
 // WhatsOnChain is a struct that configures WhatsOnChain service
 type WhatsOnChain struct {
 	ApiKey            string
-	BsvExchangeRate   *wdk.BSVExchangeRate
+	BsvExchangeRate   wdk.BSVExchangeRate
 	BsvUpdateInterval *time.Duration
 }

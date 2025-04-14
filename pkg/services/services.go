@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/configuration"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/whatsonchain"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/bsv-blockchain/go-sdk/transaction"
@@ -17,7 +18,7 @@ type WalletServices struct {
 	httpClient   *resty.Client
 	logger       *slog.Logger
 	chain        defs.BSVNetwork
-	config       *WalletServicesConfiguration
+	config       *configuration.WalletServices
 	whatsonchain *whatsonchain.WhatsOnChain
 
 	// getMerklePathServices: ServiceCollection<sdk.GetMerklePathService>
@@ -28,7 +29,7 @@ type WalletServices struct {
 }
 
 // New will return a new WalletServices
-func New(httpClient *resty.Client, logger *slog.Logger, config WalletServicesConfiguration) *WalletServices {
+func New(httpClient *resty.Client, logger *slog.Logger, config configuration.WalletServices) *WalletServices {
 	if httpClient == nil {
 		panic("httpClient is required")
 	}
@@ -38,7 +39,7 @@ func New(httpClient *resty.Client, logger *slog.Logger, config WalletServicesCon
 		chain:        config.Chain,
 		config:       &config,
 		logger:       logger,
-		whatsonchain: whatsonchain.New(httpClient, logger, config.Chain, config.WhatsOnChainConfiguration),
+		whatsonchain: whatsonchain.New(httpClient, logger, config.Chain, config.WhatsOnChain),
 	}
 }
 

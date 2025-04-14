@@ -29,7 +29,7 @@ type ServicesFixture interface {
 type WalletServicesFixture interface {
 	WithDefaultConfig() *services.WalletServices
 
-	WithBsvExchangeRate(exchangeRate *wdk.BSVExchangeRate) *services.WalletServices
+	WithBsvExchangeRate(exchangeRate wdk.BSVExchangeRate) *services.WalletServices
 }
 type WhatsOnChainFixture interface {
 	WillRespondWithRates(status int, content string, err error) WhatsOnChainFixture
@@ -58,7 +58,7 @@ func (s *servicesFixture) WithDefaultConfig() *services.WalletServices {
 	return s.services
 }
 
-func (s *servicesFixture) WithBsvExchangeRate(exchangeRate *wdk.BSVExchangeRate) *services.WalletServices {
+func (s *servicesFixture) WithBsvExchangeRate(exchangeRate wdk.BSVExchangeRate) *services.WalletServices {
 	s.t.Helper()
 	s.walletServicesConfig.WhatsOnChain.BsvExchangeRate = exchangeRate
 
@@ -135,7 +135,6 @@ func servicesCfg(chain defs.BSVNetwork) configuration.WalletServices {
 		Chain:      chain,
 		TaalApiKey: taalApiKey,
 		WhatsOnChain: configuration.WhatsOnChain{
-			BsvExchangeRate:   nil,
 			BsvUpdateInterval: to.Ptr(whatsonchain.DefaultBSVExchangeUpdateInterval),
 		},
 		FiatExchangeRates: wdk.FiatExchangeRates{
