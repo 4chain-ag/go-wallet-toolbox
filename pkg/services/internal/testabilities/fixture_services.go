@@ -60,7 +60,7 @@ func (s *servicesFixture) WithDefaultConfig() *services.WalletServices {
 
 func (s *servicesFixture) WithBsvExchangeRate(exchangeRate *wdk.BSVExchangeRate) *services.WalletServices {
 	s.t.Helper()
-	s.walletServicesConfig.WhatsOnChainConfiguration.BsvExchangeRate = exchangeRate
+	s.walletServicesConfig.WhatsOnChain.BsvExchangeRate = exchangeRate
 
 	walletServices := services.New(s.httpClient, s.logger, *s.walletServicesConfig)
 	s.services = walletServices
@@ -134,7 +134,7 @@ func servicesCfg(chain defs.BSVNetwork) configuration.WalletServices {
 	return configuration.WalletServices{
 		Chain:      chain,
 		TaalApiKey: taalApiKey,
-		WhatsOnChainConfiguration: whatsonchain.WhatsOnChainConfiguration{
+		WhatsOnChain: configuration.WhatsOnChain{
 			BsvExchangeRate:   nil,
 			BsvUpdateInterval: to.Ptr(whatsonchain.DefaultBSVExchangeUpdateInterval),
 		},
