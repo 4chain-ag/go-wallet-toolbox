@@ -1,17 +1,25 @@
 package services
 
 import (
+	"encoding/hex"
 	"fmt"
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/utils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/configuration"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/servicequeue"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/whatsonchain"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/bsv-blockchain/go-sdk/transaction"
 	"github.com/bsv-blockchain/go-sdk/transaction/chaintracker"
 	"github.com/go-resty/resty/v2"
 )
+
+type RawTxResultService interface {
+	RawTx(txID string, chain defs.BSVNetwork) (*internal.RawTxResult, error)
+}
 
 // WalletServices is a struct that contains services used by a wallet
 type WalletServices struct {
@@ -21,6 +29,7 @@ type WalletServices struct {
 	config       *configuration.WalletServices
 	whatsonchain *whatsonchain.WhatsOnChain
 
+	rawTxServices *servicequeue.ServicesQueue[RawTxResultService]
 	// getMerklePathServices: ServiceCollection<sdk.GetMerklePathService>
 	// getRawTxServices: ServiceCollection<sdk.GetRawTxService>
 	// postBeefServices: ServiceCollection<sdk.PostBeefService>
@@ -34,13 +43,77 @@ func New(httpClient *resty.Client, logger *slog.Logger, config configuration.Wal
 		panic("httpClient is required")
 	}
 
+	woc := whatsonchain.New(httpClient, logger, config.Chain, config.WhatsOnChain)
+
+	rawTxResultServices := servicequeue.New[RawTxResultService]().Add(servicequeue.ServiceExecutor[RawTxResultService]{
+		Name:    "WhatsOnChain",
+		Service: woc,
+	})
+
 	return &WalletServices{
-		httpClient:   httpClient,
-		chain:        config.Chain,
-		config:       &config,
-		logger:       logger,
-		whatsonchain: whatsonchain.New(httpClient, logger, config.Chain, config.WhatsOnChain),
+		httpClient:    httpClient,
+		chain:         config.Chain,
+		config:        &config,
+		logger:        logger,
+		whatsonchain:  woc,
+		rawTxServices: rawTxResultServices,
 	}
+}
+
+// RawTx attempts to obtain the raw transaction bytes associated with a 32 byte transaction hash (txid).
+//
+// Cycles through configured transaction processing services attempting to get a valid response.
+//
+// On success:
+// Result txid is the requested transaction hash
+// Result rawTx will be an array containing raw transaction bytes.
+// Result name will be the responding service's identifying name.
+// Returns result without incrementing active service.
+//
+// On failure:
+// Result txid is the requested transaction hash
+// Result mapi will be the first mapi response obtained (service name and response), or null
+// Result error will be the first error thrown (service name and CwiError), or null
+// Increments to next configured service and tries again until all services have been tried.
+func (s *WalletServices) RawTx(txID string) (internal.RawTxResult, error) {
+	var lastErr error
+
+	for tries := 0; tries < s.rawTxServices.Count(); tries++ {
+		srv, err := s.rawTxServices.Current()
+		if err != nil {
+			return internal.RawTxResult{}, fmt.Errorf("error while getting current service: %w", err)
+		}
+
+		resp, err := srv.Service.RawTx(txID, s.chain)
+		if err != nil {
+			lastErr = fmt.Errorf("error while getting raw tx result from service: %s => %w", srv.Name, err)
+			s.logger.Error(lastErr.Error())
+			s.rawTxServices.Next()
+			continue
+		}
+
+		if resp == nil {
+			lastErr = fmt.Errorf("transaction with txID: %s not found", txID)
+			s.rawTxServices.Next()
+			continue
+		}
+
+		hash := utils.DoubleSha256BE(resp.RawTx)
+		encodedHex := hex.EncodeToString(hash)
+		if txID != encodedHex {
+			lastErr = fmt.Errorf("computed txid %s doesn't match requested value %s", encodedHex, txID)
+			s.rawTxServices.Next()
+			continue
+		}
+
+		return *resp, nil
+	}
+
+	if lastErr != nil {
+		return internal.RawTxResult{}, fmt.Errorf("all services failed, last error: %w", lastErr)
+	}
+
+	return internal.RawTxResult{}, fmt.Errorf("internal error during getting RawTx")
 }
 
 // ChainTracker returns service, which requires `options.chaintracks` be valid.
@@ -71,25 +144,6 @@ func (s *WalletServices) BsvExchangeRate() (float64, error) {
 
 // FiatExchangeRate returns approximate exchange rate currency per base.
 func (s *WalletServices) FiatExchangeRate(currency wdk.Currency, base *wdk.Currency) float64 {
-	panic("Not implemented yet")
-}
-
-// RawTx attempts to obtain the raw transaction bytes associated with a 32 byte transaction hash (txid).
-//
-// Cycles through configured transaction processing services attempting to get a valid response.
-//
-// On success:
-// Result txid is the requested transaction hash
-// Result rawTx will be an array containing raw transaction bytes.
-// Result name will be the responding service's identifying name.
-// Returns result without incrementing active service.
-//
-// On failure:
-// Result txid is the requested transaction hash
-// Result mapi will be the first mapi response obtained (service name and response), or null
-// Result error will be the first error thrown (service name and CwiError), or null
-// Increments to next configured service and tries again until all services have been tried.
-func (s *WalletServices) RawTx(txid string, useNext bool) (RawTxResult, error) {
 	panic("Not implemented yet")
 }
 
