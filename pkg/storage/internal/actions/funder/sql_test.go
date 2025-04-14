@@ -6,6 +6,7 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder/testabilities"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/go-softwarelab/common/pkg/must"
 )
 
@@ -15,35 +16,57 @@ func TestFunderSQLFund(t *testing.T) {
 	var ctx = context.Background()
 
 	testCasesErrors := map[string]struct {
-		possessedUTXOs int64
-		targetSatoshis int64
-		txSize         uint64
+		thereAreUTXOInDB func(testabilities.FunderFixture, *wdk.TableOutputBasket)
+		targetSatoshis   int64
+		txSize           uint64
 	}{
 		"return error when user has no utxo": {
-			possessedUTXOs: 0,
+			thereAreUTXOInDB: func(testabilities.FunderFixture, *wdk.TableOutputBasket) {},
+
 			targetSatoshis: 100,
 			txSize:         smallTransactionSize,
 		},
 		"return error when user fund the transaction by himself but has not enough utxo to cover the fee": {
-			possessedUTXOs: 0,
+			thereAreUTXOInDB: func(testabilities.FunderFixture, *wdk.TableOutputBasket) {},
+
 			targetSatoshis: 0,
 			txSize:         smallTransactionSize,
 		},
 		"return error when user has not enough utxo to cover the transaction": {
-			possessedUTXOs: 50,
+			thereAreUTXOInDB: func(given testabilities.FunderFixture, basket *wdk.TableOutputBasket) {
+				given.UTXO().InBasket(basket).OwnedBy(testusers.Alice).WithSatoshis(50).P2PKH().Stored()
+			},
+
 			targetSatoshis: 100,
 			txSize:         smallTransactionSize,
 		},
 		"return error when user has not enough utxos to cover fee": {
-			possessedUTXOs: 100,
+			thereAreUTXOInDB: func(given testabilities.FunderFixture, basket *wdk.TableOutputBasket) {
+				given.UTXO().InBasket(basket).OwnedBy(testusers.Alice).WithSatoshis(100).P2PKH().Stored()
+			},
+
 			targetSatoshis: 100,
 			txSize:         smallTransactionSize,
 		},
 		"return error when user has not enough utxos to cover fee for bigger tx": {
 			// Because the transaction size makes the fee = 2, one satoshi above the target satoshis is not enough.
-			possessedUTXOs: 101,
+			thereAreUTXOInDB: func(given testabilities.FunderFixture, basket *wdk.TableOutputBasket) {
+				given.UTXO().InBasket(basket).OwnedBy(testusers.Alice).WithSatoshis(101).P2PKH().Stored()
+			},
+
 			targetSatoshis: 100,
 			txSize:         transactionSizeForHigherFee,
+		},
+		"return error when user has no utxos but there are other users utxos": {
+			thereAreUTXOInDB: func(given testabilities.FunderFixture, basket *wdk.TableOutputBasket) {
+				given.UTXO().OwnedBy(testusers.Bob).WithSatoshis(1000).P2PKH().Stored()
+				given.UTXO().OwnedBy(testusers.Bob).WithSatoshis(100).P2PKH().Stored()
+				given.UTXO().OwnedBy(testusers.Bob).WithSatoshis(200).P2PKH().Stored()
+				given.UTXO().OwnedBy(testusers.Bob).WithSatoshis(300).P2PKH().Stored()
+			},
+
+			targetSatoshis: 100,
+			txSize:         smallTransactionSize,
 		},
 	}
 	for name, test := range testCasesErrors {
@@ -56,10 +79,10 @@ func TestFunderSQLFund(t *testing.T) {
 			funder := given.NewFunderService()
 
 			// and:
-			given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(test.possessedUTXOs).P2PKH().Stored()
+			basket := given.BasketFor(testusers.Alice).ThatPrefersSingleChange()
 
 			// and:
-			basket := given.BasketFor(testusers.Alice).ThatPrefersSingleChange()
+			test.thereAreUTXOInDB(given, basket)
 
 			// when:
 			result, err := funder.Fund(ctx, test.targetSatoshis, test.txSize, basket, testusers.Alice.ID)
@@ -142,10 +165,10 @@ func TestFunderSQLFund(t *testing.T) {
 			funder := given.NewFunderService()
 
 			// and:
-			given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(test.possessedUTXOs).P2PKH().Stored()
+			basket := given.BasketFor(testusers.Alice).ThatPrefersSingleChange()
 
 			// and:
-			basket := given.BasketFor(testusers.Alice).ThatPrefersSingleChange()
+			given.UTXO().InBasket(basket).OwnedBy(testusers.Alice).WithSatoshis(test.possessedUTXOs).P2PKH().Stored()
 
 			// when:
 			result, err := funder.Fund(ctx, test.targetSatoshis, test.txSize, basket, testusers.Alice.ID)
@@ -156,14 +179,14 @@ func TestFunderSQLFund(t *testing.T) {
 	}
 
 	testCasesFundWholeTransaction := map[string]struct {
-		havingUTXOsInDB func(testabilities.FunderFixture)
+		havingUTXOsInDB func(testabilities.FunderFixture, *wdk.TableOutputBasket)
 		targetSatoshis  int64
 		txSize          uint64
 		expectations    func(testabilities.SuccessFundingResultAssertion)
 	}{
 		"target satoshis and fee are equal to the only one utxo satoshis": {
-			havingUTXOsInDB: func(given testabilities.FunderFixture) {
-				given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(101).P2PKH().Stored()
+			havingUTXOsInDB: func(given testabilities.FunderFixture, basket *wdk.TableOutputBasket) {
+				given.UTXO().InBasket(basket).OwnedBy(testusers.Alice).WithSatoshis(101).P2PKH().Stored()
 			},
 
 			targetSatoshis: 100,
@@ -176,8 +199,8 @@ func TestFunderSQLFund(t *testing.T) {
 			},
 		},
 		"adding utxo can increase the fee": {
-			havingUTXOsInDB: func(given testabilities.FunderFixture) {
-				given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(102).P2PKH().Stored()
+			havingUTXOsInDB: func(given testabilities.FunderFixture, basket *wdk.TableOutputBasket) {
+				given.UTXO().InBasket(basket).OwnedBy(testusers.Alice).WithSatoshis(102).P2PKH().Stored()
 			},
 
 			targetSatoshis: 100,
@@ -190,10 +213,10 @@ func TestFunderSQLFund(t *testing.T) {
 			},
 		},
 		"user has a lot of small utxo to they will cover the target sats and fee": {
-			havingUTXOsInDB: func(given testabilities.FunderFixture) {
+			havingUTXOsInDB: func(given testabilities.FunderFixture, basket *wdk.TableOutputBasket) {
 				// Funder is collecting utxos by 1000 rows, so we need to have more than 1000 utxos to test this case.
 				for range 1600 {
-					given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(1).P2PKH().Stored()
+					given.UTXO().InBasket(basket).OwnedBy(testusers.Alice).WithSatoshis(1).P2PKH().Stored()
 				}
 			},
 
@@ -206,8 +229,8 @@ func TestFunderSQLFund(t *testing.T) {
 			},
 		},
 		"user has single big utxo and basket is aiming for smallest number of changes": {
-			havingUTXOsInDB: func(given testabilities.FunderFixture) {
-				given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(10101).P2PKH().Stored()
+			havingUTXOsInDB: func(given testabilities.FunderFixture, basket *wdk.TableOutputBasket) {
+				given.UTXO().InBasket(basket).OwnedBy(testusers.Alice).WithSatoshis(10101).P2PKH().Stored()
 			},
 
 			targetSatoshis: 100,
@@ -220,12 +243,12 @@ func TestFunderSQLFund(t *testing.T) {
 			},
 		},
 		"allocate biggest utxos first": {
-			havingUTXOsInDB: func(given testabilities.FunderFixture) {
-				given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(200).P2PKH().Stored()
-				given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(100).P2PKH().Stored()
-				given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(10101).P2PKH().Stored()
-				given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(1).P2PKH().Stored()
-				given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(300).P2PKH().Stored()
+			havingUTXOsInDB: func(given testabilities.FunderFixture, basket *wdk.TableOutputBasket) {
+				given.UTXO().InBasket(basket).OwnedBy(testusers.Alice).WithSatoshis(200).P2PKH().Stored()
+				given.UTXO().InBasket(basket).OwnedBy(testusers.Alice).WithSatoshis(100).P2PKH().Stored()
+				given.UTXO().InBasket(basket).OwnedBy(testusers.Alice).WithSatoshis(10101).P2PKH().Stored()
+				given.UTXO().InBasket(basket).OwnedBy(testusers.Alice).WithSatoshis(1).P2PKH().Stored()
+				given.UTXO().InBasket(basket).OwnedBy(testusers.Alice).WithSatoshis(300).P2PKH().Stored()
 			},
 
 			targetSatoshis: 100,
@@ -238,11 +261,11 @@ func TestFunderSQLFund(t *testing.T) {
 			},
 		},
 		"allocate several utxos and calculate the change from them": {
-			havingUTXOsInDB: func(given testabilities.FunderFixture) {
-				given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(200).P2PKH().Stored()
-				given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(100).P2PKH().Stored()
-				given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(1).P2PKH().Stored()
-				given.UTXO().OwnedBy(testusers.Alice).WithSatoshis(300).P2PKH().Stored()
+			havingUTXOsInDB: func(given testabilities.FunderFixture, basket *wdk.TableOutputBasket) {
+				given.UTXO().InBasket(basket).OwnedBy(testusers.Alice).WithSatoshis(200).P2PKH().Stored()
+				given.UTXO().InBasket(basket).OwnedBy(testusers.Alice).WithSatoshis(100).P2PKH().Stored()
+				given.UTXO().InBasket(basket).OwnedBy(testusers.Alice).WithSatoshis(1).P2PKH().Stored()
+				given.UTXO().InBasket(basket).OwnedBy(testusers.Alice).WithSatoshis(300).P2PKH().Stored()
 			},
 
 			targetSatoshis: 549,
@@ -265,10 +288,10 @@ func TestFunderSQLFund(t *testing.T) {
 			funder := given.NewFunderService()
 
 			// and:
-			test.havingUTXOsInDB(given)
+			basket := given.BasketFor(testusers.Alice).ThatPrefersSingleChange()
 
 			// and:
-			basket := given.BasketFor(testusers.Alice).ThatPrefersSingleChange()
+			test.havingUTXOsInDB(given, basket)
 
 			// when:
 			result, err := funder.Fund(ctx, test.targetSatoshis, test.txSize, basket, testusers.Alice.ID)
@@ -348,6 +371,31 @@ func TestFunderSQLFund(t *testing.T) {
 
 		// and:
 		basket := given.BasketFor(testusers.Alice).WithNumberOfDesiredUTXOs(-5)
+
+		// when:
+		result, err := funder.Fund(ctx, -5001, smallTransactionSize, basket, testusers.Alice.ID)
+
+		// then:
+		then.Result(result).WithoutError(err).
+			HasChangeCount(1).ForAmount(5000)
+	})
+
+	t.Run("produce single change when user has already utxo number equal to desired basket NumberOfDesiredUTXOs", func(t *testing.T) {
+		// given:
+		given, then, cleanup := testabilities.New(t)
+		defer cleanup()
+
+		// and:
+		funder := given.NewFunderService()
+
+		desiredNumber := 10
+
+		// and:
+		basket := given.BasketFor(testusers.Alice).WithNumberOfDesiredUTXOs(desiredNumber)
+
+		for range desiredNumber {
+			given.UTXO().InBasket(basket).OwnedBy(testusers.Alice).WithSatoshis(100).P2PKH().Stored()
+		}
 
 		// when:
 		result, err := funder.Fund(ctx, -5001, smallTransactionSize, basket, testusers.Alice.ID)

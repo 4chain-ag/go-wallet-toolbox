@@ -25,6 +25,7 @@ const utxoBatchSize = 1000
 
 type UTXORepository interface {
 	FindAllUTXOs(ctx context.Context, userID int, page *paging.Page) ([]*models.UserUTXO, error)
+	CountUTXOs(ctx context.Context, userID int, basketID int) (int64, error)
 }
 
 type SQL struct {
@@ -51,8 +52,12 @@ func NewSQL(logger *slog.Logger, utxoRepository UTXORepository, feeModel defs.Fe
 // @param minimumDesiredUTXOValue - the minimum value of UTXO in basket #TakeFromBasket
 // @param userID - the user ID.
 func (f *SQL) Fund(ctx context.Context, targetSat int64, currentTxSize uint64, basket *wdk.TableOutputBasket, userID int) (*actions.FundingResult, error) {
+	existing, err := f.utxoRepository.CountUTXOs(ctx, userID, basket.BasketID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate desired utxo number in basket: %w", err)
+	}
 
-	collector, err := newCollector(targetSat, currentTxSize, basket.NumberOfDesiredUTXOs, basket.MinimumDesiredUTXOValue, f.feeCalculator)
+	collector, err := newCollector(targetSat, currentTxSize, basket.NumberOfDesiredUTXOs-existing, basket.MinimumDesiredUTXOValue, f.feeCalculator)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start collecting utxo: %w", err)
 	}
@@ -65,7 +70,6 @@ func (f *SQL) Fund(ctx context.Context, targetSat int64, currentTxSize uint64, b
 	}
 
 	return collector.GetResult()
-
 }
 
 func (f *SQL) loadUTXOs(ctx context.Context, userID int) iter.Seq2[*models.UserUTXO, error] {
@@ -102,7 +106,7 @@ type utxoCollector struct {
 	minimumChange           uint64
 }
 
-func newCollector(txSats int64, txSize uint64, numberOfDesiredUTXOs int, minimumDesiredUTXOValue uint64, feeCalculator *feeCalc) (c *utxoCollector, err error) {
+func newCollector(txSats int64, txSize uint64, numberOfDesiredUTXOs int64, minimumDesiredUTXOValue uint64, feeCalculator *feeCalc) (c *utxoCollector, err error) {
 	c = &utxoCollector{
 		txSats:                  txSats,
 		minimumDesiredUTXOValue: minimumDesiredUTXOValue,

@@ -59,5 +59,5 @@ func (f *funderFixture) Save(utxo *models.UserUTXO) {
 }
 
 func (f *funderFixture) BasketFor(user testusers.User) BasketFixture {
-	return newBasketFixture(f.t, user)
+	return newBasketFixture(f.t, f.db.DB, user)
 }
