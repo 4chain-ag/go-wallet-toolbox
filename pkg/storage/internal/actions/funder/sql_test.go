@@ -68,6 +68,21 @@ func TestFunderSQLFund(t *testing.T) {
 			targetSatoshis: 100,
 			txSize:         smallTransactionSize,
 		},
+		"return error when user has utxos but in other basket": {
+			thereAreUTXOInDB: func(given testabilities.FunderFixture, basket *wdk.TableOutputBasket) {
+
+				otherBasket := *basket
+				otherBasket.BasketID = 100
+				otherBasket.Name = "other_basket"
+
+				given.UTXO().InBasket(&otherBasket).OwnedBy(testusers.Alice).WithSatoshis(10_000).P2PKH().Stored()
+				given.UTXO().InBasket(&otherBasket).OwnedBy(testusers.Alice).WithSatoshis(10_000).P2PKH().Stored()
+				given.UTXO().InBasket(&otherBasket).OwnedBy(testusers.Alice).WithSatoshis(10_000).P2PKH().Stored()
+			},
+
+			targetSatoshis: 100,
+			txSize:         smallTransactionSize,
+		},
 	}
 	for name, test := range testCasesErrors {
 		t.Run(name, func(t *testing.T) {

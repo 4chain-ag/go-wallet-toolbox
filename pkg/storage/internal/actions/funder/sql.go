@@ -24,7 +24,7 @@ var changeOutputSize = txutils.P2PKHOutputSize
 const utxoBatchSize = 1000
 
 type UTXORepository interface {
-	FindAllUTXOs(ctx context.Context, userID int, page *paging.Page) ([]*models.UserUTXO, error)
+	FindAllUTXOs(ctx context.Context, userID int, basketID int, page *paging.Page) ([]*models.UserUTXO, error)
 	CountUTXOs(ctx context.Context, userID int, basketID int) (int64, error)
 }
 
@@ -62,7 +62,7 @@ func (f *SQL) Fund(ctx context.Context, targetSat int64, currentTxSize uint64, b
 		return nil, fmt.Errorf("failed to start collecting utxo: %w", err)
 	}
 
-	utxos := f.loadUTXOs(ctx, userID)
+	utxos := f.loadUTXOs(ctx, userID, basket.BasketID)
 
 	err = collector.Allocate(utxos)
 	if err != nil {
@@ -72,10 +72,10 @@ func (f *SQL) Fund(ctx context.Context, targetSat int64, currentTxSize uint64, b
 	return collector.GetResult()
 }
 
-func (f *SQL) loadUTXOs(ctx context.Context, userID int) iter.Seq2[*models.UserUTXO, error] {
+func (f *SQL) loadUTXOs(ctx context.Context, userID int, basketID int) iter.Seq2[*models.UserUTXO, error] {
 	batches := seqerr.ProduceWithArg(
 		func(page *paging.Page) ([]*models.UserUTXO, *paging.Page, error) {
-			utxos, err := f.utxoRepository.FindAllUTXOs(ctx, userID, page)
+			utxos, err := f.utxoRepository.FindAllUTXOs(ctx, userID, basketID, page)
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to load utxos: %w", err)
 			}

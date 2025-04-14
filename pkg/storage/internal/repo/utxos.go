@@ -19,10 +19,10 @@ func NewUTXOs(db *gorm.DB) *UTXOs {
 	}
 }
 
-func (u *UTXOs) FindAllUTXOs(ctx context.Context, userID int, page *paging.Page) ([]*models.UserUTXO, error) {
+func (u *UTXOs) FindAllUTXOs(ctx context.Context, userID int, basketID int, page *paging.Page) ([]*models.UserUTXO, error) {
 	var result []*models.UserUTXO
 	err := u.db.WithContext(ctx).
-		Scopes(scopes.UserID(userID), scopes.Paginate(page)).
+		Scopes(scopes.UserID(userID), scopes.BasketID(basketID), scopes.Paginate(page)).
 		Find(&result).Error
 	if err != nil {
 		return nil, err
