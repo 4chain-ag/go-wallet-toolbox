@@ -17,6 +17,7 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+// RawTxResultService is an interface for services that implement RawTx method
 type RawTxResultService interface {
 	RawTx(txID string, chain defs.BSVNetwork) (*internal.RawTxResult, error)
 }
