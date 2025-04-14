@@ -1,8 +1,9 @@
 package wdk
 
 import (
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"iter"
+
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 )
 
 // NewTx represents all the information necessary to store a transaction with additional information like labels, tags, inputs, and outputs.
@@ -24,6 +25,7 @@ type NewTx struct {
 	Labels []primitives.StringUnder300
 }
 
+// NewOutput represents an output of a new transaction.
 type NewOutput struct {
 	Satoshis         int64
 	Basket           string

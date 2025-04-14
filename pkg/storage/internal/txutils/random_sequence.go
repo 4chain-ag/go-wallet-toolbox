@@ -1,9 +1,10 @@
 package txutils
 
 import (
+	"iter"
+
 	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/go-softwarelab/common/types"
-	"iter"
 )
 
 func NewRandomSequence[T any, E types.Integer](length E, randomizer func() (T, error)) (iter.Seq[T], error) {
