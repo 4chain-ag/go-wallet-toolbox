@@ -3,6 +3,7 @@ package actions
 import (
 	"context"
 	"fmt"
+	"github.com/go-softwarelab/common/pkg/seq2"
 	"iter"
 	"log/slog"
 
@@ -19,8 +20,8 @@ import (
 )
 
 const (
-	derivationPrefixLength = 16
-	referenceLength        = 12
+	derivationLength = 16
+	referenceLength  = 12
 )
 
 type UTXO struct {
@@ -148,13 +149,24 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 	changeDist := txutils.NewChangeDistribution(basket.MinimumDesiredUTXOValue, txutils.Rand).
 		Distribute(funding.ChangeCount, funding.ChangeAmount)
 
-	// TODO: convert change values into outputs
-	_ = changeDist
-
-	derivationPrefix, reference, err := c.randomValues()
+	derivationPrefix, derivationSuffixes, reference, err := c.randomValues(funding.ChangeCount)
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO add fixed outputs (xoutputs) - after that PR is merged
+	changeOutputs := seq2.Values(seq2.Map(seq.Zip(changeDist, derivationSuffixes), func(satoshis uint64, derivationSuffix string) *wdk.NewOutput {
+		return &wdk.NewOutput{
+			Satoshis:         must.ConvertToInt64FromUnsigned(satoshis),
+			Basket:           wdk.BasketNameForChange,
+			Spendable:        true,
+			Change:           true,
+			ProvidedBy:       wdk.ProvidedByStorage,
+			Type:             "P2PKH",
+			DerivationPrefix: derivationPrefix,
+			DerivationSuffix: derivationSuffix,
+		}
+	}))
 
 	err = c.txRepo.CreateTransaction(ctx, &wdk.NewTx{
 		UserID:      userID,
@@ -165,6 +177,7 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		IsOutgoing:  true,
 		Description: params.Description,
 		Satoshis:    must.ConvertToInt64FromUnsigned(funding.ChangeAmount) - must.ConvertToInt64FromUnsigned(funding.TotalAllocated()),
+		Outputs:     changeOutputs,
 		Labels:      params.Labels,
 
 		// TODO: inputBEEF
@@ -235,10 +248,9 @@ func (c *create) txSize(xinputs iter.Seq[*wdk.ValidCreateActionInput], xoutputs 
 	return txSize, nil
 }
 
-func (c *create) randomValues() (derivationPrefix string, reference string, err error) {
-	derivationPrefix, err = txutils.RandomBase64(derivationPrefixLength)
+func (c *create) randomValues(changeCount uint64) (derivationPrefix string, derivationSuffixes iter.Seq[string], reference string, err error) {
+	derivationPrefix, err = randomDerivation()
 	if err != nil {
-		err = fmt.Errorf("failed to generate random derivation prefix: %w", err)
 		return
 	}
 
@@ -248,5 +260,20 @@ func (c *create) randomValues() (derivationPrefix string, reference string, err 
 		return
 	}
 
+	derivationSuffixes, err = txutils.NewRandomSequence(changeCount, randomDerivation)
+	if err != nil {
+		err = fmt.Errorf("failed to generate random derivation suffixes: %w", err)
+		return
+	}
+
 	return
+}
+
+func randomDerivation() (string, error) {
+	suffix, err := txutils.RandomBase64(derivationLength)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate random derivation: %w", err)
+	}
+
+	return suffix, nil
 }

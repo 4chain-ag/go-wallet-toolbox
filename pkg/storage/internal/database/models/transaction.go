@@ -20,5 +20,6 @@ type Transaction struct {
 	InputBeef   []byte
 	RawTx       []byte
 
-	Labels []Label `gorm:"many2many:transaction_labels;"`
+	Outputs []Output `gorm:"foreignKey:TransactionID"`
+	Labels  []Label  `gorm:"many2many:transaction_labels;"`
 }

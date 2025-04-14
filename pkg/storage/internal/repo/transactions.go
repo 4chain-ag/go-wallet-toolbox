@@ -33,6 +33,25 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *wdk.NewTx
 			TxID:        nil,
 			Labels:      nil,
 		}
+		var vout uint32
+		for output := range newTx.Outputs {
+			model.Outputs = append(model.Outputs, models.Output{
+				Vout:     vout,
+				Satoshis: output.Satoshis,
+				Basket: &models.OutputBasket{
+					Name:   output.Basket,
+					UserID: newTx.UserID,
+				},
+				Spendable:        output.Spendable,
+				Change:           output.Change,
+				ProvidedBy:       string(output.ProvidedBy),
+				Purpose:          output.Purpose,
+				Type:             output.Type,
+				DerivationPrefix: output.DerivationPrefix,
+				DerivationSuffix: output.DerivationSuffix,
+			})
+			vout++
+		}
 		for _, label := range newTx.Labels {
 			model.Labels = append(model.Labels, models.Label{
 				Name:   string(label),
