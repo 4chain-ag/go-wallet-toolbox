@@ -9,6 +9,7 @@ import (
 	"go/token"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -72,7 +73,9 @@ func main() {
 		targetPackageName = filepath.Base(filepath.Dir(targetFile))
 	}
 
-	output := generator.Generate(targetPackageName, fullPackageName, isTheSameDir, interfaces)
+	pkg := generator.NewPackage(targetPackageName, packageName, fullPackageName, isTheSameDir)
+
+	output := generator.Generate(pkg, interfaces)
 
 	// Write the output
 	log.Printf("Writing to file://%s \n", targetFile)
@@ -129,5 +132,6 @@ func getFullPackageName(dir string) string {
 	}
 
 	// Otherwise, join the module path and the relative path
-	return filepath.Join(modulePath, relPath)
+	p := path.Join(modulePath, relPath)
+	return strings.ReplaceAll(p, "\\", "/")
 }
