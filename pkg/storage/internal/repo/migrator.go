@@ -18,12 +18,13 @@ func NewMigrator(db *gorm.DB) *Migrator {
 
 func (m *Migrator) Migrate(ctx context.Context) error {
 	err := m.db.WithContext(ctx).AutoMigrate(
-		&models.Setting{},
-		&models.User{},
-		&models.OutputBasket{},
-		&models.CertificateField{},
-		&models.Certificate{},
-		&models.UserUTXO{},
+		models.Setting{},
+		models.User{},
+		models.OutputBasket{},
+		models.CertificateField{},
+		models.Certificate{},
+		models.UserUTXO{},
+		models.Transaction{},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to migrate settings: %w", err)
