@@ -5,6 +5,7 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"gorm.io/gorm"
 )
 
 const (
@@ -19,12 +20,14 @@ type BasketFixture interface {
 
 type basketFixture struct {
 	testing.TB
+	db   *gorm.DB
 	user testusers.User
 }
 
-func newBasketFixture(t testing.TB, user testusers.User) *basketFixture {
+func newBasketFixture(t testing.TB, db *gorm.DB, user testusers.User) *basketFixture {
 	return &basketFixture{
 		TB:   t,
+		db:   db,
 		user: user,
 	}
 }
@@ -39,7 +42,7 @@ func (f *basketFixture) WithNumberOfDesiredUTXOs(number int) *wdk.TableOutputBas
 		UserID:   f.user.ID,
 		BasketConfiguration: wdk.BasketConfiguration{
 			Name:                    "default",
-			NumberOfDesiredUTXOs:    number,
+			NumberOfDesiredUTXOs:    int64(number),
 			MinimumDesiredUTXOValue: testDesiredUTXOValue,
 		},
 		CreatedAt: exampleDate,
