@@ -16,7 +16,7 @@ func TestUpdateBsvExchangeRateSuccess(t *testing.T) {
 		given.WhatsOnChain().WillRespondWithRates(500, "", nil)
 
 		// and:
-		cachedRate := &wdk.BSVExchangeRate{
+		cachedRate := wdk.BSVExchangeRate{
 			Timestamp: time.Now().Add(-5 * time.Minute),
 			Base:      "USD",
 			Rate:      100.0,
@@ -43,7 +43,7 @@ func TestUpdateBsvExchangeRateSuccess(t *testing.T) {
 		}`, nil)
 
 		// and:
-		services := given.Services().WithBsvExchangeRate(&wdk.BSVExchangeRate{
+		services := given.Services().WithBsvExchangeRate(wdk.BSVExchangeRate{
 			Timestamp: time.Now().Add(-16 * time.Minute),
 			Base:      "USD",
 			Rate:      100.0,

@@ -10,6 +10,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/configuration"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/whatsonchain"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/go-resty/resty/v2"
@@ -22,13 +23,13 @@ type ServicesFixture interface {
 	WhatsOnChain() WhatsOnChainFixture
 
 	Services() WalletServicesFixture
-	NewServicesWithConfig(config services.WalletServicesConfiguration) *services.WalletServices
+	NewServicesWithConfig(config configuration.WalletServices) *services.WalletServices
 }
 
 type WalletServicesFixture interface {
 	WithDefaultConfig() *services.WalletServices
 
-	WithBsvExchangeRate(exchangeRate *wdk.BSVExchangeRate) *services.WalletServices
+	WithBsvExchangeRate(exchangeRate wdk.BSVExchangeRate) *services.WalletServices
 }
 type WhatsOnChainFixture interface {
 	WillRespondWithRates(status int, content string, err error) WhatsOnChainFixture
@@ -41,7 +42,7 @@ type servicesFixture struct {
 	services             *services.WalletServices
 	httpClient           *resty.Client
 	transport            *httpmock.MockTransport
-	walletServicesConfig *services.WalletServicesConfiguration
+	walletServicesConfig *configuration.WalletServices
 }
 
 func (s *servicesFixture) WhatsOnChain() WhatsOnChainFixture {
@@ -57,9 +58,9 @@ func (s *servicesFixture) WithDefaultConfig() *services.WalletServices {
 	return s.services
 }
 
-func (s *servicesFixture) WithBsvExchangeRate(exchangeRate *wdk.BSVExchangeRate) *services.WalletServices {
+func (s *servicesFixture) WithBsvExchangeRate(exchangeRate wdk.BSVExchangeRate) *services.WalletServices {
 	s.t.Helper()
-	s.walletServicesConfig.BsvExchangeRate = exchangeRate
+	s.walletServicesConfig.WhatsOnChain.BSVExchangeRate = exchangeRate
 
 	walletServices := services.New(s.httpClient, s.logger, *s.walletServicesConfig)
 	s.services = walletServices
@@ -71,7 +72,7 @@ func (s *servicesFixture) Services() WalletServicesFixture {
 	return s
 }
 
-func (s *servicesFixture) NewServicesWithConfig(config services.WalletServicesConfiguration) *services.WalletServices {
+func (s *servicesFixture) NewServicesWithConfig(config configuration.WalletServices) *services.WalletServices {
 	s.t.Helper()
 
 	walletServices := services.New(s.httpClient, s.logger, config)
@@ -115,7 +116,7 @@ func Given(t testing.TB) ServicesFixture {
 	}
 }
 
-func servicesCfg(chain defs.BSVNetwork) services.WalletServicesConfiguration {
+func servicesCfg(chain defs.BSVNetwork) configuration.WalletServices {
 	var taalApiKey string
 	var port int
 	var arcUrl string
@@ -130,11 +131,12 @@ func servicesCfg(chain defs.BSVNetwork) services.WalletServicesConfiguration {
 		arcUrl = "https://arc-test.taal.com/arc"
 	}
 
-	return services.WalletServicesConfiguration{
-		Chain:             chain,
-		TaalApiKey:        taalApiKey,
-		BsvExchangeRate:   nil,
-		BsvUpdateInterval: to.Ptr(whatsonchain.DefaultBSVExchangeUpdateInterval),
+	return configuration.WalletServices{
+		Chain:      chain,
+		TaalAPIKey: taalApiKey,
+		WhatsOnChain: configuration.WhatsOnChain{
+			BSVUpdateInterval: to.Ptr(whatsonchain.DefaultBSVExchangeUpdateInterval),
+		},
 		FiatExchangeRates: wdk.FiatExchangeRates{
 			Timestamp: time.Date(2023, time.December, 13, 0, 0, 0, 0, time.UTC),
 			Base:      wdk.USD,
@@ -149,7 +151,7 @@ func servicesCfg(chain defs.BSVNetwork) services.WalletServicesConfiguration {
 		ExchangeratesApiKey:             "bd539d2ff492bcb5619d5f27726a766f",
 		ChaintracksFiatExchangeRatesUrl: fmt.Sprintf("https://npm-registry.babbage.systems:%d/getFiatExchangeRates", port),
 		Chaintracks:                     nil, // TODO: implement me
-		ArcUrl:                          arcUrl,
+		ArcURL:                          arcUrl,
 		ArcConfig:                       nil, // TODO: implement me
 	}
 }
