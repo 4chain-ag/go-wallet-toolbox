@@ -10,6 +10,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/configuration"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/whatsonchain"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/go-resty/resty/v2"
@@ -22,7 +23,7 @@ type ServicesFixture interface {
 	WhatsOnChain() WhatsOnChainFixture
 
 	Services() WalletServicesFixture
-	NewServicesWithConfig(config services.WalletServicesConfiguration) *services.WalletServices
+	NewServicesWithConfig(config configuration.WalletServices) *services.WalletServices
 }
 
 type WalletServicesFixture interface {
@@ -41,7 +42,7 @@ type servicesFixture struct {
 	services             *services.WalletServices
 	httpClient           *resty.Client
 	transport            *httpmock.MockTransport
-	walletServicesConfig *services.WalletServicesConfiguration
+	walletServicesConfig *configuration.WalletServices
 }
 
 func (s *servicesFixture) WhatsOnChain() WhatsOnChainFixture {
@@ -71,7 +72,7 @@ func (s *servicesFixture) Services() WalletServicesFixture {
 	return s
 }
 
-func (s *servicesFixture) NewServicesWithConfig(config services.WalletServicesConfiguration) *services.WalletServices {
+func (s *servicesFixture) NewServicesWithConfig(config configuration.WalletServices) *services.WalletServices {
 	s.t.Helper()
 
 	walletServices := services.New(s.httpClient, s.logger, config)
@@ -115,7 +116,7 @@ func Given(t testing.TB) ServicesFixture {
 	}
 }
 
-func servicesCfg(chain defs.BSVNetwork) services.WalletServicesConfiguration {
+func servicesCfg(chain defs.BSVNetwork) configuration.WalletServices {
 	var taalApiKey string
 	var port int
 	var arcUrl string
@@ -130,7 +131,7 @@ func servicesCfg(chain defs.BSVNetwork) services.WalletServicesConfiguration {
 		arcUrl = "https://arc-test.taal.com/arc"
 	}
 
-	return services.WalletServicesConfiguration{
+	return configuration.WalletServices{
 		Chain:      chain,
 		TaalApiKey: taalApiKey,
 		WhatsOnChainConfiguration: whatsonchain.WhatsOnChainConfiguration{

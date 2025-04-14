@@ -8,6 +8,7 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/configuration"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/go-resty/resty/v2"
 	"github.com/go-softwarelab/common/pkg/to"
@@ -30,7 +31,7 @@ type WhatsOnChain struct {
 	bsvUpdateInterval *time.Duration
 }
 
-func New(httpClient *resty.Client, logger *slog.Logger, network defs.BSVNetwork, config WhatsOnChainConfiguration) *WhatsOnChain {
+func New(httpClient *resty.Client, logger *slog.Logger, network defs.BSVNetwork, config configuration.WhatsOnChain) *WhatsOnChain {
 	if httpClient == nil {
 		panic("httpClient is required")
 	}

@@ -1,15 +1,14 @@
-package services
+package configuration
 
 import (
 	"time"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/whatsonchain"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 )
 
-// WalletServicesConfiguration is a struct that has options for wallet services
-type WalletServicesConfiguration struct {
+// WalletServices is a struct that has options for wallet services
+type WalletServices struct {
 	Chain                           defs.BSVNetwork
 	TaalApiKey                      string
 	BitailsApiKey                   *string
@@ -22,5 +21,5 @@ type WalletServicesConfiguration struct {
 	ArcUrl                          string
 	ArcConfig                       any // TODO: create *ArcConfig
 
-	WhatsOnChainConfiguration whatsonchain.WhatsOnChainConfiguration
+	WhatsOnChain WhatsOnChain
 }

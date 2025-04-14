@@ -1,4 +1,4 @@
-package whatsonchain
+package configuration
 
 import (
 	"time"
@@ -6,8 +6,8 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 )
 
-// WhatsOnChainConfiguration is a struct that configures WhatsOnChain service
-type WhatsOnChainConfiguration struct {
+// WhatsOnChain is a struct that configures WhatsOnChain service
+type WhatsOnChain struct {
 	ApiKey            string
 	BsvExchangeRate   *wdk.BSVExchangeRate
 	BsvUpdateInterval *time.Duration
