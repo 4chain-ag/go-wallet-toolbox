@@ -1,12 +1,11 @@
 package services
 
 import (
-	"encoding/hex"
 	"fmt"
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/utils"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/transactions/utils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/configuration"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/servicequeue"
@@ -46,10 +45,11 @@ func New(httpClient *resty.Client, logger *slog.Logger, config configuration.Wal
 
 	woc := whatsonchain.New(httpClient, logger, config.Chain, config.WhatsOnChain)
 
-	rawTxResultServices := servicequeue.New[RawTxResultService]().Add(servicequeue.ServiceExecutor[RawTxResultService]{
-		Name:    "WhatsOnChain",
-		Service: woc,
-	})
+	rawTxResultServices := servicequeue.New(
+		servicequeue.ServiceExecutor[RawTxResultService]{
+			Name:    "WhatsOnChain",
+			Service: woc,
+		})
 
 	return &WalletServices{
 		httpClient:    httpClient,
@@ -99,10 +99,9 @@ func (s *WalletServices) RawTx(txID string) (internal.RawTxResult, error) {
 			continue
 		}
 
-		hash := utils.DoubleSha256BE(resp.RawTx)
-		encodedHex := hex.EncodeToString(hash)
-		if txID != encodedHex {
-			lastErr = fmt.Errorf("computed txid %s doesn't match requested value %s", encodedHex, txID)
+		txIDFromRawTx := utils.TransactionIDFromRawTx(resp.RawTx)
+		if txID != txIDFromRawTx {
+			lastErr = fmt.Errorf("computed txid %s doesn't match requested value %s", txIDFromRawTx, txID)
 			s.rawTxServices.Next()
 			continue
 		}
