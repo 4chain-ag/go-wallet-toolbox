@@ -5,7 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/transactions/utils"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/txutils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/configuration"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/servicequeue"
@@ -99,7 +99,7 @@ func (s *WalletServices) RawTx(txID string) (internal.RawTxResult, error) {
 			continue
 		}
 
-		txIDFromRawTx := utils.TransactionIDFromRawTx(resp.RawTx)
+		txIDFromRawTx := txutils.TransactionIDFromRawTx(resp.RawTx)
 		if txID != txIDFromRawTx {
 			lastErr = fmt.Errorf("computed txid %s doesn't match requested value %s", txIDFromRawTx, txID)
 			s.rawTxServices.Next()
