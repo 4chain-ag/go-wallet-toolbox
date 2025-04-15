@@ -1,8 +1,6 @@
 package wdk
 
 import (
-	"iter"
-
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 )
 
@@ -20,7 +18,7 @@ type NewTx struct {
 	InputBeef   []byte
 	Description string
 
-	Outputs iter.Seq[*NewOutput]
+	Outputs []*NewOutput
 
 	Labels []primitives.StringUnder300
 }
@@ -39,4 +37,5 @@ type NewOutput struct {
 	DerivationPrefix   *string
 	DerivationSuffix   *string
 	Description        string
+	Vout               uint32
 }

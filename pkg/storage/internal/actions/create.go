@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"iter"
 	"log/slog"
+	"math/rand/v2"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
@@ -14,7 +15,6 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/go-softwarelab/common/pkg/must"
 	"github.com/go-softwarelab/common/pkg/seq"
-	"github.com/go-softwarelab/common/pkg/seq2"
 	"github.com/go-softwarelab/common/pkg/seqerr"
 	"github.com/go-softwarelab/common/pkg/to"
 )
@@ -50,8 +50,8 @@ type CreateActionParams struct {
 	LockTime    int
 	Description string
 	Labels      []primitives.StringUnder300
-	Outputs     iter.Seq[*wdk.ValidCreateActionOutput]
-	Inputs      iter.Seq[*wdk.ValidCreateActionInput]
+	Outputs     []wdk.ValidCreateActionOutput
+	Inputs      []wdk.ValidCreateActionInput
 }
 
 func FromValidCreateActionArgs(args *wdk.ValidCreateActionArgs) CreateActionParams {
@@ -61,8 +61,8 @@ func FromValidCreateActionArgs(args *wdk.ValidCreateActionArgs) CreateActionPara
 		LockTime:    args.LockTime,
 		Description: string(args.Description),
 		Labels:      args.Labels,
-		Outputs:     seq.PointersFromSlice(args.Outputs),
-		Inputs:      seq.PointersFromSlice(args.Inputs),
+		Outputs:     args.Outputs,
+		Inputs:      args.Inputs,
 	}
 }
 
@@ -119,8 +119,8 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		return nil, fmt.Errorf("basket for change (%s) not found", wdk.BasketNameForChange)
 	}
 
-	xoutputs := params.Outputs
-	xinputs := params.Inputs
+	xoutputs := seq.PointersFromSlice(params.Outputs)
+	xinputs := seq.PointersFromSlice(params.Inputs)
 
 	var commOut *serviceChargeOutput
 	if c.commission != nil {
@@ -149,17 +149,21 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 	changeDistribution := txutils.NewChangeDistribution(basket.MinimumDesiredUTXOValue, txutils.Rand).
 		Distribute(funding.ChangeCount, funding.ChangeAmount)
 
-	derivationPrefix, derivationSuffixes, reference, err := c.randomValues(funding.ChangeCount)
+	derivationPrefix, reference, err := c.randomValues()
 	if err != nil {
 		return nil, err
 	}
 
-	newOutputs := c.newOutputs(
-		seq.Zip(changeDistribution, derivationSuffixes),
+	newOutputs, err := c.newOutputs(
+		changeDistribution,
+		funding.ChangeCount,
 		derivationPrefix,
 		params.Outputs,
 		commOut,
 	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new outputs: %w", err)
+	}
 
 	err = c.txRepo.CreateTransaction(ctx, &wdk.NewTx{
 		UserID:      userID,
@@ -241,7 +245,7 @@ func (c *create) txSize(xinputs iter.Seq[*wdk.ValidCreateActionInput], xoutputs 
 	return txSize, nil
 }
 
-func (c *create) randomValues(changeCount uint64) (derivationPrefix string, derivationSuffixes iter.Seq[string], reference string, err error) {
+func (c *create) randomValues() (derivationPrefix string, reference string, err error) {
 	derivationPrefix, err = randomDerivation()
 	if err != nil {
 		return
@@ -253,23 +257,31 @@ func (c *create) randomValues(changeCount uint64) (derivationPrefix string, deri
 		return
 	}
 
-	derivationSuffixes, err = txutils.NewRandomSequence(changeCount, randomDerivation)
-	if err != nil {
-		err = fmt.Errorf("failed to generate random derivation suffixes: %w", err)
-		return
-	}
-
 	return
 }
 
 func (c *create) newOutputs(
-	changOutputsWithSuffixes iter.Seq2[uint64, string],
+	changDistribution iter.Seq[uint64],
+	changeCount uint64,
 	derivationPrefix string,
-	xoutputs iter.Seq[*wdk.ValidCreateActionOutput],
+	providedOutputs []wdk.ValidCreateActionOutput,
 	commissionOutput *serviceChargeOutput,
-) iter.Seq[*wdk.NewOutput] {
-	changeOutputs := seq2.Values(seq2.Map(changOutputsWithSuffixes, func(satoshis uint64, derivationSuffix string) *wdk.NewOutput {
-		return &wdk.NewOutput{
+) ([]*wdk.NewOutput, error) {
+	length := must.ConvertToIntFromUnsigned(changeCount) + len(providedOutputs)
+	if commissionOutput != nil {
+		length++
+	}
+	len32 := must.ConvertToUInt32(length)
+
+	all := make([]*wdk.NewOutput, 0, len32)
+
+	for satoshis := range changDistribution {
+		derivationSuffix, err := randomDerivation()
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate random derivation suffix: %w", err)
+		}
+
+		all = append(all, &wdk.NewOutput{
 			Satoshis:         must.ConvertToInt64FromUnsigned(satoshis),
 			Basket:           to.Ptr(wdk.BasketNameForChange),
 			Spendable:        true,
@@ -278,26 +290,25 @@ func (c *create) newOutputs(
 			Type:             "P2PKH",
 			DerivationPrefix: to.Ptr(derivationPrefix),
 			DerivationSuffix: to.Ptr(derivationSuffix),
-		}
-	}))
+		})
+	}
 
-	fixedOutputs := seq.Map(xoutputs, func(output *wdk.ValidCreateActionOutput) *wdk.NewOutput {
-		return &wdk.NewOutput{
+	for _, output := range providedOutputs {
+		all = append(all, &wdk.NewOutput{
 			Satoshis:           must.ConvertToInt64FromUnsigned(output.Satoshis),
 			Basket:             (*string)(output.Basket),
 			Spendable:          true,
 			Change:             false,
 			ProvidedBy:         wdk.ProvidedByYou,
 			Type:               "custom",
-			LockingScript:      to.Ptr(string(output.LockingScript)),
+			LockingScript:      (*string)(&output.LockingScript),
 			CustomInstructions: output.CustomInstructions,
 			Description:        string(output.OutputDescription),
-		}
-	})
+		})
+	}
 
-	all := seq.Concat(fixedOutputs, changeOutputs)
 	if commissionOutput != nil {
-		all = seq.Append(all, &wdk.NewOutput{
+		all = append(all, &wdk.NewOutput{
 			LockingScript: to.Ptr(string(commissionOutput.LockingScript)),
 			Satoshis:      must.ConvertToInt64FromUnsigned(commissionOutput.Satoshis),
 			Basket:        nil,
@@ -309,7 +320,15 @@ func (c *create) newOutputs(
 		})
 	}
 
-	return all
+	rand.Shuffle(len(all), func(i, j int) {
+		all[i], all[j] = all[j], all[i]
+	})
+
+	for vout := uint32(0); vout < len32; vout++ {
+		all[vout].Vout = vout
+	}
+
+	return all, nil
 }
 
 func randomDerivation() (string, error) {

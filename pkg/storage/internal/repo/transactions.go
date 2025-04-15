@@ -3,7 +3,6 @@ package repo
 import (
 	"context"
 	"fmt"
-
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"gorm.io/gorm"
@@ -33,10 +32,9 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *wdk.NewTx
 			TxID:        nil,
 			Labels:      nil,
 		}
-		var vout uint32
-		for output := range newTx.Outputs {
+		for _, output := range newTx.Outputs {
 			out := models.Output{
-				Vout:               vout,
+				Vout:               output.Vout,
 				Satoshis:           output.Satoshis,
 				Spendable:          output.Spendable,
 				Change:             output.Change,
@@ -58,7 +56,6 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *wdk.NewTx
 			}
 
 			model.Outputs = append(model.Outputs, out)
-			vout++
 		}
 		for _, label := range newTx.Labels {
 			model.Labels = append(model.Labels, models.Label{
