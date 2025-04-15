@@ -44,7 +44,7 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *wdk.NewTx
 				Type:               output.Type,
 				DerivationPrefix:   output.DerivationPrefix,
 				DerivationSuffix:   output.DerivationSuffix,
-				LockingScript:      output.LockingScript,
+				LockingScript:      (*string)(output.LockingScript),
 				CustomInstructions: output.CustomInstructions,
 			}
 

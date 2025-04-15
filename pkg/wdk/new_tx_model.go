@@ -25,7 +25,7 @@ type NewTx struct {
 
 // NewOutput represents an output of a new transaction.
 type NewOutput struct {
-	LockingScript      *string
+	LockingScript      *primitives.HexString
 	CustomInstructions *string
 	Satoshis           int64
 	Basket             *string

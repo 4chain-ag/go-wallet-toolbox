@@ -3,6 +3,7 @@ package methodtests
 import (
 	"context"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
+	"slices"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
@@ -51,6 +52,8 @@ func TestCreateActionHappyPath(t *testing.T) {
 	require.Equal(t, 16, len(result.Reference))
 	require.Equal(t, args.Version, result.Version)
 	require.Equal(t, args.LockTime, result.LockTime)
+	require.Equal(t, 1, len(result.Outputs))
+	require.Equal(t, args.Outputs[0].LockingScript, result.Outputs[0].LockingScript)
 }
 
 func TestCreateActionWithCommission(t *testing.T) {
@@ -77,6 +80,11 @@ func TestCreateActionWithCommission(t *testing.T) {
 	require.Equal(t, 16, len(result.Reference))
 	require.Equal(t, args.Version, result.Version)
 	require.Equal(t, args.LockTime, result.LockTime)
-
-	// TODO: More assertions to check the commission was applied correctly
+	require.Equal(t, 2, len(result.Outputs))
+	require.True(t, slices.ContainsFunc(result.Outputs, func(p wdk.StorageCreateTransactionSdkOutput) bool {
+		return p.Purpose == "storage-commission"
+	}))
+	require.True(t, slices.ContainsFunc(result.Outputs, func(p wdk.StorageCreateTransactionSdkOutput) bool {
+		return p.Purpose == ""
+	}))
 }

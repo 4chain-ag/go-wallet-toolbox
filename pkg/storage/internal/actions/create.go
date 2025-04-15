@@ -188,6 +188,7 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		Version:          params.Version,
 		LockTime:         params.LockTime,
 		DerivationPrefix: derivationPrefix,
+		Outputs:          c.resultOutputs(newOutputs),
 	}, nil
 }
 
@@ -301,7 +302,7 @@ func (c *create) newOutputs(
 			Change:             false,
 			ProvidedBy:         wdk.ProvidedByYou,
 			Type:               "custom",
-			LockingScript:      (*string)(&output.LockingScript),
+			LockingScript:      &output.LockingScript,
 			CustomInstructions: output.CustomInstructions,
 			Description:        string(output.OutputDescription),
 		})
@@ -309,7 +310,7 @@ func (c *create) newOutputs(
 
 	if commissionOutput != nil {
 		all = append(all, &wdk.NewOutput{
-			LockingScript: to.Ptr(string(commissionOutput.LockingScript)),
+			LockingScript: to.Ptr(commissionOutput.LockingScript),
 			Satoshis:      must.ConvertToInt64FromUnsigned(commissionOutput.Satoshis),
 			Basket:        nil,
 			Spendable:     false,
@@ -329,6 +330,35 @@ func (c *create) newOutputs(
 	}
 
 	return all, nil
+}
+
+func (c *create) resultOutputs(newOutputs []*wdk.NewOutput) []wdk.StorageCreateTransactionSdkOutput {
+	resultOutputs := make([]wdk.StorageCreateTransactionSdkOutput, len(newOutputs))
+	for i, output := range newOutputs {
+		resultOutputs[i] = wdk.StorageCreateTransactionSdkOutput{
+			Vout:             output.Vout,
+			ProvidedBy:       output.ProvidedBy,
+			Purpose:          output.Purpose,
+			DerivationSuffix: output.DerivationSuffix,
+			ValidCreateActionOutput: wdk.ValidCreateActionOutput{
+				Satoshis:           primitives.SatoshiValue(output.Satoshis),
+				OutputDescription:  primitives.String5to2000Bytes(output.Description),
+				CustomInstructions: output.CustomInstructions,
+
+				// TODO: Tags
+			},
+		}
+
+		if output.LockingScript != nil {
+			resultOutputs[i].LockingScript = *output.LockingScript
+		}
+
+		if output.Basket != nil {
+			resultOutputs[i].Basket = to.Ptr(primitives.StringUnder300(*output.Basket))
+		}
+	}
+
+	return resultOutputs
 }
 
 func randomDerivation() (string, error) {
