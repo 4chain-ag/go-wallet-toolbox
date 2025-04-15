@@ -118,14 +118,24 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		return nil, fmt.Errorf("basket for change (%s) not found", wdk.BasketNameForChange)
 	}
 
-	// TODO: Add commission output if enabled
+	xoutputs := params.Outputs
+	xinputs := params.Inputs
 
-	initialTxSize, err := c.txSize(&params)
+	var commOut *serviceChargeOutput
+	if c.commission != nil {
+		commOut, err = c.createCommissionOutput()
+		if err != nil {
+			return nil, fmt.Errorf("failed to collect outputs: %w", err)
+		}
+		xoutputs = seq.Append(xoutputs, &commOut.ValidCreateActionOutput)
+	}
+
+	initialTxSize, err := c.txSize(xinputs, xoutputs)
 	if err != nil {
 		return nil, err
 	}
 
-	targetSat, err := c.targetSat(&params)
+	targetSat, err := c.targetSat(xinputs, xoutputs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to calculate target satoshis: %w", err)
 	}
@@ -171,12 +181,33 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 	}, nil
 }
 
-func (c *create) targetSat(args *CreateActionParams) (int64, error) {
+type serviceChargeOutput struct {
+	wdk.ValidCreateActionOutput
+	KeyOffset string
+}
+
+func (c *create) createCommissionOutput() (*serviceChargeOutput, error) {
+	lockingScript, keyOffset, err := c.commission.Generate()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate commission script: %w", err)
+	}
+
+	return &serviceChargeOutput{
+		ValidCreateActionOutput: wdk.ValidCreateActionOutput{
+			LockingScript:     primitives.HexString(lockingScript),
+			Satoshis:          primitives.SatoshiValue(c.commissionCfg.Satoshis),
+			OutputDescription: "Storage Service Charge",
+		},
+		KeyOffset: keyOffset,
+	}, nil
+}
+
+func (c *create) targetSat(_ iter.Seq[*wdk.ValidCreateActionInput], xoutputs iter.Seq[*wdk.ValidCreateActionOutput]) (int64, error) {
 	providedInputs := int64(0)
 	// TODO: sum provided inputs satoshis - but first the values should be found
 
 	providedOutputs := int64(0)
-	for output := range args.Outputs {
+	for output := range xoutputs {
 		satInt64, err := to.Int64FromUnsigned(output.Satoshis)
 		if err != nil {
 			return 0, fmt.Errorf("failed to convert satoshis to int64: %w", err)
@@ -187,12 +218,12 @@ func (c *create) targetSat(args *CreateActionParams) (int64, error) {
 	return providedOutputs - providedInputs, nil
 }
 
-func (c *create) txSize(args *CreateActionParams) (uint64, error) {
-	outputSizes := seqerr.MapSeq(args.Outputs, func(o *wdk.ValidCreateActionOutput) (uint64, error) {
+func (c *create) txSize(xinputs iter.Seq[*wdk.ValidCreateActionInput], xoutputs iter.Seq[*wdk.ValidCreateActionOutput]) (uint64, error) {
+	inputSizes := seqerr.MapSeq(xinputs, func(o *wdk.ValidCreateActionInput) (uint64, error) {
 		return o.ScriptLength()
 	})
 
-	inputSizes := seqerr.MapSeq(args.Inputs, func(o *wdk.ValidCreateActionInput) (uint64, error) {
+	outputSizes := seqerr.MapSeq(xoutputs, func(o *wdk.ValidCreateActionOutput) (uint64, error) {
 		return o.ScriptLength()
 	})
 

@@ -18,7 +18,7 @@ func TestInsertCertificateAuth(t *testing.T) {
 	given := testabilities.Given(t)
 
 	// and:
-	activeStorage := given.GormProvider()
+	activeStorage := given.Provider().GORM()
 
 	// and:
 	expectedResult := &wdk.ListCertificatesResult{
@@ -175,7 +175,7 @@ func TestInsertCertificateAuthFailure(t *testing.T) {
 	given := testabilities.Given(t)
 
 	// and:
-	activeStorage := given.GormProvider()
+	activeStorage := given.Provider().GORM()
 
 	t.Run("should fail to insert a certificate when no UserID provided in auth and when certificate UserID is different than authID", func(t *testing.T) {
 		// when:
@@ -229,7 +229,7 @@ func TestListCertificates(t *testing.T) {
 	given := testabilities.Given(t)
 
 	// and:
-	activeStorage := given.GormProvider()
+	activeStorage := given.Provider().GORM()
 
 	t.Run("should insert 3 certificates for Alice", func(t *testing.T) {
 		// given:

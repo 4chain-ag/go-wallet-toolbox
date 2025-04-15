@@ -1,7 +1,6 @@
 package testabilities
 
 import (
-	"context"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -12,8 +11,6 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/mocks"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/server"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/dbfixtures"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -27,8 +24,7 @@ const (
 )
 
 type StorageFixture interface {
-	GormProvider() *storage.Provider
-	GormProviderWithCleanDatabase() *storage.Provider
+	Provider() ProviderFixture
 
 	StartedRPCServerFor(provider wdk.WalletStorageWriter) (cleanup func())
 	RPCClient() (*storage.WalletStorageWriterClient, func())
@@ -37,42 +33,10 @@ type StorageFixture interface {
 }
 
 type storageFixture struct {
-	t             testing.TB
-	require       *require.Assertions
-	logger        *slog.Logger
-	testServer    *httptest.Server
-	activeStorage *storage.Provider
-}
-
-func (s *storageFixture) GormProvider() *storage.Provider {
-	activeStorage := s.GormProviderWithCleanDatabase()
-
-	s.seedUsers()
-
-	return activeStorage
-}
-
-func (s *storageFixture) GormProviderWithCleanDatabase() *storage.Provider {
-	s.t.Helper()
-
-	storageIdentityKey, err := wdk.IdentityKey(StorageServerPrivKey)
-	s.require.NoError(err)
-
-	dbConfig := dbfixtures.DBConfigForTests()
-
-	activeStorage, err := storage.NewGORMProvider(s.logger, storage.GORMProviderConfig{
-		DB:       dbConfig,
-		Chain:    defs.NetworkTestnet,
-		FeeModel: defs.DefaultFeeModel(),
-	}, storage.WithFunder(&MockFunder{}))
-	s.require.NoError(err)
-
-	_, err = activeStorage.Migrate(context.Background(), StorageName, storageIdentityKey)
-	s.require.NoError(err)
-
-	s.activeStorage = activeStorage
-
-	return activeStorage
+	t          testing.TB
+	require    *require.Assertions
+	logger     *slog.Logger
+	testServer *httptest.Server
 }
 
 func (s *storageFixture) StartedRPCServerFor(provider wdk.WalletStorageWriter) (cleanup func()) {
@@ -100,12 +64,16 @@ func (s *storageFixture) MockProvider() *mocks.MockWalletStorageWriter {
 	return mocks.NewMockWalletStorageWriter(ctrl)
 }
 
-func (s *storageFixture) seedUsers() {
-	for _, user := range testusers.All() {
-		res, err := s.activeStorage.FindOrInsertUser(context.Background(), user.PrivKey)
-		s.require.NoError(err)
+func (s *storageFixture) Provider() ProviderFixture {
+	s.t.Helper()
+	return &providerFixture{
+		t:       s.t,
+		require: s.require,
+		logger:  s.logger,
 
-		user.ID = res.User.UserID
+		network:    defs.NetworkTestnet,
+		commission: defs.Commission{},
+		feeModel:   defs.DefaultFeeModel(),
 	}
 }
 
