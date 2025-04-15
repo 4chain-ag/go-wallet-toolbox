@@ -15,5 +15,4 @@ type TableSettings struct {
 	Chain              defs.BSVNetwork `json:"chain"`
 	DbType             defs.DBType     `json:"dbtype"`
 	MaxOutputScript    int             `json:"maxOutputScript"`
-	AAA                *string         `json:"aaa"`
 }
