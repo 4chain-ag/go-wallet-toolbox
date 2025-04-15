@@ -7,7 +7,7 @@ import (
 // BasketConfiguration is a struct that defines the configuration of the output basket
 type BasketConfiguration struct {
 	Name                    string `json:"name"`
-	NumberOfDesiredUTXOs    int    `json:"numberOfDesiredUTXOs"`
+	NumberOfDesiredUTXOs    int64  `json:"numberOfDesiredUTXOs"`
 	MinimumDesiredUTXOValue uint64 `json:"minimumDesiredUTXOValue"`
 }
 
