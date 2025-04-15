@@ -15,17 +15,6 @@ const (
 	Script UtxoStatusOutputFormat = "script"
 )
 
-// RawTxResult is result from RawTx method
-type RawTxResult struct {
-	// TxID is a transaction hash or rawTx
-	TxID string
-	// Name is the name of the service returning the rawTx or nil if no rawTx
-	Name *string
-	// RawTx are multiple proofs that may be returned when a transaction also appears in
-	// one or more orphaned blocks
-	RawTx []string
-}
-
 // BaseBlockHeader are fields of 80 byte serialized header in order whose double sha256 hash is a block's hash value
 // and the next block's previousHash value.
 // All block hash values and merkleRoot values are 32 byte hex string values with the byte order reversed from the serialized byte order.

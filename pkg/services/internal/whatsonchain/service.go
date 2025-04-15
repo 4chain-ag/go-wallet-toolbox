@@ -1,6 +1,7 @@
 package whatsonchain
 
 import (
+	"encoding/hex"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/configuration"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/go-resty/resty/v2"
 	"github.com/go-softwarelab/common/pkg/to"
@@ -52,14 +54,37 @@ func New(httpClient *resty.Client, logger *slog.Logger, network defs.BSVNetwork,
 	}
 }
 
-func (woc *WhatsOnChain) prepareRequest(req *resty.Request) *resty.Request {
-	req.SetHeader("Accept", "application/json")
+func (woc *WhatsOnChain) RawTx(txID string, chain defs.BSVNetwork) (*internal.RawTxResult, error) {
+	result := &internal.RawTxResult{
+		Name: "WoC",
+		TxID: txID,
+	}
+	req := woc.httpClient.
+		R().
+		AddRetryCondition(func(res *resty.Response, err error) bool {
+			return res.StatusCode() == http.StatusTooManyRequests
+		})
+	woc.prepareRequest(req)
+	req.SetHeader("Cache-Control", "no-cache")
 
-	if woc.apiKey != "" {
-		req.SetHeader("Authorization", woc.apiKey)
+	res, err := req.Get(fmt.Sprintf("%s/tx/%s/hex", woc.url, txID))
+	if err != nil || res.String() == "" {
+		return nil, fmt.Errorf("failed to fetch raw tx hex: %w", err)
+	}
+	if res.StatusCode() == http.StatusNotFound {
+		return nil, nil
+	}
+	if res.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("failed to retrieve successful response from WOC. Actual status: %d", res.StatusCode())
 	}
 
-	return req
+	txHexDecoded, err := hex.DecodeString(res.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode raw transaction hex: %w", err)
+	}
+
+	result.RawTx = txHexDecoded
+	return result, nil
 }
 
 func (woc *WhatsOnChain) UpdateBsvExchangeRate() (wdk.BSVExchangeRate, error) {
@@ -100,4 +125,14 @@ func (woc *WhatsOnChain) UpdateBsvExchangeRate() (wdk.BSVExchangeRate, error) {
 	}
 
 	return woc.bsvExchangeRate, nil
+}
+
+func (woc *WhatsOnChain) prepareRequest(req *resty.Request) *resty.Request {
+	req.SetHeader("Accept", "application/json")
+
+	if woc.apiKey != "" {
+		req.SetHeader("Authorization", woc.apiKey)
+	}
+
+	return req
 }
