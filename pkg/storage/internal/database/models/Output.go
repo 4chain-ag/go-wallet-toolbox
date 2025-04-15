@@ -12,10 +12,13 @@ type Output struct {
 	Vout          uint32 `gorm:"index"`
 	Satoshis      int64
 
-	DerivationPrefix string
-	DerivationSuffix string
+	LockingScript      *string
+	CustomInstructions *string
 
-	BasketID int           `gorm:"index"`
+	DerivationPrefix *string
+	DerivationSuffix *string
+
+	BasketID *int          `gorm:"index"`
 	Basket   *OutputBasket `gorm:"foreignKey:BasketID"`
 
 	Spendable bool

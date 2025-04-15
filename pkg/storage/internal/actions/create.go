@@ -154,19 +154,32 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		return nil, err
 	}
 
-	// TODO add fixed outputs (xoutputs) - after that PR is merged
 	changeOutputs := seq2.Values(seq2.Map(seq.Zip(changeDist, derivationSuffixes), func(satoshis uint64, derivationSuffix string) *wdk.NewOutput {
 		return &wdk.NewOutput{
 			Satoshis:         must.ConvertToInt64FromUnsigned(satoshis),
-			Basket:           wdk.BasketNameForChange,
+			Basket:           to.Ptr(wdk.BasketNameForChange),
 			Spendable:        true,
 			Change:           true,
 			ProvidedBy:       wdk.ProvidedByStorage,
 			Type:             "P2PKH",
-			DerivationPrefix: derivationPrefix,
-			DerivationSuffix: derivationSuffix,
+			DerivationPrefix: to.Ptr(derivationPrefix),
+			DerivationSuffix: to.Ptr(derivationSuffix),
 		}
 	}))
+
+	fixedOutputs := seq.Map(xoutputs, func(output *wdk.ValidCreateActionOutput) *wdk.NewOutput {
+		return &wdk.NewOutput{
+			Satoshis:           must.ConvertToInt64FromUnsigned(output.Satoshis),
+			Basket:             (*string)(output.Basket),
+			Spendable:          true,
+			Change:             false,
+			ProvidedBy:         wdk.ProvidedByYou,
+			Type:               "custom",
+			LockingScript:      to.Ptr(string(output.LockingScript)),
+			CustomInstructions: output.CustomInstructions,
+			Description:        string(output.OutputDescription),
+		}
+	})
 
 	err = c.txRepo.CreateTransaction(ctx, &wdk.NewTx{
 		UserID:      userID,
@@ -177,7 +190,7 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		IsOutgoing:  true,
 		Description: params.Description,
 		Satoshis:    must.ConvertToInt64FromUnsigned(funding.ChangeAmount) - must.ConvertToInt64FromUnsigned(funding.TotalAllocated()),
-		Outputs:     changeOutputs,
+		Outputs:     seq.Concat(fixedOutputs, changeOutputs),
 		Labels:      params.Labels,
 
 		// TODO: inputBEEF

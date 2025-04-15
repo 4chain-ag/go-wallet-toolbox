@@ -27,13 +27,16 @@ type NewTx struct {
 
 // NewOutput represents an output of a new transaction.
 type NewOutput struct {
-	Satoshis         int64
-	Basket           string
-	Spendable        bool
-	Change           bool
-	ProvidedBy       ProvidedBy
-	Purpose          string
-	Type             string
-	DerivationPrefix string
-	DerivationSuffix string
+	LockingScript      *string
+	CustomInstructions *string
+	Satoshis           int64
+	Basket             *string
+	Spendable          bool
+	Change             bool
+	ProvidedBy         ProvidedBy
+	Purpose            string
+	Type               string
+	DerivationPrefix   *string
+	DerivationSuffix   *string
+	Description        string
 }
