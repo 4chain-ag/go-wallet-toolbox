@@ -341,7 +341,7 @@ func (c *create) resultOutputs(newOutputs []*wdk.NewOutput) []wdk.StorageCreateT
 			Purpose:          output.Purpose,
 			DerivationSuffix: output.DerivationSuffix,
 			ValidCreateActionOutput: wdk.ValidCreateActionOutput{
-				Satoshis:           primitives.SatoshiValue(output.Satoshis),
+				Satoshis:           primitives.SatoshiValue(must.ConvertToUInt64(output.Satoshis)),
 				OutputDescription:  primitives.String5to2000Bytes(output.Description),
 				CustomInstructions: output.CustomInstructions,
 

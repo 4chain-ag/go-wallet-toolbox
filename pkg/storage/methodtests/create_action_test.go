@@ -2,7 +2,6 @@ package methodtests
 
 import (
 	"context"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"slices"
 	"testing"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/testabilities"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/go-softwarelab/common/pkg/to"
 	"github.com/stretchr/testify/require"
 )
