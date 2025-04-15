@@ -14,8 +14,8 @@ type OutputBasket struct {
 
 	BasketID                int    `gorm:"primaryKey;not null"`
 	Name                    string `gorm:"type:varchar(300);not null;uniqueIndex:idx_name_user_id"`
-	NumberOfDesiredUTXOs    int64  `gorm:"not null"`
-	MinimumDesiredUTXOValue uint64 `gorm:"not null;default:10000"`
+	NumberOfDesiredUTXOs    int64  `gorm:"not null;column:number_of_desired_utxos;default:32"`
+	MinimumDesiredUTXOValue uint64 `gorm:"not null;default:1000"`
 
 	UserID int `gorm:"uniqueIndex:idx_name_user_id"`
 }

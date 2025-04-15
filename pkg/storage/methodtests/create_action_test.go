@@ -2,6 +2,7 @@ package methodtests
 
 import (
 	"context"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
@@ -65,6 +66,7 @@ func TestCreateActionWithCommission(t *testing.T) {
 
 	// and:
 	args := fixtures.DefaultValidCreateActionArgs()
+	args.Outputs[0].Basket = to.Ptr(primitives.StringUnder300("custom_basket"))
 
 	// when:
 	result, err := activeStorage.CreateAction(context.Background(), wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)}, args)

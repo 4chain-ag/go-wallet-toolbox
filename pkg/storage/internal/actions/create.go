@@ -146,7 +146,7 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		return nil, fmt.Errorf("funding failed: %w", err)
 	}
 
-	changeDist := txutils.NewChangeDistribution(basket.MinimumDesiredUTXOValue, txutils.Rand).
+	changeDistribution := txutils.NewChangeDistribution(basket.MinimumDesiredUTXOValue, txutils.Rand).
 		Distribute(funding.ChangeCount, funding.ChangeAmount)
 
 	derivationPrefix, derivationSuffixes, reference, err := c.randomValues(funding.ChangeCount)
@@ -154,32 +154,12 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		return nil, err
 	}
 
-	changeOutputs := seq2.Values(seq2.Map(seq.Zip(changeDist, derivationSuffixes), func(satoshis uint64, derivationSuffix string) *wdk.NewOutput {
-		return &wdk.NewOutput{
-			Satoshis:         must.ConvertToInt64FromUnsigned(satoshis),
-			Basket:           to.Ptr(wdk.BasketNameForChange),
-			Spendable:        true,
-			Change:           true,
-			ProvidedBy:       wdk.ProvidedByStorage,
-			Type:             "P2PKH",
-			DerivationPrefix: to.Ptr(derivationPrefix),
-			DerivationSuffix: to.Ptr(derivationSuffix),
-		}
-	}))
-
-	fixedOutputs := seq.Map(xoutputs, func(output *wdk.ValidCreateActionOutput) *wdk.NewOutput {
-		return &wdk.NewOutput{
-			Satoshis:           must.ConvertToInt64FromUnsigned(output.Satoshis),
-			Basket:             (*string)(output.Basket),
-			Spendable:          true,
-			Change:             false,
-			ProvidedBy:         wdk.ProvidedByYou,
-			Type:               "custom",
-			LockingScript:      to.Ptr(string(output.LockingScript)),
-			CustomInstructions: output.CustomInstructions,
-			Description:        string(output.OutputDescription),
-		}
-	})
+	newOutputs := c.newOutputs(
+		seq.Zip(changeDistribution, derivationSuffixes),
+		derivationPrefix,
+		params.Outputs,
+		commOut,
+	)
 
 	err = c.txRepo.CreateTransaction(ctx, &wdk.NewTx{
 		UserID:      userID,
@@ -190,7 +170,7 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		IsOutgoing:  true,
 		Description: params.Description,
 		Satoshis:    must.ConvertToInt64FromUnsigned(funding.ChangeAmount) - must.ConvertToInt64FromUnsigned(funding.TotalAllocated()),
-		Outputs:     seq.Concat(fixedOutputs, changeOutputs),
+		Outputs:     newOutputs,
 		Labels:      params.Labels,
 
 		// TODO: inputBEEF
@@ -280,6 +260,56 @@ func (c *create) randomValues(changeCount uint64) (derivationPrefix string, deri
 	}
 
 	return
+}
+
+func (c *create) newOutputs(
+	changOutputsWithSuffixes iter.Seq2[uint64, string],
+	derivationPrefix string,
+	xoutputs iter.Seq[*wdk.ValidCreateActionOutput],
+	commissionOutput *serviceChargeOutput,
+) iter.Seq[*wdk.NewOutput] {
+	changeOutputs := seq2.Values(seq2.Map(changOutputsWithSuffixes, func(satoshis uint64, derivationSuffix string) *wdk.NewOutput {
+		return &wdk.NewOutput{
+			Satoshis:         must.ConvertToInt64FromUnsigned(satoshis),
+			Basket:           to.Ptr(wdk.BasketNameForChange),
+			Spendable:        true,
+			Change:           true,
+			ProvidedBy:       wdk.ProvidedByStorage,
+			Type:             "P2PKH",
+			DerivationPrefix: to.Ptr(derivationPrefix),
+			DerivationSuffix: to.Ptr(derivationSuffix),
+		}
+	}))
+
+	fixedOutputs := seq.Map(xoutputs, func(output *wdk.ValidCreateActionOutput) *wdk.NewOutput {
+		return &wdk.NewOutput{
+			Satoshis:           must.ConvertToInt64FromUnsigned(output.Satoshis),
+			Basket:             (*string)(output.Basket),
+			Spendable:          true,
+			Change:             false,
+			ProvidedBy:         wdk.ProvidedByYou,
+			Type:               "custom",
+			LockingScript:      to.Ptr(string(output.LockingScript)),
+			CustomInstructions: output.CustomInstructions,
+			Description:        string(output.OutputDescription),
+		}
+	})
+
+	all := seq.Concat(fixedOutputs, changeOutputs)
+	if commissionOutput != nil {
+		all = seq.Append(all, &wdk.NewOutput{
+			LockingScript: to.Ptr(string(commissionOutput.LockingScript)),
+			Satoshis:      must.ConvertToInt64FromUnsigned(commissionOutput.Satoshis),
+			Basket:        nil,
+			Spendable:     false,
+			Change:        false,
+			ProvidedBy:    wdk.ProvidedByStorage,
+			Type:          "custom",
+			Purpose:       "storage-commission",
+		})
+	}
+
+	return all
 }
 
 func randomDerivation() (string, error) {

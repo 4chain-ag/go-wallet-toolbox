@@ -18,8 +18,8 @@ type Output struct {
 	DerivationPrefix *string
 	DerivationSuffix *string
 
-	BasketID *int          `gorm:"index"`
-	Basket   *OutputBasket `gorm:"foreignKey:BasketID"`
+	BasketID *int
+	Basket   *OutputBasket
 
 	Spendable bool
 	Change    bool
