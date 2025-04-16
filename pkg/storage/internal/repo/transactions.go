@@ -3,9 +3,9 @@ package repo
 import (
 	"context"
 	"fmt"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/entity"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"gorm.io/gorm"
 )
 
@@ -17,7 +17,7 @@ func NewTransactions(db *gorm.DB) *Transactions {
 	return &Transactions{db: db}
 }
 
-func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *wdk.NewTx) error {
+func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *entity.NewTx) error {
 	err := txs.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		model := &models.Transaction{
 			UserID:      newTx.UserID,
@@ -42,7 +42,7 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *wdk.NewTx
 				ProvidedBy:         string(output.ProvidedBy),
 				Description:        output.Description,
 				Purpose:            output.Purpose,
-				Type:               output.Type,
+				Type:               string(output.Type),
 				DerivationPrefix:   output.DerivationPrefix,
 				DerivationSuffix:   output.DerivationSuffix,
 				LockingScript:      (*string)(output.LockingScript),

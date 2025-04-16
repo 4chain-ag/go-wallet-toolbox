@@ -13,7 +13,7 @@ type Transaction struct {
 	Reference   string
 	IsOutgoing  bool
 	Satoshis    int64
-	Description string
+	Description string `gorm:"type:string"`
 	Version     int
 	LockTime    int
 	TxID        *string

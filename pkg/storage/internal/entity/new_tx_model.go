@@ -1,6 +1,7 @@
-package wdk
+package entity
 
 import (
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 )
 
@@ -11,7 +12,7 @@ type NewTx struct {
 
 	Version     int
 	LockTime    int
-	Status      TxStatus
+	Status      wdk.TxStatus
 	Reference   string
 	Satoshis    int64
 	IsOutgoing  bool
@@ -31,9 +32,9 @@ type NewOutput struct {
 	Basket             *string
 	Spendable          bool
 	Change             bool
-	ProvidedBy         ProvidedBy
+	ProvidedBy         wdk.ProvidedBy
 	Purpose            string
-	Type               string
+	Type               wdk.OutputType
 	DerivationPrefix   *string
 	DerivationSuffix   *string
 	Description        string

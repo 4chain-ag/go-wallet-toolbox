@@ -118,6 +118,7 @@ func TestCreateActionShuffleOutputs(t *testing.T) {
 
 	// and:
 	args := fixtures.DefaultValidCreateActionArgs()
+	args.Options.RandomizeOutputs = true
 
 	commissionOutputVouts := map[uint32]struct{}{}
 	for range 100 {
