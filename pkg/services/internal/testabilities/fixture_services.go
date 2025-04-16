@@ -33,6 +33,8 @@ type WalletServicesFixture interface {
 }
 type WhatsOnChainFixture interface {
 	WillRespondWithRates(status int, content string, err error) WhatsOnChainFixture
+
+	WillRespondWithRawTx(status int, txID, rawTx string, err error) WhatsOnChainFixture
 }
 
 type servicesFixture struct {
@@ -80,6 +82,24 @@ func (s *servicesFixture) NewServicesWithConfig(config configuration.WalletServi
 	s.services = walletServices
 
 	return s.services
+}
+
+func (s *servicesFixture) WillRespondWithRawTx(status int, txID, rawTx string, err error) WhatsOnChainFixture {
+	responder := func(status int, content string) func(req *http.Request) (*http.Response, error) {
+		return func(req *http.Request) (*http.Response, error) {
+			if err != nil {
+				return nil, err
+			}
+			res := httpmock.NewStringResponse(status, content)
+			res.Header.Set("Content-Type", "text/plain")
+			return res, nil
+		}
+	}
+
+	url := fmt.Sprintf("https://api.whatsonchain.com/v1/bsv/test/tx/%s/hex", txID)
+	s.transport.RegisterResponder("GET", url, responder(status, rawTx))
+
+	return s
 }
 
 func (s *servicesFixture) WillRespondWithRates(status int, content string, err error) WhatsOnChainFixture {
