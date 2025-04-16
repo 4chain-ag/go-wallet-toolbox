@@ -119,23 +119,28 @@ func TestCreateActionShuffleOutputs(t *testing.T) {
 	// and:
 	args := fixtures.DefaultValidCreateActionArgs()
 
-	// when:
 	commissionOutputVouts := map[uint32]struct{}{}
 	for range 100 {
+		// when:
 		result, _ := activeStorage.CreateAction(
 			context.Background(),
 			wdk.AuthID{UserID: to.Ptr(testusers.Bob.ID)},
 			args,
 		)
 
+		// then:
 		found := slices.IndexFunc(result.Outputs, func(p wdk.StorageCreateTransactionSdkOutput) bool {
 			return p.Purpose == "storage-commission"
 		})
 		commissionOutputVouts[result.Outputs[found].Vout] = struct{}{}
+
+		if len(commissionOutputVouts) > 1 {
+			t.Log(t, "Random shuffle works! Found commission outputs at different vouts")
+			return
+		}
 	}
 
-	// then:
-	require.Greater(t, len(commissionOutputVouts), 1)
+	t.Error(t, "Expected commission output to be shuffled, but it was not")
 }
 
 func findOutput(
