@@ -135,12 +135,12 @@ func TestCreateActionShuffleOutputs(t *testing.T) {
 		commissionOutputVouts[result.Outputs[found].Vout] = struct{}{}
 
 		if len(commissionOutputVouts) > 1 {
-			t.Log(t, "Random shuffle works! Found commission outputs at different vouts")
+			t.Log("Random shuffle works! Found commission outputs at different vouts")
 			return
 		}
 	}
 
-	t.Error(t, "Expected commission output to be shuffled, but it was not")
+	t.Error("Expected commission output to be shuffled, but it was not")
 }
 
 func findOutput(
