@@ -1,11 +1,12 @@
 package satoshi_test
 
 import (
+	"math"
+	"testing"
+
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/stretchr/testify/require"
-	"math"
-	"testing"
 )
 
 func TestAdd(t *testing.T) {

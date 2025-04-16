@@ -2,9 +2,10 @@ package satoshi
 
 import (
 	"fmt"
+	"reflect"
+
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/go-softwarelab/common/types"
-	"reflect"
 )
 
 type Value int64
