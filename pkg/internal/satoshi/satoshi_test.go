@@ -38,6 +38,29 @@ func TestAdd(t *testing.T) {
 		_, err := satoshi.Add(primitives.MaxSatoshis, primitives.MaxSatoshis)
 		require.Error(t, err)
 	})
+
+	t.Run("add two minimum satoshi values", func(t *testing.T) {
+		_, err := satoshi.Add(-primitives.MaxSatoshis, -primitives.MaxSatoshis)
+		require.Error(t, err)
+	})
+
+	t.Run("add two negative ints", func(t *testing.T) {
+		c, err := satoshi.Add(-1, -2)
+		require.NoError(t, err)
+		require.Equal(t, satoshi.Value(-3), c)
+	})
+
+	t.Run("add zero and int", func(t *testing.T) {
+		c, err := satoshi.Add(0, 5)
+		require.NoError(t, err)
+		require.Equal(t, satoshi.Value(5), c)
+	})
+
+	t.Run("add max satoshis and minus-max-satoshis", func(t *testing.T) {
+		c, err := satoshi.Add(primitives.MaxSatoshis, -primitives.MaxSatoshis)
+		require.NoError(t, err)
+		require.Equal(t, satoshi.Value(0), c)
+	})
 }
 
 func TestSubtract(t *testing.T) {
