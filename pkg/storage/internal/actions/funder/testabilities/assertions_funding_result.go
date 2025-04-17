@@ -3,6 +3,7 @@ package testabilities
 import (
 	"testing"
 
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions"
 	"github.com/go-softwarelab/common/pkg/slices"
 	"github.com/stretchr/testify/assert"
@@ -81,7 +82,7 @@ func (a *funderAssertion) HasAllocatedUTXOs() AllocatedUTXOsAssertion {
 
 func (a *funderAssertion) ForTotalAmount(satoshis uint64) SuccessFundingResultAssertion {
 	a.Helper()
-	total := uint64(0)
+	total := satoshi.Zero()
 	for _, utxo := range a.result.AllocatedUTXOs {
 		total += utxo.Satoshis
 	}
@@ -95,7 +96,7 @@ func (a *funderAssertion) RowIndexes(indexes ...int) SuccessFundingResultAsserti
 		return &actions.UTXO{
 			TxID:     a.fixture.createdUTXOs[index].TxID,
 			Vout:     a.fixture.createdUTXOs[index].Vout,
-			Satoshis: a.fixture.createdUTXOs[index].Satoshis,
+			Satoshis: satoshi.MustFrom(a.fixture.createdUTXOs[index].Satoshis),
 		}
 	})
 

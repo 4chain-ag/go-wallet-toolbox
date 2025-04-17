@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 )
@@ -28,7 +29,7 @@ type NewTx struct {
 type NewOutput struct {
 	LockingScript      *primitives.HexString
 	CustomInstructions *string
-	Satoshis           int64
+	Satoshis           satoshi.Value
 	Basket             *string
 	Spendable          bool
 	Change             bool

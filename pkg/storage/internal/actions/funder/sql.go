@@ -8,6 +8,7 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/txutils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder/errfunder"
@@ -51,7 +52,7 @@ func NewSQL(logger *slog.Logger, utxoRepository UTXORepository, feeModel defs.Fe
 // @param numberOfDesiredUTXOs - the number of UTXOs in basket #TakeFromBasket
 // @param minimumDesiredUTXOValue - the minimum value of UTXO in basket #TakeFromBasket
 // @param userID - the user ID.
-func (f *SQL) Fund(ctx context.Context, targetSat int64, currentTxSize uint64, basket *wdk.TableOutputBasket, userID int) (*actions.FundingResult, error) {
+func (f *SQL) Fund(ctx context.Context, targetSat satoshi.Value, currentTxSize uint64, basket *wdk.TableOutputBasket, userID int) (*actions.FundingResult, error) {
 	existing, err := f.utxoRepository.CountUTXOs(ctx, userID, basket.BasketID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to calculate desired utxo number in basket: %w", err)
@@ -91,13 +92,13 @@ func (f *SQL) loadUTXOs(ctx context.Context, userID int, basketID int) iter.Seq2
 }
 
 type utxoCollector struct {
-	txSats int64
+	txSats satoshi.Value
 	txSize uint64
 
-	fee           int64
+	fee           satoshi.Value
 	feeCalculator *feeCalc
 
-	satsCovered    int64
+	satsCovered    satoshi.Value
 	allocatedUTXOs []*actions.UTXO
 
 	numberOfDesiredUTXOs    uint64
@@ -106,7 +107,7 @@ type utxoCollector struct {
 	minimumChange           uint64
 }
 
-func newCollector(txSats int64, txSize uint64, numberOfDesiredUTXOs int64, minimumDesiredUTXOValue uint64, feeCalculator *feeCalc) (c *utxoCollector, err error) {
+func newCollector(txSats satoshi.Value, txSize uint64, numberOfDesiredUTXOs int64, minimumDesiredUTXOValue uint64, feeCalculator *feeCalc) (c *utxoCollector, err error) {
 	c = &utxoCollector{
 		txSats:                  txSats,
 		minimumDesiredUTXOValue: minimumDesiredUTXOValue,
@@ -159,7 +160,7 @@ func (c *utxoCollector) allocateUTXO(utxo *models.UserUTXO) (err error) {
 		return fmt.Errorf("failed to increase tx size: %w", err)
 	}
 
-	err = c.increaseValue(utxo.Satoshis)
+	err = c.increaseValue(satoshi.MustFrom(utxo.Satoshis))
 	if err != nil {
 		return fmt.Errorf("failed to increase tx value: %w", err)
 	}
@@ -176,7 +177,7 @@ func (c *utxoCollector) addToAllocated(utxo *models.UserUTXO) {
 	c.allocatedUTXOs = append(c.allocatedUTXOs, &actions.UTXO{
 		TxID:     utxo.TxID,
 		Vout:     utxo.Vout,
-		Satoshis: utxo.Satoshis,
+		Satoshis: satoshi.MustFrom(utxo.Satoshis),
 	})
 }
 
@@ -189,33 +190,25 @@ func (c *utxoCollector) increaseSize(size uint64) (err error) {
 	return nil
 }
 
-func (c *utxoCollector) increaseValue(sats uint64) error {
-	satoshis, err := to.Int64FromUnsigned(sats)
+func (c *utxoCollector) increaseValue(sats satoshi.Value) error {
+	var err error
+	c.satsCovered, err = satoshi.Add(c.satsCovered, sats)
 	if err != nil {
-		return fmt.Errorf("utxo satoshis value int64: %w", err)
+		return fmt.Errorf("cannot increase tx value: %w", err)
 	}
-	c.satsCovered += satoshis
 	return nil
 }
 
-func (c *utxoCollector) satsToCover() int64 {
-	return c.txSats + c.fee
+func (c *utxoCollector) satsToCover() satoshi.Value {
+	return satoshi.MustAdd(c.txSats, c.fee)
 }
 
-func (c *utxoCollector) change() int64 {
-	return c.satsCovered - c.satsToCover()
+func (c *utxoCollector) change() satoshi.Value {
+	return satoshi.MustSubtract(c.satsCovered, c.satsToCover())
 }
 
 func (c *utxoCollector) prepareResult() (*actions.FundingResult, error) {
-	fee, err := to.UInt64(c.fee)
-	if err != nil {
-		return nil, fmt.Errorf("cannot convert fee to uint64: %w", err)
-	}
-
-	changeAmount, err := to.UInt64(c.change())
-	if err != nil {
-		return nil, fmt.Errorf("cannot convert change amount to uint64: %w", err)
-	}
+	changeAmount := c.change()
 
 	// If adding a change output increases the fee to the point where no change remains,
 	// the change outputs are discarded, and the additional amount is given as a higher fee to the miner.
@@ -225,7 +218,7 @@ func (c *utxoCollector) prepareResult() (*actions.FundingResult, error) {
 
 	return &actions.FundingResult{
 		AllocatedUTXOs: c.allocatedUTXOs,
-		Fee:            fee,
+		Fee:            c.fee,
 		ChangeAmount:   changeAmount,
 		ChangeCount:    c.changeOutputsCount,
 	}, nil

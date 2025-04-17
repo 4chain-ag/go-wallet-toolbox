@@ -36,7 +36,7 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *entity.Ne
 		for _, output := range newTx.Outputs {
 			out := models.Output{
 				Vout:               output.Vout,
-				Satoshis:           output.Satoshis,
+				Satoshis:           output.Satoshis.Int64(),
 				Spendable:          output.Spendable,
 				Change:             output.Change,
 				ProvidedBy:         string(output.ProvidedBy),
