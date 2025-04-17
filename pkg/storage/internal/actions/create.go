@@ -5,21 +5,26 @@ import (
 	"fmt"
 	"iter"
 	"log/slog"
+	"math/rand/v2"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/txutils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/commission"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/entity"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
+	"github.com/go-softwarelab/common/pkg/must"
+	"github.com/go-softwarelab/common/pkg/optional"
 	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/go-softwarelab/common/pkg/seqerr"
+	"github.com/go-softwarelab/common/pkg/to"
 )
 
 const (
-	derivationPrefixLength = 16
-	referenceLength        = 12
+	derivationLength = 16
+	referenceLength  = 12
 )
 
 type UTXO struct {
@@ -47,23 +52,25 @@ func (fr *FundingResult) TotalAllocated() (satoshi.Value, error) {
 }
 
 type CreateActionParams struct {
-	Version     int
-	LockTime    int
-	Description string
-	Labels      []primitives.StringUnder300
-	Outputs     iter.Seq[*wdk.ValidCreateActionOutput]
-	Inputs      iter.Seq[*wdk.ValidCreateActionInput]
+	Version          int
+	LockTime         int
+	Description      string
+	Labels           []primitives.StringUnder300
+	Outputs          []wdk.ValidCreateActionOutput
+	Inputs           []wdk.ValidCreateActionInput
+	RandomizeOutputs bool
 }
 
 func FromValidCreateActionArgs(args *wdk.ValidCreateActionArgs) CreateActionParams {
 	// TODO: use only the necessary fields (no redundant fields)
 	return CreateActionParams{
-		Version:     args.Version,
-		LockTime:    args.LockTime,
-		Description: string(args.Description),
-		Labels:      args.Labels,
-		Outputs:     seq.PointersFromSlice(args.Outputs),
-		Inputs:      seq.PointersFromSlice(args.Inputs),
+		Version:          args.Version,
+		LockTime:         args.LockTime,
+		Description:      string(args.Description),
+		Labels:           args.Labels,
+		Outputs:          args.Outputs,
+		Inputs:           args.Inputs,
+		RandomizeOutputs: args.Options.RandomizeOutputs,
 	}
 }
 
@@ -82,7 +89,7 @@ type BasketRepo interface {
 }
 
 type TxRepo interface {
-	CreateTransaction(ctx context.Context, transaction *wdk.NewTx) error
+	CreateTransaction(ctx context.Context, transaction *entity.NewTx) error
 }
 
 type create struct {
@@ -120,8 +127,8 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		return nil, fmt.Errorf("basket for change (%s) not found", wdk.BasketNameForChange)
 	}
 
-	xoutputs := params.Outputs
-	xinputs := params.Inputs
+	xoutputs := seq.PointersFromSlice(params.Outputs)
+	xinputs := seq.PointersFromSlice(params.Inputs)
 
 	var commOut *serviceChargeOutput
 	if c.commission != nil {
@@ -147,15 +154,24 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		return nil, fmt.Errorf("funding failed: %w", err)
 	}
 
-	changeDist := txutils.NewChangeDistribution(satoshi.MustFrom(basket.MinimumDesiredUTXOValue), txutils.Rand).
+	changeDistribution := txutils.NewChangeDistribution(satoshi.MustFrom(basket.MinimumDesiredUTXOValue), txutils.Rand).
 		Distribute(funding.ChangeCount, funding.ChangeAmount)
-
-	// TODO: convert change values into outputs
-	_ = changeDist
 
 	derivationPrefix, reference, err := c.randomValues()
 	if err != nil {
 		return nil, err
+	}
+
+	newOutputs, err := c.newOutputs(
+		changeDistribution,
+		funding.ChangeCount,
+		derivationPrefix,
+		params.Outputs,
+		commOut,
+		params.RandomizeOutputs,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new outputs: %w", err)
 	}
 
 	totalAllocated, err := funding.TotalAllocated()
@@ -163,7 +179,7 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		return nil, err
 	}
 
-	err = c.txRepo.CreateTransaction(ctx, &wdk.NewTx{
+	err = c.txRepo.CreateTransaction(ctx, &entity.NewTx{
 		UserID:      userID,
 		Version:     params.Version,
 		LockTime:    params.LockTime,
@@ -172,6 +188,7 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		IsOutgoing:  true,
 		Description: params.Description,
 		Satoshis:    satoshi.MustSubtract(funding.ChangeAmount, totalAllocated).Int64(),
+		Outputs:     newOutputs,
 		Labels:      params.Labels,
 
 		// TODO: inputBEEF
@@ -185,6 +202,7 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		Version:          params.Version,
 		LockTime:         params.LockTime,
 		DerivationPrefix: derivationPrefix,
+		Outputs:          c.resultOutputs(newOutputs),
 	}, nil
 }
 
@@ -246,9 +264,8 @@ func (c *create) txSize(xinputs iter.Seq[*wdk.ValidCreateActionInput], xoutputs 
 }
 
 func (c *create) randomValues() (derivationPrefix string, reference string, err error) {
-	derivationPrefix, err = txutils.RandomBase64(derivationPrefixLength)
+	derivationPrefix, err = randomDerivation()
 	if err != nil {
-		err = fmt.Errorf("failed to generate random derivation prefix: %w", err)
 		return
 	}
 
@@ -259,4 +276,112 @@ func (c *create) randomValues() (derivationPrefix string, reference string, err 
 	}
 
 	return
+}
+
+func (c *create) newOutputs(
+	changeDistribution iter.Seq[satoshi.Value],
+	changeCount uint64,
+	derivationPrefix string,
+	providedOutputs []wdk.ValidCreateActionOutput,
+	commissionOutput *serviceChargeOutput,
+	randomizeOutputs bool,
+) ([]*entity.NewOutput, error) {
+	length := must.ConvertToIntFromUnsigned(changeCount) + len(providedOutputs)
+	if commissionOutput != nil {
+		length++
+	}
+	len32 := must.ConvertToUInt32(length)
+
+	all := make([]*entity.NewOutput, 0, len32)
+
+	for satoshis := range changeDistribution {
+		derivationSuffix, err := randomDerivation()
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate random derivation suffix: %w", err)
+		}
+
+		all = append(all, &entity.NewOutput{
+			Satoshis:         satoshis,
+			Basket:           to.Ptr(wdk.BasketNameForChange),
+			Spendable:        true,
+			Change:           true,
+			ProvidedBy:       wdk.ProvidedByStorage,
+			Type:             wdk.OutputTypeP2PKH,
+			DerivationPrefix: to.Ptr(derivationPrefix),
+			DerivationSuffix: to.Ptr(derivationSuffix),
+		})
+	}
+
+	for _, output := range providedOutputs {
+		all = append(all, &entity.NewOutput{
+			Satoshis:           satoshi.MustFrom(output.Satoshis),
+			Basket:             (*string)(output.Basket),
+			Spendable:          true,
+			Change:             false,
+			ProvidedBy:         wdk.ProvidedByYou,
+			Type:               wdk.OutputTypeCustom,
+			LockingScript:      &output.LockingScript,
+			CustomInstructions: output.CustomInstructions,
+			Description:        string(output.OutputDescription),
+		})
+	}
+
+	if commissionOutput != nil {
+		all = append(all, &entity.NewOutput{
+			LockingScript: to.Ptr(commissionOutput.LockingScript),
+			Satoshis:      satoshi.MustFrom(commissionOutput.Satoshis),
+			Basket:        nil,
+			Spendable:     false,
+			Change:        false,
+			ProvidedBy:    wdk.ProvidedByStorage,
+			Type:          wdk.OutputTypeCustom,
+			Purpose:       wdk.StorageCommissionPurpose,
+		})
+	}
+
+	if randomizeOutputs {
+		rand.Shuffle(len(all), func(i, j int) {
+			all[i], all[j] = all[j], all[i]
+		})
+	}
+
+	for vout := uint32(0); vout < len32; vout++ {
+		all[vout].Vout = vout
+	}
+
+	return all, nil
+}
+
+func (c *create) resultOutputs(newOutputs []*entity.NewOutput) []wdk.StorageCreateTransactionSdkOutput {
+	resultOutputs := make([]wdk.StorageCreateTransactionSdkOutput, len(newOutputs))
+	for i, output := range newOutputs {
+
+		resultOutputs[i] = wdk.StorageCreateTransactionSdkOutput{
+			Vout:             output.Vout,
+			ProvidedBy:       output.ProvidedBy,
+			Purpose:          output.Purpose,
+			DerivationSuffix: output.DerivationSuffix,
+			ValidCreateActionOutput: wdk.ValidCreateActionOutput{
+				Satoshis:           primitives.SatoshiValue(must.ConvertToUInt64(output.Satoshis)),
+				OutputDescription:  primitives.String5to2000Bytes(output.Description),
+				CustomInstructions: output.CustomInstructions,
+				LockingScript:      optional.OfPtr(output.LockingScript).OrZeroValue(),
+			},
+		}
+
+		if output.Basket != nil {
+			resultOutputs[i].Basket = to.Ptr(primitives.StringUnder300(*output.Basket))
+		}
+	}
+
+	return resultOutputs
+}
+
+func randomDerivation() (string, error) {
+	suffix, err := txutils.RandomBase64(derivationLength)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate random derivation: %w", err)
+	}
+
+	return suffix, nil
 }

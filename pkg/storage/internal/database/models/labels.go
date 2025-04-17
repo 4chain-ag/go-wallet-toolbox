@@ -1,10 +1,16 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type Label struct {
-	gorm.Model
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
 
-	Name   string `gorm:"uniqueIndex:idx_name_userid"`
-	UserID int    `gorm:"uniqueIndex:idx_name_userid"`
+	Name   string `gorm:"primarykey"`
+	UserID int    `gorm:"primarykey"`
 }

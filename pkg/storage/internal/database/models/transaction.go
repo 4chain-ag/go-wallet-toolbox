@@ -13,12 +13,13 @@ type Transaction struct {
 	Reference   string
 	IsOutgoing  bool
 	Satoshis    int64
-	Description string
+	Description string `gorm:"type:string"`
 	Version     int
 	LockTime    int
 	TxID        *string
 	InputBeef   []byte
 	RawTx       []byte
 
-	Labels []Label `gorm:"many2many:transaction_labels;"`
+	Outputs []Output `gorm:"foreignKey:TransactionID"`
+	Labels  []Label  `gorm:"many2many:transaction_labels;"`
 }
