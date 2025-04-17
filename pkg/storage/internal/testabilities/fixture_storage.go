@@ -1,6 +1,7 @@
 package testabilities
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -30,7 +31,7 @@ type StorageFixture interface {
 
 	MockProvider() *mocks.MockWalletStorageWriter
 
-	Faucet(user testusers.User) FaucetFixture
+	Faucet(activeStorage *storage.Provider, user testusers.User) FaucetFixture
 }
 
 type FaucetFixture interface {
@@ -84,15 +85,24 @@ func (s *storageFixture) Provider() ProviderFixture {
 	}
 }
 
-func (s *storageFixture) Faucet(user testusers.User) FaucetFixture {
+func (s *storageFixture) Faucet(activeStorage *storage.Provider, user testusers.User) FaucetFixture {
 	s.t.Helper()
+	ctx := context.Background()
+
+	_, err := activeStorage.FindOrInsertUser(ctx, user.PrivKey)
+	s.require.NoError(err)
 
 	funderFixture, _ := testabilities.NewWithDatabase(s.t, s.db)
+
+	basket, err := s.db.CreateRepositories().
+		FindBasketByName(context.Background(), user.ID, wdk.BasketNameForChange)
+	require.NoError(s.t, err)
 
 	return &faucetFixture{
 		t:             s.t,
 		user:          user,
 		funderFixture: funderFixture,
+		basket:        basket,
 	}
 }
 

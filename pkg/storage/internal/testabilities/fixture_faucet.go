@@ -1,6 +1,7 @@
 package testabilities
 
 import (
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
@@ -12,10 +13,16 @@ type faucetFixture struct {
 	t             testing.TB
 	user          testusers.User
 	funderFixture testabilities.FunderFixture
+	basket        *wdk.TableOutputBasket
 }
 
 func (f *faucetFixture) TopUp(satoshis satoshi.Value) {
 	f.t.Helper()
 
-	f.funderFixture.UTXO().OwnedBy(f.user).WithSatoshis(satoshis.Int64()).P2PKH().Stored()
+	f.funderFixture.UTXO().
+		OwnedBy(f.user).
+		InBasket(f.basket).
+		WithSatoshis(satoshis.Int64()).
+		P2PKH().
+		Stored()
 }

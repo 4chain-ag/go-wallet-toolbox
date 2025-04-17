@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/go-softwarelab/common/pkg/slices"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
-	"github.com/go-softwarelab/common/pkg/seq"
 	"gorm.io/gorm"
 )
 
@@ -44,13 +44,13 @@ func (u *Users) CreateUser(ctx context.Context, identityKey, activeStorage strin
 	user := models.User{
 		IdentityKey:   identityKey,
 		ActiveStorage: activeStorage,
-		OutputBaskets: seq.Collect(seq.Map(seq.Of(baskets...), func(basket wdk.BasketConfiguration) *models.OutputBasket {
+		OutputBaskets: slices.Map(baskets, func(basket wdk.BasketConfiguration) *models.OutputBasket {
 			return &models.OutputBasket{
 				Name:                    basket.Name,
 				NumberOfDesiredUTXOs:    basket.NumberOfDesiredUTXOs,
 				MinimumDesiredUTXOValue: basket.MinimumDesiredUTXOValue,
 			}
-		})),
+		}),
 	}
 	err := u.db.WithContext(ctx).Create(&user).Error
 	if err != nil {

@@ -70,7 +70,7 @@ func (p *providerFixture) GORMWithCleanDatabase() *storage.Provider {
 		Chain:      p.network,
 		FeeModel:   p.feeModel,
 		Commission: p.commission,
-	}, storage.WithFunder(&MockFunder{}), storage.WithGORM(p.db.DB))
+	}, storage.WithGORM(p.db.DB))
 	p.require.NoError(err)
 
 	_, err = activeStorage.Migrate(context.Background(), fixtures.StorageName, storageIdentityKey)

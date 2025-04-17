@@ -36,13 +36,16 @@ func TestCreateActionHappyPath(t *testing.T) {
 	activeStorage := given.Provider().GORM()
 
 	// and:
+	given.Faucet(activeStorage, testusers.Alice).TopUp(100_000)
+
+	// and:
 	args := fixtures.DefaultValidCreateActionArgs()
 	providedOutput := args.Outputs[0]
 
 	// when:
 	result, err := activeStorage.CreateAction(
 		context.Background(),
-		wdk.AuthID{UserID: to.Ptr(testusers.Bob.ID)},
+		wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
 		args,
 	)
 
@@ -52,10 +55,12 @@ func TestCreateActionHappyPath(t *testing.T) {
 	assert.Equal(t, 16, len(result.Reference))
 	assert.Equal(t, args.Version, result.Version)
 	assert.Equal(t, args.LockTime, result.LockTime)
-	assert.Equal(t, 1, len(result.Outputs))
+	assert.Equal(t, 32, len(result.Outputs))
 
-	resultOutput := result.Outputs[0]
-	assert.Equal(t, wdk.ProvidedByYou, resultOutput.ProvidedBy)
+	resultOutput, _ := findOutput(t, result.Outputs, func(p wdk.StorageCreateTransactionSdkOutput) bool {
+		return p.ProvidedBy == wdk.ProvidedByYou
+	})
+
 	assert.Empty(t, resultOutput.Purpose)
 	assert.Equal(t, providedOutput.Satoshis, resultOutput.Satoshis)
 	assert.Equal(t, providedOutput.Basket, resultOutput.Basket)
@@ -78,6 +83,9 @@ func TestCreateActionWithCommission(t *testing.T) {
 		GORM()
 
 	// and:
+	given.Faucet(activeStorage, testusers.Alice).TopUp(100_000)
+
+	// and:
 	args := fixtures.DefaultValidCreateActionArgs()
 
 	// when:
@@ -89,7 +97,7 @@ func TestCreateActionWithCommission(t *testing.T) {
 	assert.Equal(t, 16, len(result.Reference))
 	assert.Equal(t, args.Version, result.Version)
 	assert.Equal(t, args.LockTime, result.LockTime)
-	assert.Equal(t, 2, len(result.Outputs))
+	assert.Equal(t, 33, len(result.Outputs))
 
 	commissionOutput, _ := findOutput(t, result.Outputs, func(p wdk.StorageCreateTransactionSdkOutput) bool {
 		return p.Purpose == "storage-commission"
@@ -117,15 +125,20 @@ func TestCreateActionShuffleOutputs(t *testing.T) {
 		GORM()
 
 	// and:
+	faucet := given.Faucet(activeStorage, testusers.Alice)
+
+	// and:
 	args := fixtures.DefaultValidCreateActionArgs()
 	args.Options.RandomizeOutputs = true
 
 	commissionOutputVouts := map[uint32]struct{}{}
 	for range 100 {
 		// when:
+		faucet.TopUp(100_000)
+
 		result, _ := activeStorage.CreateAction(
 			context.Background(),
-			wdk.AuthID{UserID: to.Ptr(testusers.Bob.ID)},
+			wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
 			args,
 		)
 
@@ -142,6 +155,82 @@ func TestCreateActionShuffleOutputs(t *testing.T) {
 	}
 
 	t.Error("Expected commission output to be shuffled, but it was not")
+}
+
+func TestZeroFunds(t *testing.T) {
+	given := testabilities.Given(t)
+
+	// given:
+	activeStorage := given.Provider().GORM()
+
+	// and:
+	args := fixtures.DefaultValidCreateActionArgs()
+
+	// when:
+	_, err := activeStorage.CreateAction(
+		context.Background(),
+		wdk.AuthID{UserID: to.Ptr(testusers.Bob.ID)},
+		args,
+	)
+
+	// then:
+	require.Error(t, err)
+}
+
+func TestInsufficientFunds(t *testing.T) {
+	given := testabilities.Given(t)
+
+	// given:
+	activeStorage := given.Provider().GORM()
+
+	// and:
+	given.Faucet(activeStorage, testusers.Alice).TopUp(1)
+
+	// and:
+	args := fixtures.DefaultValidCreateActionArgs()
+
+	// when:
+	_, err := activeStorage.CreateAction(
+		context.Background(),
+		wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
+		args,
+	)
+
+	// then:
+	require.Error(t, err)
+}
+
+func TestReservedUTXO(t *testing.T) {
+	given := testabilities.Given(t)
+
+	// given:
+	activeStorage := given.Provider().GORM()
+
+	// and:
+	given.Faucet(activeStorage, testusers.Alice).TopUp(100_000)
+
+	// and:
+	args := fixtures.DefaultValidCreateActionArgs()
+
+	// when:
+	_, err := activeStorage.CreateAction(
+		context.Background(),
+		wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
+		args,
+	)
+
+	// then:
+	require.NoError(t, err)
+
+	// when:
+	_, err = activeStorage.CreateAction(
+		context.Background(),
+		wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
+		args,
+	)
+
+	// then:
+	require.Error(t, err)
 }
 
 func findOutput(
