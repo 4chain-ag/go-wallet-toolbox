@@ -1,8 +1,5 @@
 package wdk
 
-// StorageProvidedBy represents who provided the storage
-type StorageProvidedBy string
-
 // StorageCreateTransactionSdkInput represents the input for SDK transaction creation
 type StorageCreateTransactionSdkInput struct {
 	Vin                   int
@@ -12,7 +9,7 @@ type StorageCreateTransactionSdkInput struct {
 	SourceLockingScript   string
 	SourceTransaction     []byte
 	UnlockingScriptLength int
-	ProvidedBy            StorageProvidedBy
+	ProvidedBy            ProvidedBy
 	Type                  string
 	SpendingDescription   *string
 	DerivationPrefix      *string
@@ -24,9 +21,9 @@ type StorageCreateTransactionSdkInput struct {
 type StorageCreateTransactionSdkOutput struct {
 	ValidCreateActionOutput
 	// Additional fields
-	Vout             int
-	ProvidedBy       StorageProvidedBy
-	Purpose          *string
+	Vout             uint32
+	ProvidedBy       ProvidedBy
+	Purpose          string
 	DerivationSuffix *string
 }
 
