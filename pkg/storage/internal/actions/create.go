@@ -3,6 +3,7 @@ package actions
 import (
 	"context"
 	"fmt"
+
 	"iter"
 	"log/slog"
 	"math/rand/v2"
@@ -19,6 +20,7 @@ import (
 	"github.com/go-softwarelab/common/pkg/optional"
 	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/go-softwarelab/common/pkg/seqerr"
+	"github.com/go-softwarelab/common/pkg/slices"
 	"github.com/go-softwarelab/common/pkg/to"
 )
 
@@ -189,7 +191,13 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		Description: params.Description,
 		Satoshis:    satoshi.MustSubtract(funding.ChangeAmount, totalAllocated).Int64(),
 		Outputs:     newOutputs,
-		Labels:      params.Labels,
+		ReservedUTXOs: slices.Map(funding.AllocatedUTXOs, func(utxo *UTXO) *wdk.OutPoint {
+			return &wdk.OutPoint{
+				TxID: utxo.TxID,
+				Vout: utxo.Vout,
+			}
+		}),
+		Labels: params.Labels,
 
 		// TODO: inputBEEF
 	})

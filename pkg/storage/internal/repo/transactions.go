@@ -3,7 +3,6 @@ package repo
 import (
 	"context"
 	"fmt"
-
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/entity"
 	"gorm.io/gorm"
@@ -62,6 +61,14 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *entity.Ne
 			model.Labels = append(model.Labels, models.Label{
 				Name:   string(label),
 				UserID: newTx.UserID,
+			})
+		}
+
+		for _, reserved := range newTx.ReservedUTXOs {
+			model.ReservedUtxos = append(model.ReservedUtxos, models.UserUTXO{
+				UserID: newTx.UserID,
+				TxID:   reserved.TxID,
+				Vout:   reserved.Vout,
 			})
 		}
 
