@@ -1,12 +1,12 @@
 package testabilities
 
 import (
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder/testabilities"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 )
 
 type faucetFixture struct {

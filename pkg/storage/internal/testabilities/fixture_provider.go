@@ -8,7 +8,6 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder/testabilities"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
@@ -29,11 +28,10 @@ type providerFixture struct {
 	commission defs.Commission
 	feeModel   defs.FeeModel
 
-	t             testing.TB
-	require       *require.Assertions
-	logger        *slog.Logger
-	funderFixture testabilities.FunderFixture
-	db            *database.Database
+	t       testing.TB
+	require *require.Assertions
+	logger  *slog.Logger
+	db      *database.Database
 }
 
 func (p *providerFixture) WithNetwork(network defs.BSVNetwork) ProviderFixture {
