@@ -1,6 +1,7 @@
 package satoshi_test
 
 import (
+	"github.com/go-softwarelab/common/pkg/seq"
 	"math"
 	"testing"
 
@@ -211,5 +212,54 @@ func TestFrom(t *testing.T) {
 	t.Run("from other type alias equals max satoshi + 1", func(t *testing.T) {
 		_, err := satoshi.From(otherTypeAlias(primitives.MaxSatoshis + 1))
 		require.Error(t, err)
+	})
+}
+
+func TestSum(t *testing.T) {
+	t.Run("sum of empty sequence", func(t *testing.T) {
+		c, err := satoshi.Sum(seq.Of[int]())
+		require.NoError(t, err)
+		require.Equal(t, satoshi.Value(0), c)
+	})
+
+	t.Run("sum of single element sequence", func(t *testing.T) {
+		c, err := satoshi.Sum(seq.Of(1))
+		require.NoError(t, err)
+		require.Equal(t, satoshi.Value(1), c)
+	})
+
+	t.Run("sum of multiple elements", func(t *testing.T) {
+		c, err := satoshi.Sum(seq.Of(1, 2, 3))
+		require.NoError(t, err)
+		require.Equal(t, satoshi.Value(6), c)
+	})
+
+	t.Run("sum of multiple elements with different signs", func(t *testing.T) {
+		c, err := satoshi.Sum(seq.Of(1, -2, 3))
+		require.NoError(t, err)
+		require.Equal(t, satoshi.Value(2), c)
+	})
+
+	t.Run("sum of multiple max satoshis", func(t *testing.T) {
+		c, err := satoshi.Sum(seq.Of(primitives.MaxSatoshis, -primitives.MaxSatoshis, primitives.MaxSatoshis, -primitives.MaxSatoshis))
+		require.NoError(t, err)
+		require.Equal(t, satoshi.Value(0), c)
+	})
+
+	t.Run("sum exceeding max satoshi value", func(t *testing.T) {
+		_, err := satoshi.Sum(seq.Of(primitives.MaxSatoshis, 1))
+		require.Error(t, err)
+	})
+
+	t.Run("sum of only negative values", func(t *testing.T) {
+		c, err := satoshi.Sum(seq.Of(-1, -2, -3))
+		require.NoError(t, err)
+		require.Equal(t, satoshi.Value(-6), c)
+	})
+
+	t.Run("sum of single max satoshi value", func(t *testing.T) {
+		c, err := satoshi.Sum(seq.Of(primitives.MaxSatoshis))
+		require.NoError(t, err)
+		require.Equal(t, satoshi.Value(primitives.MaxSatoshis), c)
 	})
 }

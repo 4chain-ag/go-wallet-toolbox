@@ -3,6 +3,7 @@ package actions
 import (
 	"context"
 	"fmt"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"iter"
 	"log/slog"
 
@@ -12,10 +13,8 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/commission"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
-	"github.com/go-softwarelab/common/pkg/must"
 	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/go-softwarelab/common/pkg/seqerr"
-	"github.com/go-softwarelab/common/pkg/to"
 )
 
 const (
@@ -26,22 +25,25 @@ const (
 type UTXO struct {
 	TxID     string
 	Vout     uint32
-	Satoshis uint64
+	Satoshis satoshi.Value
 }
 
 type FundingResult struct {
 	AllocatedUTXOs []*UTXO
 	ChangeCount    uint64
-	ChangeAmount   uint64
-	Fee            uint64
+	ChangeAmount   satoshi.Value
+	Fee            satoshi.Value
 }
 
-func (fr *FundingResult) TotalAllocated() uint64 {
-	total := uint64(0)
-	for _, utxo := range fr.AllocatedUTXOs {
-		total += utxo.Satoshis
+func (fr *FundingResult) TotalAllocated() (satoshi.Value, error) {
+	total, err := satoshi.Sum(seq.Map(seq.FromSlice(fr.AllocatedUTXOs), func(utxo *UTXO) satoshi.Value {
+		return utxo.Satoshis
+	}))
+	if err != nil {
+		return 0, fmt.Errorf("failed to sum allocated UTXOs: %w", err)
 	}
-	return total
+
+	return total, nil
 }
 
 type CreateActionParams struct {
@@ -72,7 +74,7 @@ type Funder interface {
 	// @param numberOfDesiredUTXOs - the number of UTXOs in basket #TakeFromBasket
 	// @param minimumDesiredUTXOValue - the minimum value of UTXO in basket #TakeFromBasket
 	// @param userID - the user ID
-	Fund(ctx context.Context, targetSat int64, currentTxSize uint64, basket *wdk.TableOutputBasket, userID int) (*FundingResult, error)
+	Fund(ctx context.Context, targetSat satoshi.Value, currentTxSize uint64, basket *wdk.TableOutputBasket, userID int) (*FundingResult, error)
 }
 
 type BasketRepo interface {
@@ -145,13 +147,18 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		return nil, fmt.Errorf("funding failed: %w", err)
 	}
 
-	changeDist := txutils.NewChangeDistribution(basket.MinimumDesiredUTXOValue, txutils.Rand).
+	changeDist := txutils.NewChangeDistribution(satoshi.MustFrom(basket.MinimumDesiredUTXOValue), txutils.Rand).
 		Distribute(funding.ChangeCount, funding.ChangeAmount)
 
 	// TODO: convert change values into outputs
 	_ = changeDist
 
 	derivationPrefix, reference, err := c.randomValues()
+	if err != nil {
+		return nil, err
+	}
+
+	totalAllocated, err := funding.TotalAllocated()
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +171,7 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		Reference:   reference,
 		IsOutgoing:  true,
 		Description: params.Description,
-		Satoshis:    must.ConvertToInt64FromUnsigned(funding.ChangeAmount) - must.ConvertToInt64FromUnsigned(funding.TotalAllocated()),
+		Satoshis:    satoshi.MustSubtract(funding.ChangeAmount, totalAllocated).Int64(),
 		Labels:      params.Labels,
 
 		// TODO: inputBEEF
@@ -202,20 +209,23 @@ func (c *create) createCommissionOutput() (*serviceChargeOutput, error) {
 	}, nil
 }
 
-func (c *create) targetSat(_ iter.Seq[*wdk.ValidCreateActionInput], xoutputs iter.Seq[*wdk.ValidCreateActionOutput]) (int64, error) {
-	providedInputs := int64(0)
+func (c *create) targetSat(_ iter.Seq[*wdk.ValidCreateActionInput], xoutputs iter.Seq[*wdk.ValidCreateActionOutput]) (satoshi.Value, error) {
+	providedInputs := satoshi.Zero()
 	// TODO: sum provided inputs satoshis - but first the values should be found
 
-	providedOutputs := int64(0)
-	for output := range xoutputs {
-		satInt64, err := to.Int64FromUnsigned(output.Satoshis)
-		if err != nil {
-			return 0, fmt.Errorf("failed to convert satoshis to int64: %w", err)
-		}
-		providedOutputs += satInt64
+	providedOutputs, err := satoshi.Sum(seq.Map(xoutputs, func(output *wdk.ValidCreateActionOutput) primitives.SatoshiValue {
+		return output.Satoshis
+	}))
+	if err != nil {
+		return 0, fmt.Errorf("failed to sum provided outputs' satoshis: %w", err)
 	}
 
-	return providedOutputs - providedInputs, nil
+	sub, err := satoshi.Subtract(providedOutputs, providedInputs)
+	if err != nil {
+		return 0, fmt.Errorf("failed to subtract commission from provided outputs: %w", err)
+	}
+
+	return sub, nil
 }
 
 func (c *create) txSize(xinputs iter.Seq[*wdk.ValidCreateActionInput], xoutputs iter.Seq[*wdk.ValidCreateActionOutput]) (uint64, error) {

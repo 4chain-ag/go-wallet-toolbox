@@ -2,12 +2,12 @@ package funder_test
 
 import (
 	"context"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder/testabilities"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
-	"github.com/go-softwarelab/common/pkg/must"
 )
 
 func TestFunderSQLFund(t *testing.T) {
@@ -17,7 +17,7 @@ func TestFunderSQLFund(t *testing.T) {
 
 	testCasesErrors := map[string]struct {
 		thereAreUTXOInDB func(testabilities.FunderFixture, *wdk.TableOutputBasket)
-		targetSatoshis   int64
+		targetSatoshis   satoshi.Value
 		txSize           uint64
 	}{
 		"return error when user has no utxo": {
@@ -111,7 +111,7 @@ func TestFunderSQLFund(t *testing.T) {
 	// those are the test cases for handling such transactions with inputs.
 	testCasesForFundingWithoutAllocatingUTXO := map[string]struct {
 		possessedUTXOs int64
-		targetSatoshis int64
+		targetSatoshis satoshi.Value
 		txSize         uint64
 		expectations   func(testabilities.SuccessFundingResultAssertion)
 	}{
@@ -195,7 +195,7 @@ func TestFunderSQLFund(t *testing.T) {
 
 	testCasesFundWholeTransaction := map[string]struct {
 		havingUTXOsInDB func(testabilities.FunderFixture, *wdk.TableOutputBasket)
-		targetSatoshis  int64
+		targetSatoshis  satoshi.Value
 		txSize          uint64
 		expectations    func(testabilities.SuccessFundingResultAssertion)
 	}{
@@ -476,7 +476,7 @@ func TestFunderSQLFund(t *testing.T) {
 
 			// and: targetSatoshis should cover the fee and the expected change value
 			// and it must be negative to simulate that user provides by himself the inputs to cover those values.
-			targetSatoshis := must.ConvertToInt64(-(test.expectedChangeValue + fee))
+			targetSatoshis := -satoshi.MustAdd(test.expectedChangeValue, fee)
 
 			// and:
 			given, then, cleanup := testabilities.New(t)

@@ -2,6 +2,7 @@ package funder
 
 import (
 	"fmt"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"math"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
@@ -33,7 +34,7 @@ func newFeeCalculator(model defs.FeeModel) *feeCalc {
 	}
 }
 
-func (f *feeCalc) Calculate(txSize uint64) (int64, error) {
+func (f *feeCalc) Calculate(txSize uint64) (satoshi.Value, error) {
 	size, err := to.Float64FromUnsigned(txSize)
 	if err != nil {
 		return 0, fmt.Errorf("invalid transaction size: %w", err)
@@ -46,5 +47,10 @@ func (f *feeCalc) Calculate(txSize uint64) (int64, error) {
 		return 0, fmt.Errorf("failed to calculate fee value: %w", err)
 	}
 
-	return fee, nil
+	sats, err := satoshi.From(fee)
+	if err != nil {
+		return 0, fmt.Errorf("failed to convert fee to satoshi: %w", err)
+	}
+
+	return sats, nil
 }

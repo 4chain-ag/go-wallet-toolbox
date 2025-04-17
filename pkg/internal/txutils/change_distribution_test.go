@@ -1,6 +1,7 @@
 package txutils
 
 import (
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"slices"
 	"testing"
 
@@ -29,109 +30,109 @@ func mockConstRandomizer(factors ...uint64) Randomizer {
 
 func TestChangeDistribution(t *testing.T) {
 	tests := map[string]struct {
-		initialValue uint64
+		initialValue satoshi.Value
 		randomizer   func(uint64) uint64
 		count        uint64
-		amount       uint64
-		expected     []uint64
+		amount       satoshi.Value
+		expected     []satoshi.Value
 	}{
 		"single output": {
 			initialValue: 1000,
 			randomizer:   mockZeroRandomizer,
 			count:        1,
 			amount:       5500,
-			expected:     []uint64{5500},
+			expected:     []satoshi.Value{5500},
 		},
 		"single output with one satoshi": {
 			initialValue: 1000,
 			randomizer:   mockZeroRandomizer,
 			count:        1,
 			amount:       1,
-			expected:     []uint64{1},
+			expected:     []satoshi.Value{1},
 		},
 		"zero outputs": {
 			initialValue: 1000,
 			randomizer:   mockZeroRandomizer,
 			count:        0,
 			amount:       5500,
-			expected:     []uint64(nil),
+			expected:     []satoshi.Value(nil),
 		},
 		"zero amount": {
 			initialValue: 1000,
 			randomizer:   mockZeroRandomizer,
 			count:        6,
 			amount:       0,
-			expected:     []uint64(nil),
+			expected:     []satoshi.Value(nil),
 		},
 		"zero amount & zero count": {
 			initialValue: 1000,
 			randomizer:   mockZeroRandomizer,
 			count:        0,
 			amount:       0,
-			expected:     []uint64(nil),
+			expected:     []satoshi.Value(nil),
 		},
 		"not saturated: reminder + (count-1) * initialValue": {
 			initialValue: 1000,
 			randomizer:   mockZeroRandomizer,
 			count:        6,
 			amount:       5500,
-			expected:     []uint64{500, 1000, 1000, 1000, 1000, 1000},
+			expected:     []satoshi.Value{500, 1000, 1000, 1000, 1000, 1000},
 		},
 		"not saturated: initialValue/4 + (count-1) * initialValue": {
 			initialValue: 1000,
 			randomizer:   mockZeroRandomizer,
 			count:        6,
 			amount:       5250,
-			expected:     []uint64{250, 1000, 1000, 1000, 1000, 1000},
+			expected:     []satoshi.Value{250, 1000, 1000, 1000, 1000, 1000},
 		},
 		"equally saturated: (count) * initialValue": {
 			initialValue: 1000,
 			randomizer:   mockZeroRandomizer,
 			count:        6,
 			amount:       6000,
-			expected:     []uint64{1000, 1000, 1000, 1000, 1000, 1000},
+			expected:     []satoshi.Value{1000, 1000, 1000, 1000, 1000, 1000},
 		},
 		"saturated: equal distribution +1": {
 			initialValue: 1000,
 			randomizer:   mockMaxRandomizer,
 			count:        6,
 			amount:       6001,
-			expected:     []uint64{1000, 1000, 1000, 1000, 1000, 1001},
+			expected:     []satoshi.Value{1000, 1000, 1000, 1000, 1000, 1001},
 		},
 		"saturated: equal distribution": {
 			initialValue: 1000,
 			randomizer:   mockZeroRandomizer,
 			count:        6,
 			amount:       7200,
-			expected:     []uint64{1200, 1200, 1200, 1200, 1200, 1200},
+			expected:     []satoshi.Value{1200, 1200, 1200, 1200, 1200, 1200},
 		},
 		"saturated: not equal distribution": {
 			initialValue: 1000,
 			randomizer:   mockZeroRandomizer,
 			count:        6,
 			amount:       7201,
-			expected:     []uint64{1201, 1200, 1200, 1200, 1200, 1200},
+			expected:     []satoshi.Value{1201, 1200, 1200, 1200, 1200, 1200},
 		},
 		"saturated: not equal distribution - mockMaxRandomizer": {
 			initialValue: 1000,
 			randomizer:   mockMaxRandomizer,
 			count:        6,
 			amount:       7205,
-			expected:     []uint64{1200, 1200, 1200, 1200, 1200, 1205},
+			expected:     []satoshi.Value{1200, 1200, 1200, 1200, 1200, 1205},
 		},
 		"saturated: not equal distribution - constRandomizer": {
 			initialValue: 1000,
 			randomizer:   mockConstRandomizer(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
 			count:        6,
 			amount:       7205,
-			expected:     []uint64{1305, 1260, 1220, 1180, 1140, 1100},
+			expected:     []satoshi.Value{1305, 1260, 1220, 1180, 1140, 1100},
 		},
 		"saturated: zero initialValue": {
 			initialValue: 0,
 			randomizer:   mockMaxRandomizer,
 			count:        6,
 			amount:       7201,
-			expected:     []uint64{1200, 1200, 1200, 1200, 1200, 1201},
+			expected:     []satoshi.Value{1200, 1200, 1200, 1200, 1200, 1201},
 		},
 
 		"not saturated, minimal value: 1 + (count-1) * initialValue": {
@@ -139,7 +140,7 @@ func TestChangeDistribution(t *testing.T) {
 			randomizer:   mockZeroRandomizer,
 			count:        6,
 			amount:       5001,
-			expected:     []uint64{1, 1000, 1000, 1000, 1000, 1000},
+			expected:     []satoshi.Value{1, 1000, 1000, 1000, 1000, 1000},
 		},
 	}
 	for name, test := range tests {
@@ -158,10 +159,10 @@ func TestChangeDistribution(t *testing.T) {
 
 func TestChangeDistributionPanics(t *testing.T) {
 	tests := map[string]struct {
-		initialValue uint64
+		initialValue satoshi.Value
 		randomizer   func(uint64) uint64
 		count        uint64
-		amount       uint64
+		amount       satoshi.Value
 	}{
 		"reduced count: (count-1) * initialValue": {
 			initialValue: 1000,
@@ -200,21 +201,21 @@ func TestChangeDistributionPanics(t *testing.T) {
 
 func TestChangeDistributionWithActualRandomizer(t *testing.T) {
 	// given:
-	initialValue := uint64(1000)
+	initialValue := satoshi.Value(1000)
 	count := uint64(1000)
 
 	// and:
 	dist := NewChangeDistribution(initialValue, Rand)
 
 	// when:
-	values := dist.Distribute(count, 2*count*initialValue)
+	values := dist.Distribute(count, satoshi.MustMultiply(2*count, initialValue))
 
 	// then:
 	var i uint64
 	var equalsToInitial uint64
 	for v := range values {
 		assert.GreaterOrEqual(t, v, initialValue, "value was randomized wrongly - it should be greater or equal to initialValue")
-		if v == initialValue {
+		if satoshi.MustEqual(v, initialValue) {
 			equalsToInitial++
 		}
 		i++
