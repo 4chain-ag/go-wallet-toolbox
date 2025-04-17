@@ -187,17 +187,17 @@ func Validate[T types.Integer](value T) error {
 
 func validateInt[T ~int | ~int64](value T) error {
 	if value > primitives.MaxSatoshis {
-		return fmt.Errorf("satoshi value exceeded max value")
+		return fmt.Errorf("satoshi value %d exceeded max value %d", value, primitives.MaxSatoshis)
 	}
 	if value < -primitives.MaxSatoshis {
-		return fmt.Errorf("negative satoshi value exceeded max value")
+		return fmt.Errorf("satoshi value %d is less than minimum allowed value %d", value, -primitives.MaxSatoshis)
 	}
 	return nil
 }
 
 func validateUint[T ~uint | ~uint64](value T) error {
 	if value > primitives.MaxSatoshis {
-		return fmt.Errorf("satoshi value exceeded max value")
+		return fmt.Errorf("satoshi value %d exceeded max value %d", value, primitives.MaxSatoshis)
 	}
 	return nil
 }
