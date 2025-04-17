@@ -263,3 +263,139 @@ func TestSum(t *testing.T) {
 		require.Equal(t, satoshi.Value(primitives.MaxSatoshis), c)
 	})
 }
+
+func TestMultiply(t *testing.T) {
+	t.Run("multiply two ints", func(t *testing.T) {
+		res, err := satoshi.Multiply(2, 3)
+		require.NoError(t, err)
+		require.Equal(t, satoshi.Value(6), res)
+	})
+
+	t.Run("multiplication overflow", func(t *testing.T) {
+		_, err := satoshi.Multiply(primitives.MaxSatoshis, 2)
+		require.Error(t, err)
+	})
+
+	t.Run("multiply two int64 values", func(t *testing.T) {
+		res, err := satoshi.Multiply(int64(3), int64(4))
+		require.NoError(t, err)
+		require.Equal(t, satoshi.Value(12), res)
+	})
+
+	t.Run("multiply int and int64", func(t *testing.T) {
+		res, err := satoshi.Multiply(3, int64(5))
+		require.NoError(t, err)
+		require.Equal(t, satoshi.Value(15), res)
+	})
+
+	t.Run("multiply uint and int", func(t *testing.T) {
+		res, err := satoshi.Multiply(uint(2), 4)
+		require.NoError(t, err)
+		require.Equal(t, satoshi.Value(8), res)
+	})
+
+	t.Run("multiply uint64 and int", func(t *testing.T) {
+		res, err := satoshi.Multiply(uint64(2), 4)
+		require.NoError(t, err)
+		require.Equal(t, satoshi.Value(8), res)
+	})
+
+	t.Run("multiply negative and positive", func(t *testing.T) {
+		res, err := satoshi.Multiply(-2, 4)
+		require.NoError(t, err)
+		require.Equal(t, satoshi.Value(-8), res)
+	})
+}
+
+func TestMustMultiply(t *testing.T) {
+	t.Run("must multiply happy case", func(t *testing.T) {
+		res := satoshi.MustMultiply(4, 5)
+		require.Equal(t, satoshi.Value(20), res)
+	})
+
+	t.Run("must multiply panics on overflow", func(t *testing.T) {
+		require.Panics(t, func() {
+			_ = satoshi.MustMultiply(primitives.MaxSatoshis, 2)
+		})
+	})
+}
+
+func TestEqual(t *testing.T) {
+	t.Run("equal numbers", func(t *testing.T) {
+		eq, err := satoshi.Equal(10, 10)
+		require.NoError(t, err)
+		require.True(t, eq)
+	})
+
+	t.Run("unequal numbers", func(t *testing.T) {
+		eq, err := satoshi.Equal(10, 20)
+		require.NoError(t, err)
+		require.False(t, eq)
+	})
+
+	t.Run("equal with different types", func(t *testing.T) {
+		eq, err := satoshi.Equal(10, int64(10))
+		require.NoError(t, err)
+		require.True(t, eq)
+	})
+
+	t.Run("equal with max satoshis", func(t *testing.T) {
+		eq, err := satoshi.Equal(primitives.MaxSatoshis, primitives.MaxSatoshis)
+		require.NoError(t, err)
+		require.True(t, eq)
+	})
+
+	t.Run("equal with negative max satoshis", func(t *testing.T) {
+		eq, err := satoshi.Equal(-primitives.MaxSatoshis, -primitives.MaxSatoshis)
+		require.NoError(t, err)
+		require.True(t, eq)
+	})
+
+	t.Run("try equal with max satoshis + 1", func(t *testing.T) {
+		_, err := satoshi.Equal(0, primitives.MaxSatoshis+1)
+		require.Error(t, err)
+	})
+}
+
+// Added tests for MustEqual
+func TestMustEqual(t *testing.T) {
+	t.Run("must equal happy case", func(t *testing.T) {
+		eq := satoshi.MustEqual(15, 15)
+		require.True(t, eq)
+	})
+
+	t.Run("try must equal with max satoshis + 1", func(t *testing.T) {
+		require.Panics(t, func() {
+			_ = satoshi.MustEqual(0, primitives.MaxSatoshis+1)
+		})
+	})
+}
+
+func TestUInt64(t *testing.T) {
+	t.Run("positive value", func(t *testing.T) {
+		v := satoshi.Value(100)
+		u, err := v.UInt64()
+		require.NoError(t, err)
+		require.Equal(t, uint64(100), u)
+	})
+
+	t.Run("negative value", func(t *testing.T) {
+		v := satoshi.Value(-50)
+		u, err := v.UInt64()
+		require.Error(t, err)
+		require.Equal(t, uint64(0), u)
+	})
+}
+
+func TestMustUInt64(t *testing.T) {
+	t.Run("must uint64 happy case", func(t *testing.T) {
+		v := satoshi.Value(200)
+		require.Equal(t, uint64(200), v.MustUInt64())
+	})
+
+	t.Run("must uint64 panics on negative", func(t *testing.T) {
+		require.Panics(t, func() {
+			_ = satoshi.Value(-1).MustUInt64()
+		})
+	})
+}
