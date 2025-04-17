@@ -2,6 +2,7 @@ package testabilities
 
 import (
 	"context"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
 	"log/slog"
 	"testing"
 
@@ -59,7 +60,7 @@ func (p *providerFixture) GORM() *storage.Provider {
 func (p *providerFixture) GORMWithCleanDatabase() *storage.Provider {
 	p.t.Helper()
 
-	storageIdentityKey, err := wdk.IdentityKey(StorageServerPrivKey)
+	storageIdentityKey, err := wdk.IdentityKey(fixtures.StorageServerPrivKey)
 	p.require.NoError(err)
 
 	dbConfig := dbfixtures.DBConfigForTests()
@@ -72,7 +73,7 @@ func (p *providerFixture) GORMWithCleanDatabase() *storage.Provider {
 	}, storage.WithFunder(&MockFunder{}))
 	p.require.NoError(err)
 
-	_, err = activeStorage.Migrate(context.Background(), StorageName, storageIdentityKey)
+	_, err = activeStorage.Migrate(context.Background(), fixtures.StorageName, storageIdentityKey)
 	p.require.NoError(err)
 
 	return activeStorage

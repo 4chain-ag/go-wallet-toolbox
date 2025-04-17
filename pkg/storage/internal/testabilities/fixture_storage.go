@@ -1,6 +1,7 @@
 package testabilities
 
 import (
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -14,13 +15,6 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-)
-
-const (
-	StorageServerPrivKey = "8143f5ed6c5b41c3d084d39d49e161d8dde4b50b0685a4e4ac23959d3b8a319b"
-	StorageIdentityKey   = "028f2daab7808b79368d99eef1ebc2d35cdafe3932cafe3d83cf17837af034ec29" // that matches StorageServerPrivKey
-	StorageName          = "test-storage"
-	StorageHandlerName   = "storage_server"
 )
 
 type StorageFixture interface {
@@ -41,7 +35,7 @@ type storageFixture struct {
 
 func (s *storageFixture) StartedRPCServerFor(provider wdk.WalletStorageWriter) (cleanup func()) {
 	s.t.Helper()
-	rpcServer := server.NewRPCHandler(s.logger, StorageHandlerName, provider)
+	rpcServer := server.NewRPCHandler(s.logger, fixtures.StorageHandlerName, provider)
 
 	mux := http.NewServeMux()
 	rpcServer.Register(mux)
