@@ -1,12 +1,12 @@
 package satoshi_test
 
 import (
-	"github.com/go-softwarelab/common/pkg/seq"
 	"math"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
+	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/stretchr/testify/require"
 )
 

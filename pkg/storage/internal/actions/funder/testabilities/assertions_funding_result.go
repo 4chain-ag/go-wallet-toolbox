@@ -1,9 +1,9 @@
 package testabilities
 
 import (
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"testing"
 
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions"
 	"github.com/go-softwarelab/common/pkg/slices"
 	"github.com/stretchr/testify/assert"

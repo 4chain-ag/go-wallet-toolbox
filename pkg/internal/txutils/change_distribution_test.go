@@ -1,10 +1,10 @@
 package txutils
 
 import (
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"slices"
 	"testing"
 
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

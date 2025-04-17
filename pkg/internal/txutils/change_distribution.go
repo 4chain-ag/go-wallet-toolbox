@@ -3,10 +3,10 @@ package txutils
 import (
 	"crypto/rand"
 	"fmt"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"iter"
 	"math/big"
 
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"github.com/go-softwarelab/common/pkg/must"
 	"github.com/go-softwarelab/common/pkg/seq"
 )
