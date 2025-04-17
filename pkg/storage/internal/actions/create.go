@@ -3,7 +3,6 @@ package actions
 import (
 	"context"
 	"fmt"
-
 	"iter"
 	"log/slog"
 	"math/rand/v2"

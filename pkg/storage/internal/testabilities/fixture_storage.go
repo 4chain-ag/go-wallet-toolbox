@@ -1,17 +1,22 @@
 package testabilities
 
 import (
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/mocks"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder/testabilities"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/server"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/dbfixtures"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -24,6 +29,12 @@ type StorageFixture interface {
 	RPCClient() (*storage.WalletStorageWriterClient, func())
 
 	MockProvider() *mocks.MockWalletStorageWriter
+
+	Faucet(user testusers.User) FaucetFixture
+}
+
+type FaucetFixture interface {
+	TopUp(satoshis satoshi.Value)
 }
 
 type storageFixture struct {
@@ -31,6 +42,7 @@ type storageFixture struct {
 	require    *require.Assertions
 	logger     *slog.Logger
 	testServer *httptest.Server
+	db         *database.Database
 }
 
 func (s *storageFixture) StartedRPCServerFor(provider wdk.WalletStorageWriter) (cleanup func()) {
@@ -64,6 +76,7 @@ func (s *storageFixture) Provider() ProviderFixture {
 		t:       s.t,
 		require: s.require,
 		logger:  s.logger,
+		db:      s.db,
 
 		network:    defs.NetworkTestnet,
 		commission: defs.Commission{},
@@ -71,10 +84,24 @@ func (s *storageFixture) Provider() ProviderFixture {
 	}
 }
 
+func (s *storageFixture) Faucet(user testusers.User) FaucetFixture {
+	s.t.Helper()
+
+	funderFixture, _ := testabilities.NewWithDatabase(s.t, s.db)
+
+	return &faucetFixture{
+		t:             s.t,
+		user:          user,
+		funderFixture: funderFixture,
+	}
+}
+
 func Given(t testing.TB) StorageFixture {
+	db, _ := dbfixtures.TestDatabase(t)
 	return &storageFixture{
 		t:       t,
 		require: require.New(t),
 		logger:  logging.NewTestLogger(t),
+		db:      db,
 	}
 }
