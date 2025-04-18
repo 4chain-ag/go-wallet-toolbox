@@ -6,8 +6,9 @@ import (
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/dbfixtures"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/stretchr/testify/require"
@@ -30,6 +31,7 @@ type providerFixture struct {
 	t       testing.TB
 	require *require.Assertions
 	logger  *slog.Logger
+	db      *database.Database
 }
 
 func (p *providerFixture) WithNetwork(network defs.BSVNetwork) ProviderFixture {
@@ -59,20 +61,17 @@ func (p *providerFixture) GORM() *storage.Provider {
 func (p *providerFixture) GORMWithCleanDatabase() *storage.Provider {
 	p.t.Helper()
 
-	storageIdentityKey, err := wdk.IdentityKey(StorageServerPrivKey)
+	storageIdentityKey, err := wdk.IdentityKey(fixtures.StorageServerPrivKey)
 	p.require.NoError(err)
 
-	dbConfig := dbfixtures.DBConfigForTests()
-
 	activeStorage, err := storage.NewGORMProvider(p.logger, storage.GORMProviderConfig{
-		DB:         dbConfig,
 		Chain:      p.network,
 		FeeModel:   p.feeModel,
 		Commission: p.commission,
-	}, storage.WithFunder(&MockFunder{}))
+	}, storage.WithGORM(p.db.DB))
 	p.require.NoError(err)
 
-	_, err = activeStorage.Migrate(context.Background(), StorageName, storageIdentityKey)
+	_, err = activeStorage.Migrate(context.Background(), fixtures.StorageName, storageIdentityKey)
 	p.require.NoError(err)
 
 	return activeStorage

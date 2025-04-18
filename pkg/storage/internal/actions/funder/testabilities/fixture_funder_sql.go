@@ -9,7 +9,6 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/dbfixtures"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/stretchr/testify/require"
 )
@@ -33,13 +32,12 @@ type funderFixture struct {
 	createdUTXOs []*models.UserUTXO
 }
 
-func newFixture(t testing.TB) (given FunderFixture, cleanup func()) {
-	db, dbCleanup := dbfixtures.TestDatabase(t)
+func newFixture(t testing.TB, db *database.Database) FunderFixture {
 	return &funderFixture{
 		t:            t,
 		db:           db,
 		createdUTXOs: make([]*models.UserUTXO, 0),
-	}, dbCleanup
+	}
 }
 
 func (f *funderFixture) NewFunderService() *funder.SQL {

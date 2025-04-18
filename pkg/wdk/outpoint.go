@@ -5,5 +5,5 @@ type OutPoint struct {
 	// TxID Transaction double sha256 hash as big endian hex string
 	TxID string
 	// Vout Zero based output index within the transaction
-	Vout int
+	Vout uint32
 }
