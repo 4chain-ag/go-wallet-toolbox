@@ -19,7 +19,7 @@ func NewUTXOs(db *gorm.DB) *UTXOs {
 	}
 }
 
-func (u *UTXOs) FindFreeUTXOs(ctx context.Context, userID int, basketID int, page *paging.Page) ([]*models.UserUTXO, error) {
+func (u *UTXOs) FindNotReservedUTXOs(ctx context.Context, userID int, basketID int, page *paging.Page) ([]*models.UserUTXO, error) {
 	var result []*models.UserUTXO
 	err := u.db.WithContext(ctx).
 		Scopes(scopes.UserID(userID), scopes.BasketID(basketID), scopes.Paginate(page), notReserved()).

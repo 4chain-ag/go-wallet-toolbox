@@ -25,7 +25,7 @@ var changeOutputSize = txutils.P2PKHOutputSize
 const utxoBatchSize = 1000
 
 type UTXORepository interface {
-	FindFreeUTXOs(ctx context.Context, userID int, basketID int, page *paging.Page) ([]*models.UserUTXO, error)
+	FindNotReservedUTXOs(ctx context.Context, userID int, basketID int, page *paging.Page) ([]*models.UserUTXO, error)
 	CountUTXOs(ctx context.Context, userID int, basketID int) (int64, error)
 }
 
@@ -76,7 +76,7 @@ func (f *SQL) Fund(ctx context.Context, targetSat satoshi.Value, currentTxSize u
 func (f *SQL) loadUTXOs(ctx context.Context, userID int, basketID int) iter.Seq2[*models.UserUTXO, error] {
 	batches := seqerr.ProduceWithArg(
 		func(page *paging.Page) ([]*models.UserUTXO, *paging.Page, error) {
-			utxos, err := f.utxoRepository.FindFreeUTXOs(ctx, userID, basketID, page)
+			utxos, err := f.utxoRepository.FindNotReservedUTXOs(ctx, userID, basketID, page)
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to load utxos: %w", err)
 			}
