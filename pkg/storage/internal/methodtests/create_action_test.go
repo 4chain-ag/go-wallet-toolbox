@@ -7,10 +7,11 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/testabilities"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
+	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/go-softwarelab/common/pkg/to"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,13 +37,16 @@ func TestCreateActionHappyPath(t *testing.T) {
 	activeStorage := given.Provider().GORM()
 
 	// and:
+	given.Faucet(activeStorage, testusers.Alice).TopUp(100_000)
+
+	// and:
 	args := fixtures.DefaultValidCreateActionArgs()
 	providedOutput := args.Outputs[0]
 
 	// when:
 	result, err := activeStorage.CreateAction(
 		context.Background(),
-		wdk.AuthID{UserID: to.Ptr(testusers.Bob.ID)},
+		wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
 		args,
 	)
 
@@ -52,10 +56,12 @@ func TestCreateActionHappyPath(t *testing.T) {
 	assert.Equal(t, 16, len(result.Reference))
 	assert.Equal(t, args.Version, result.Version)
 	assert.Equal(t, args.LockTime, result.LockTime)
-	assert.Equal(t, 1, len(result.Outputs))
+	assert.Equal(t, 32, len(result.Outputs))
+	assert.Equal(t, 31, countOutputsWithCondition(t, result.Outputs, providedByStorageCondition))
+	assert.Equal(t, primitives.SatoshiValue(57_998), sumOutputsWithCondition(t, result.Outputs, providedByStorageCondition))
 
-	resultOutput := result.Outputs[0]
-	assert.Equal(t, wdk.ProvidedByYou, resultOutput.ProvidedBy)
+	resultOutput, _ := findOutput(t, result.Outputs, providedByYouCondition)
+
 	assert.Empty(t, resultOutput.Purpose)
 	assert.Equal(t, providedOutput.Satoshis, resultOutput.Satoshis)
 	assert.Equal(t, providedOutput.Basket, resultOutput.Basket)
@@ -78,6 +84,9 @@ func TestCreateActionWithCommission(t *testing.T) {
 		GORM()
 
 	// and:
+	given.Faucet(activeStorage, testusers.Alice).TopUp(100_000)
+
+	// and:
 	args := fixtures.DefaultValidCreateActionArgs()
 
 	// when:
@@ -89,11 +98,11 @@ func TestCreateActionWithCommission(t *testing.T) {
 	assert.Equal(t, 16, len(result.Reference))
 	assert.Equal(t, args.Version, result.Version)
 	assert.Equal(t, args.LockTime, result.LockTime)
-	assert.Equal(t, 2, len(result.Outputs))
+	assert.Equal(t, 33, len(result.Outputs))
+	assert.Equal(t, 32, countOutputsWithCondition(t, result.Outputs, providedByStorageCondition))
+	assert.Equal(t, primitives.SatoshiValue(57_998), sumOutputsWithCondition(t, result.Outputs, providedByStorageCondition))
 
-	commissionOutput, _ := findOutput(t, result.Outputs, func(p wdk.StorageCreateTransactionSdkOutput) bool {
-		return p.Purpose == "storage-commission"
-	})
+	commissionOutput, _ := findOutput(t, result.Outputs, commissionOutputCondition)
 	assert.Equal(t, primitives.SatoshiValue(10), commissionOutput.Satoshis)
 	assert.Nil(t, commissionOutput.Basket)
 	assert.Equal(t, wdk.ProvidedByStorage, commissionOutput.ProvidedBy)
@@ -117,22 +126,24 @@ func TestCreateActionShuffleOutputs(t *testing.T) {
 		GORM()
 
 	// and:
+	faucet := given.Faucet(activeStorage, testusers.Alice)
+
+	// and:
 	args := fixtures.DefaultValidCreateActionArgs()
 	args.Options.RandomizeOutputs = true
 
 	commissionOutputVouts := map[uint32]struct{}{}
 	for range 100 {
 		// when:
+		faucet.TopUp(100_000)
+
 		result, _ := activeStorage.CreateAction(
 			context.Background(),
-			wdk.AuthID{UserID: to.Ptr(testusers.Bob.ID)},
+			wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
 			args,
 		)
 
-		// then:
-		found := slices.IndexFunc(result.Outputs, func(p wdk.StorageCreateTransactionSdkOutput) bool {
-			return p.Purpose == "storage-commission"
-		})
+		found := slices.IndexFunc(result.Outputs, commissionOutputCondition)
 		commissionOutputVouts[result.Outputs[found].Vout] = struct{}{}
 
 		if len(commissionOutputVouts) > 1 {
@@ -142,6 +153,82 @@ func TestCreateActionShuffleOutputs(t *testing.T) {
 	}
 
 	t.Error("Expected commission output to be shuffled, but it was not")
+}
+
+func TestZeroFunds(t *testing.T) {
+	given := testabilities.Given(t)
+
+	// given:
+	activeStorage := given.Provider().GORM()
+
+	// and:
+	args := fixtures.DefaultValidCreateActionArgs()
+
+	// when:
+	_, err := activeStorage.CreateAction(
+		context.Background(),
+		wdk.AuthID{UserID: to.Ptr(testusers.Bob.ID)},
+		args,
+	)
+
+	// then:
+	require.Error(t, err)
+}
+
+func TestInsufficientFunds(t *testing.T) {
+	given := testabilities.Given(t)
+
+	// given:
+	activeStorage := given.Provider().GORM()
+
+	// and:
+	given.Faucet(activeStorage, testusers.Alice).TopUp(1)
+
+	// and:
+	args := fixtures.DefaultValidCreateActionArgs()
+
+	// when:
+	_, err := activeStorage.CreateAction(
+		context.Background(),
+		wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
+		args,
+	)
+
+	// then:
+	require.Error(t, err)
+}
+
+func TestReservedUTXO(t *testing.T) {
+	given := testabilities.Given(t)
+
+	// given:
+	activeStorage := given.Provider().GORM()
+
+	// and:
+	given.Faucet(activeStorage, testusers.Alice).TopUp(100_000)
+
+	// and:
+	args := fixtures.DefaultValidCreateActionArgs()
+
+	// when:
+	_, err := activeStorage.CreateAction(
+		context.Background(),
+		wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
+		args,
+	)
+
+	// then:
+	require.NoError(t, err)
+
+	// when:
+	_, err = activeStorage.CreateAction(
+		context.Background(),
+		wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
+		args,
+	)
+
+	// then:
+	require.Error(t, err)
 }
 
 func findOutput(
@@ -154,4 +241,42 @@ func findOutput(
 	require.GreaterOrEqual(t, index, 0)
 
 	return &outputs[index], uint32(index)
+}
+
+func countOutputsWithCondition(
+	t *testing.T,
+	outputs []wdk.StorageCreateTransactionSdkOutput,
+	finder func(p wdk.StorageCreateTransactionSdkOutput) bool,
+) int {
+	t.Helper()
+
+	return seq.Count(seq.Filter(seq.FromSlice(outputs), finder))
+}
+
+func sumOutputsWithCondition(
+	t *testing.T,
+	outputs []wdk.StorageCreateTransactionSdkOutput,
+	finder func(p wdk.StorageCreateTransactionSdkOutput) bool,
+) primitives.SatoshiValue {
+	t.Helper()
+
+	sum := primitives.SatoshiValue(0)
+	for _, output := range outputs {
+		if finder(output) {
+			sum += output.Satoshis
+		}
+	}
+	return sum
+}
+
+func providedByYouCondition(p wdk.StorageCreateTransactionSdkOutput) bool {
+	return p.ProvidedBy == wdk.ProvidedByYou
+}
+
+func providedByStorageCondition(p wdk.StorageCreateTransactionSdkOutput) bool {
+	return p.ProvidedBy == wdk.ProvidedByStorage
+}
+
+func commissionOutputCondition(p wdk.StorageCreateTransactionSdkOutput) bool {
+	return p.Purpose == "storage-commission"
 }

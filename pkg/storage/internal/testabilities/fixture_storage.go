@@ -1,26 +1,26 @@
 package testabilities
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/mocks"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder/testabilities"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/server"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/dbfixtures"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-)
-
-const (
-	StorageServerPrivKey = "8143f5ed6c5b41c3d084d39d49e161d8dde4b50b0685a4e4ac23959d3b8a319b"
-	StorageIdentityKey   = "028f2daab7808b79368d99eef1ebc2d35cdafe3932cafe3d83cf17837af034ec29" // that matches StorageServerPrivKey
-	StorageName          = "test-storage"
-	StorageHandlerName   = "storage_server"
 )
 
 type StorageFixture interface {
@@ -30,6 +30,12 @@ type StorageFixture interface {
 	RPCClient() (*storage.WalletStorageWriterClient, func())
 
 	MockProvider() *mocks.MockWalletStorageWriter
+
+	Faucet(activeStorage *storage.Provider, user testusers.User) FaucetFixture
+}
+
+type FaucetFixture interface {
+	TopUp(satoshis satoshi.Value)
 }
 
 type storageFixture struct {
@@ -37,11 +43,12 @@ type storageFixture struct {
 	require    *require.Assertions
 	logger     *slog.Logger
 	testServer *httptest.Server
+	db         *database.Database
 }
 
 func (s *storageFixture) StartedRPCServerFor(provider wdk.WalletStorageWriter) (cleanup func()) {
 	s.t.Helper()
-	rpcServer := server.NewRPCHandler(s.logger, StorageHandlerName, provider)
+	rpcServer := server.NewRPCHandler(s.logger, fixtures.StorageHandlerName, provider)
 
 	mux := http.NewServeMux()
 	rpcServer.Register(mux)
@@ -70,6 +77,7 @@ func (s *storageFixture) Provider() ProviderFixture {
 		t:       s.t,
 		require: s.require,
 		logger:  s.logger,
+		db:      s.db,
 
 		network:    defs.NetworkTestnet,
 		commission: defs.Commission{},
@@ -77,10 +85,33 @@ func (s *storageFixture) Provider() ProviderFixture {
 	}
 }
 
+func (s *storageFixture) Faucet(activeStorage *storage.Provider, user testusers.User) FaucetFixture {
+	s.t.Helper()
+	ctx := context.Background()
+
+	_, err := activeStorage.FindOrInsertUser(ctx, user.PrivKey)
+	s.require.NoError(err)
+
+	funderFixture, _ := testabilities.NewWithDatabase(s.t, s.db)
+
+	basket, err := s.db.CreateRepositories().
+		FindBasketByName(context.Background(), user.ID, wdk.BasketNameForChange)
+	require.NoError(s.t, err)
+
+	return &faucetFixture{
+		t:             s.t,
+		user:          user,
+		funderFixture: funderFixture,
+		basket:        basket,
+	}
+}
+
 func Given(t testing.TB) StorageFixture {
+	db, _ := dbfixtures.TestDatabase(t)
 	return &storageFixture{
 		t:       t,
 		require: require.New(t),
 		logger:  logging.NewTestLogger(t),
+		db:      db,
 	}
 }

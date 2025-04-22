@@ -5,7 +5,8 @@ import (
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/testabilities"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,11 +30,11 @@ func TestRPCCommunication(t *testing.T) {
 	t.Run("Migrate", func(t *testing.T) {
 		// given:
 		mockStorage.EXPECT().
-			Migrate(gomock.Any(), testabilities.StorageName, testabilities.StorageIdentityKey).
+			Migrate(gomock.Any(), fixtures.StorageName, fixtures.StorageIdentityKey).
 			Return("current-migration-version", nil)
 
 		// when:
-		migrationVersion, err := client.Migrate(context.Background(), testabilities.StorageName, testabilities.StorageIdentityKey)
+		migrationVersion, err := client.Migrate(context.Background(), fixtures.StorageName, fixtures.StorageIdentityKey)
 
 		// then:
 		require.NoError(t, err)
@@ -43,8 +44,8 @@ func TestRPCCommunication(t *testing.T) {
 	t.Run("MakeAvailable", func(t *testing.T) {
 		// given:
 		storageResult := &wdk.TableSettings{
-			StorageName:        testabilities.StorageName,
-			StorageIdentityKey: testabilities.StorageIdentityKey,
+			StorageName:        fixtures.StorageName,
+			StorageIdentityKey: fixtures.StorageIdentityKey,
 			Chain:              defs.NetworkTestnet,
 			MaxOutputScript:    1024,
 		}
@@ -74,11 +75,11 @@ func TestRPCCommunication(t *testing.T) {
 
 		// and:
 		mockStorage.EXPECT().
-			FindOrInsertUser(gomock.Any(), testabilities.StorageIdentityKey).
+			FindOrInsertUser(gomock.Any(), fixtures.StorageIdentityKey).
 			Return(storageResult, nil)
 
 		// when:
-		response, err := client.FindOrInsertUser(context.Background(), testabilities.StorageIdentityKey)
+		response, err := client.FindOrInsertUser(context.Background(), fixtures.StorageIdentityKey)
 
 		// then:
 		require.NoError(t, err)

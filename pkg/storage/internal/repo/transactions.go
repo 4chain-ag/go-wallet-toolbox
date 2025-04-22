@@ -36,6 +36,7 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *entity.Ne
 		for _, output := range newTx.Outputs {
 			out := models.Output{
 				Vout:               output.Vout,
+				UserID:             newTx.UserID,
 				Satoshis:           output.Satoshis.Int64(),
 				Spendable:          output.Spendable,
 				Change:             output.Change,
@@ -62,6 +63,14 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *entity.Ne
 			model.Labels = append(model.Labels, models.Label{
 				Name:   string(label),
 				UserID: newTx.UserID,
+			})
+		}
+
+		for _, reserved := range newTx.ReservedUTXOs {
+			model.ReservedUtxos = append(model.ReservedUtxos, models.UserUTXO{
+				UserID: newTx.UserID,
+				TxID:   reserved.TxID,
+				Vout:   reserved.Vout,
 			})
 		}
 

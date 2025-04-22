@@ -13,4 +13,7 @@ type UserUTXO struct {
 	// EstimatedInputSize is the estimated size increase when adding and unlocking this UTXO to a transaction.
 	EstimatedInputSize uint64
 	CreatedAt          time.Time
+
+	ReservedByID *uint
+	ReservedBy   *Transaction
 }

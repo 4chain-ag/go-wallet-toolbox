@@ -20,7 +20,8 @@ type NewTx struct {
 	InputBeef   []byte
 	Description string
 
-	Outputs []*NewOutput
+	ReservedUTXOs []*wdk.OutPoint
+	Outputs       []*NewOutput
 
 	Labels []primitives.StringUnder300
 }
