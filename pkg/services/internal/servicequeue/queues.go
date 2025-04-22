@@ -8,9 +8,11 @@ import (
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal"
 	"github.com/go-softwarelab/common/pkg/is"
 	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/go-softwarelab/common/pkg/to"
+	"github.com/go-softwarelab/common/pkg/types"
 )
 
 var ErrEmptyResult = fmt.Errorf("service returns an empty result")
@@ -33,6 +35,13 @@ func NewQueue[R any](logger *slog.Logger, methodName string, services ...*Servic
 		methodName: methodName,
 		services:   services,
 	}
+}
+
+// All calls all services in parallel and returns the slice of results of all services.
+func (q *Queue[R]) All(ctx context.Context) ([]*NamedResult[R], error) {
+	return processParallel(ctx, q.logger, q.services, func(ctxParallel context.Context, s *Service[R]) (R, error) {
+		return s.service(ctxParallel)
+	})
 }
 
 // OneByOne calls the services with provided context, one by one, until a successful result is obtained.
@@ -60,6 +69,13 @@ func NewQueue1[A, R any](logger *slog.Logger, methodName string, services ...*Se
 		methodName: methodName,
 		services:   services,
 	}
+}
+
+// All processes all services in parallel and returns the slice of results of all services.
+func (q *Queue1[A, R]) All(ctx context.Context, a A) ([]*NamedResult[R], error) {
+	return processParallel(ctx, q.logger, q.services, func(ctxParallel context.Context, s *Service1[A, R]) (R, error) {
+		return s.service(ctxParallel, a)
+	})
 }
 
 // OneByOne processes services one by one until a successful result is obtained.
@@ -90,6 +106,13 @@ func NewQueue2[A, B, R any](logger *slog.Logger, methodName string, services ...
 	}
 }
 
+// All processes all services in parallel and returns the slice of results of all services.
+func (q *Queue2[A, B, R]) All(ctx context.Context, a A, b B) ([]*NamedResult[R], error) {
+	return processParallel(ctx, q.logger, q.services, func(ctxParallel context.Context, s *Service2[A, B, R]) (R, error) {
+		return s.service(ctxParallel, a, b)
+	})
+}
+
 // OneByOne processes services one by one until a successful result is obtained.
 // The context and arguments are passed to each service.
 // Returns the first successful result or an error if all services fail.
@@ -118,6 +141,13 @@ func NewQueue3[A, B, C, R any](logger *slog.Logger, methodName string, services 
 	}
 }
 
+// All processes all services in parallel and returns the slice of results of all services.
+func (q *Queue3[A, B, C, R]) All(ctx context.Context, a A, b B, c C) ([]*NamedResult[R], error) {
+	return processParallel(ctx, q.logger, q.services, func(ctxParallel context.Context, s *Service3[A, B, C, R]) (R, error) {
+		return s.service(ctxParallel, a, b, c)
+	})
+}
+
 // OneByOne processes services one by one until a successful result is obtained.
 // The context and arguments are passed to each service.
 // Returns the first successful result or an error if all services fail.
@@ -129,6 +159,41 @@ func (q *Queue3[A, B, C, R]) OneByOne(ctx context.Context, a A, b B, c C) (R, er
 
 type serv interface {
 	Name() string
+}
+
+func processParallel[S serv, R any](ctx context.Context, logger *slog.Logger, services []S, callService func(context.Context, S) (R, error)) ([]*NamedResult[R], error) {
+	if len(services) == 0 {
+		return nil, ErrNoServicesRegistered
+	}
+
+	results := internal.MapParallel(ctx, seq.FromSlice(services), func(ctxParallel context.Context, s S) (result *NamedResult[R]) {
+		defer func() {
+			if r := recover(); r != nil {
+				err := fmt.Errorf("%v", r)
+				result = NewNamedResult(s.Name(), types.FailureResult[R](err))
+			}
+		}()
+		result = NewNamedResult(s.Name(), types.ResultOf(callService(ctxParallel, s)))
+		return
+	})
+
+	results = seq.Map(results, func(result *NamedResult[R]) *NamedResult[R] {
+		if result.IsNotError() && is.Nil(result.MustGetValue()) {
+			return NewNamedResult(result.Name(), types.FailureResult[R](ErrEmptyResult))
+		}
+		return result
+	})
+
+	results = seq.Each(results, func(result *NamedResult[R]) {
+		if result.IsError() {
+			logger.Warn("error when calling service",
+				slog.String("service.name", result.Name()),
+				logging.Error(result.GetError()),
+			)
+		}
+	})
+
+	return seq.Collect(results), nil
 }
 
 func processOneByOne[S serv, R any](logger *slog.Logger, services []S, callService func(S) (R, error)) (R, error) {
