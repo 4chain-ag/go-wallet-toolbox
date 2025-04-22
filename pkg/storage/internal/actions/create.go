@@ -210,6 +210,7 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		LockTime:         params.LockTime,
 		DerivationPrefix: derivationPrefix,
 		Outputs:          c.resultOutputs(newOutputs),
+		Inputs:           c.resultInputs(funding.AllocatedUTXOs),
 	}, nil
 }
 
@@ -382,6 +383,24 @@ func (c *create) resultOutputs(newOutputs []*entity.NewOutput) []wdk.StorageCrea
 	}
 
 	return resultOutputs
+}
+
+func (c *create) resultInputs(allocatedUTXOs []*UTXO) []wdk.StorageCreateTransactionSdkInput {
+	resultInputs := make([]wdk.StorageCreateTransactionSdkInput, len(allocatedUTXOs))
+	for i, utxo := range allocatedUTXOs {
+		resultInputs[i] = wdk.StorageCreateTransactionSdkInput{
+			Vin:            i,
+			SourceTxid:     utxo.TxID,
+			SourceVout:     int(utxo.Vout),
+			SourceSatoshis: utxo.Satoshis.MustInt(),
+			// TODO LockingScript, Type, SpendingDescription, DerivationPrefix, DerivationSuffix
+
+			UnlockingScriptLength: txutils.P2PKHUnlockingScriptLength,
+			ProvidedBy:            wdk.ProvidedByStorage,
+			// TODO raw source tx when handle isSignAction
+		}
+	}
+	return resultInputs
 }
 
 func randomDerivation() (string, error) {

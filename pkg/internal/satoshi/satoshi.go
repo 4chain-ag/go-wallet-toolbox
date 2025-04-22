@@ -15,6 +15,21 @@ func (v Value) Int64() int64 {
 	return int64(v)
 }
 
+func (v Value) Int() (int, error) {
+	if v < 0 {
+		return 0, fmt.Errorf("cannot convert negative satoshi to int")
+	}
+	return int(v), nil
+}
+
+func (v Value) MustInt() int {
+	i, err := v.Int()
+	if err != nil {
+		panic(err)
+	}
+	return i
+}
+
 func (v Value) UInt64() (uint64, error) {
 	if v < 0 {
 		return 0, fmt.Errorf("cannot convert negative satoshi to uint64")
