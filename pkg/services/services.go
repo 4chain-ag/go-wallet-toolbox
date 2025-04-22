@@ -8,7 +8,6 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/configuration"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/servicequeue"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/whatsonchain"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
@@ -24,7 +23,7 @@ type WalletServices struct {
 	chain         defs.BSVNetwork
 	config        *configuration.WalletServices
 	whatsonchain  *whatsonchain.WhatsOnChain
-	rawTxServices servicequeue.Queue1[string, *internal.RawTxResult]
+	rawTxServices servicequeue.Queue1[string, *wdk.RawTxResult]
 
 	// getMerklePathServices: ServiceCollection<sdk.GetMerklePathService>
 	// getRawTxServices: ServiceCollection<sdk.GetRawTxService>
@@ -41,30 +40,29 @@ func New(httpClient *resty.Client, logger *slog.Logger, config configuration.Wal
 
 	woc := whatsonchain.New(httpClient, logger, config.Chain, config.WhatsOnChain)
 
-	rawTxResultServices := servicequeue.NewQueue1(
-		logger,
-		"RawTx",
-		servicequeue.NewService1("WhatsOnChain", woc.RawTx),
-	)
-
 	return &WalletServices{
-		httpClient:    httpClient,
-		chain:         config.Chain,
-		config:        &config,
-		logger:        logger,
-		whatsonchain:  woc,
-		rawTxServices: rawTxResultServices,
+		httpClient:   httpClient,
+		chain:        config.Chain,
+		config:       &config,
+		logger:       logger,
+		whatsonchain: woc,
+
+		rawTxServices: servicequeue.NewQueue1(
+			logger,
+			"RawTx",
+			servicequeue.NewService1("WhatsOnChain", woc.RawTx),
+		),
 	}
 }
 
 // RawTx attempts to obtain the raw transaction bytes associated with a 32 byte transaction hash (txid).
-func (s *WalletServices) RawTx(txID string) (internal.RawTxResult, error) {
+func (s *WalletServices) RawTx(txID string) (wdk.RawTxResult, error) {
 	result, err := s.rawTxServices.OneByOne(context.TODO(), txID)
 	if err != nil {
 		if errors.Is(err, servicequeue.ErrEmptyResult) {
-			return internal.RawTxResult{}, fmt.Errorf("transaction with txID: %s not found", txID)
+			return wdk.RawTxResult{}, fmt.Errorf("transaction with txID: %s not found", txID)
 		}
-		return internal.RawTxResult{}, fmt.Errorf("couldn't get rawtx for id %s: %w", txID, err)
+		return wdk.RawTxResult{}, fmt.Errorf("couldn't get rawtx for id %s: %w", txID, err)
 	}
 	return *result, nil
 }
