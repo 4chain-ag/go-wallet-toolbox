@@ -23,6 +23,7 @@ require (
 )
 
 require (
+	github.com/bsv-blockchain/universal-test-vectors v0.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/go-sql-driver/mysql v1.7.0 // indirect

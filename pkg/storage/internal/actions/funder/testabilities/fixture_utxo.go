@@ -12,6 +12,12 @@ import (
 	"gorm.io/gorm"
 )
 
+//const (
+//	MockReference        = "mock-reference"
+//	MockDerivationPrefix = "mock-derivation-prefix"
+//	MockDerivationSuffix = "mock-derivation-suffix"
+//)
+
 var FirstCreatedAt = time.Date(2006, 02, 01, 15, 4, 5, 7, time.UTC)
 
 type UserUTXOFixture interface {
@@ -44,7 +50,7 @@ type userUtxoFixture struct {
 	t                  testing.TB
 	index              uint
 	userID             int
-	txID               string
+	transactionID      uint
 	vout               uint32
 	satoshis           uint64
 	estimatedInputSize uint64
@@ -59,7 +65,7 @@ func newUtxoFixture(t testing.TB, parent UTXODatabase, index uint) *userUtxoFixt
 		index:              index,
 		basket:             &basket,
 		userID:             1,
-		txID:               txIDTemplated(index),
+		transactionID:      index,
 		vout:               uint32(index),
 		satoshis:           1,
 		estimatedInputSize: txutils.P2PKHEstimatedInputSize,
@@ -101,8 +107,7 @@ func (f *userUtxoFixture) Stored() {
 
 	utxo := &models.UserUTXO{
 		UserID:             f.userID,
-		TxID:               f.txID,
-		Vout:               f.vout,
+		OutputID:           f.index,
 		Satoshis:           f.satoshis,
 		EstimatedInputSize: f.estimatedInputSize,
 		CreatedAt:          FirstCreatedAt.Add(time.Duration(f.index) * time.Second),
@@ -118,6 +123,35 @@ func (f *userUtxoFixture) Stored() {
 			MinimumDesiredUTXOValue: f.basket.MinimumDesiredUTXOValue,
 		},
 	}
+
+	//transaction := &models.Transaction{
+	//	UserID:      f.userID,
+	//	Status:      wdk.TxStatusCompleted,
+	//	Reference:   MockReference,
+	//	IsOutgoing:  false,
+	//	Satoshis:    int64(f.satoshis),
+	//	Description: "test-faucet-tx",
+	//	Version:     1,
+	//	LockTime:    0,
+	//	InputBeef:   nil,
+	//	RawTx:       nil,
+	//	TxID:        to.Ptr(txIDTemplated(f.transactionID)),
+	//	Outputs: []models.Output{
+	//		{
+	//			Vout:             f.vout,
+	//			UserID:           f.userID,
+	//			Satoshis:         int64(f.satoshis),
+	//			Spendable:        true,
+	//			Change:           true,
+	//			ProvidedBy:       string(wdk.ProvidedByStorage),
+	//			Description:      "test-faucet-output",
+	//			Purpose:          "test-faucet-purpose",
+	//			Type:             string(wdk.OutputTypeP2PKH),
+	//			DerivationPrefix: to.Ptr(MockDerivationPrefix),
+	//			DerivationSuffix: to.Ptr(MockDerivationSuffix),
+	//		},
+	//	},
+	//}
 
 	f.parent.Save(utxo)
 }
