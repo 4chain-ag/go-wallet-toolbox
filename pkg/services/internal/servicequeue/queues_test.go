@@ -8,6 +8,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/servicequeue"
 	"github.com/go-softwarelab/common/pkg/slices"
+	"github.com/go-softwarelab/common/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,17 +16,17 @@ const secondArgument = "test"
 const thirdArgument = 1
 const fourthArgument = true
 
-func TestQueue(t *testing.T) {
+func TestQueueOneByOne(t *testing.T) {
 	tests := map[string]struct {
 		services         []TestService
-		expectedResult   *Result
+		expectedResult   *TestServiceResult
 		errorExpectation func(t assert.TestingT, err error, msgAndArgs ...interface{}) bool
 	}{
 		"single service returning success should return success": {
 			services: []TestService{
 				TestService{Name: "successful"}.Successful(),
 			},
-			expectedResult:   &Result{200, "success"},
+			expectedResult:   &TestServiceResult{200, "success"},
 			errorExpectation: assert.NoError,
 		},
 		"single service returning error should return error": {
@@ -66,7 +67,7 @@ func TestQueue(t *testing.T) {
 				TestService{Name: "should-not-be-called-1"}.ShouldNotBeCalled(),
 				TestService{Name: "should-not-be-called-2"}.ShouldNotBeCalled(),
 			},
-			expectedResult:   &Result{200, "success"},
+			expectedResult:   &TestServiceResult{200, "success"},
 			errorExpectation: assert.NoError,
 		},
 		"first service returning error but second returning success should return second result": {
@@ -75,7 +76,7 @@ func TestQueue(t *testing.T) {
 				TestService{Name: "success-service"}.Successful(),
 				TestService{Name: "should-not-be-called"}.ShouldNotBeCalled(),
 			},
-			expectedResult:   &Result{200, "success"},
+			expectedResult:   &TestServiceResult{200, "success"},
 			errorExpectation: assert.NoError,
 		},
 		"first service returning nil but second returning success should return second result": {
@@ -84,7 +85,7 @@ func TestQueue(t *testing.T) {
 				TestService{Name: "success-service"}.Successful(),
 				TestService{Name: "should-not-be-called"}.ShouldNotBeCalled(),
 			},
-			expectedResult:   &Result{200, "success"},
+			expectedResult:   &TestServiceResult{200, "success"},
 			errorExpectation: assert.NoError,
 		},
 		"first and second services returning error but third returning success should return third result": {
@@ -94,7 +95,7 @@ func TestQueue(t *testing.T) {
 				TestService{Name: "success-service"}.Successful(),
 				TestService{Name: "should-not-be-called"}.ShouldNotBeCalled(),
 			},
-			expectedResult:   &Result{200, "success"},
+			expectedResult:   &TestServiceResult{200, "success"},
 			errorExpectation: assert.NoError,
 		},
 		"first and second services returning nil but third returning success should return third result": {
@@ -104,7 +105,7 @@ func TestQueue(t *testing.T) {
 				TestService{Name: "success-service"}.Successful(),
 				TestService{Name: "should-not-be-called"}.ShouldNotBeCalled(),
 			},
-			expectedResult:   &Result{200, "success"},
+			expectedResult:   &TestServiceResult{200, "success"},
 			errorExpectation: assert.NoError,
 		},
 		"first service returning error, second returning nil, third returning success should return third result": {
@@ -114,7 +115,7 @@ func TestQueue(t *testing.T) {
 				TestService{Name: "success-service"}.Successful(),
 				TestService{Name: "should-not-be-called"}.ShouldNotBeCalled(),
 			},
-			expectedResult:   &Result{200, "success"},
+			expectedResult:   &TestServiceResult{200, "success"},
 			errorExpectation: assert.NoError,
 		},
 		"first service returning nil, second returning error, third returning success should return third result": {
@@ -124,7 +125,7 @@ func TestQueue(t *testing.T) {
 				TestService{Name: "success-service"}.Successful(),
 				TestService{Name: "should-not-be-called"}.ShouldNotBeCalled(),
 			},
-			expectedResult:   &Result{200, "success"},
+			expectedResult:   &TestServiceResult{200, "success"},
 			errorExpectation: assert.NoError,
 		},
 		"empty queue should return error": {
@@ -137,7 +138,7 @@ func TestQueue(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name+": Queue", func(t *testing.T) {
 			// given:
-			services := slices.Map(test.services, func(s TestService) *servicequeue.Service[*Result] {
+			services := slices.Map(test.services, func(s TestService) *servicequeue.Service[*TestServiceResult] {
 				service := s.NewTest(t)
 				return servicequeue.NewService(service.Name, service.Do)
 			})
@@ -159,7 +160,7 @@ func TestQueue(t *testing.T) {
 
 		t.Run(name+": Queue1", func(t *testing.T) {
 			// given:
-			services := slices.Map(test.services, func(s TestService) *servicequeue.Service1[string, *Result] {
+			services := slices.Map(test.services, func(s TestService) *servicequeue.Service1[string, *TestServiceResult] {
 				service := s.NewTest(t)
 				return servicequeue.NewService1(service.Name, service.Do1)
 			})
@@ -181,7 +182,7 @@ func TestQueue(t *testing.T) {
 
 		t.Run(name+": Queue2", func(t *testing.T) {
 			// given:
-			services := slices.Map(test.services, func(s TestService) *servicequeue.Service2[string, int, *Result] {
+			services := slices.Map(test.services, func(s TestService) *servicequeue.Service2[string, int, *TestServiceResult] {
 				service := s.NewTest(t)
 				return servicequeue.NewService2(service.Name, service.Do2)
 			})
@@ -203,7 +204,7 @@ func TestQueue(t *testing.T) {
 
 		t.Run(name+": Queue3", func(t *testing.T) {
 			// given:
-			services := slices.Map(test.services, func(s TestService) *servicequeue.Service3[string, int, bool, *Result] {
+			services := slices.Map(test.services, func(s TestService) *servicequeue.Service3[string, int, bool, *TestServiceResult] {
 				service := s.NewTest(t)
 				return servicequeue.NewService3(service.Name, service.Do3)
 			})
@@ -225,7 +226,172 @@ func TestQueue(t *testing.T) {
 	}
 }
 
-type Result struct {
+func TestQueueParallel(t *testing.T) {
+	testCases := map[string]struct {
+		services         []TestService
+		expectedResults  []*servicequeue.NamedResult[*TestServiceResult]
+		errorExpectation func(t assert.TestingT, err error, msgAndArgs ...interface{}) bool
+	}{
+		"empty queue should return error": {
+			services:         []TestService{},
+			expectedResults:  nil,
+			errorExpectation: assert.Error,
+		},
+		"single service successful result": {
+			services: []TestService{
+				TestService{Name: "successful"}.Successful(),
+			},
+			expectedResults: []*servicequeue.NamedResult[*TestServiceResult]{
+				servicequeue.NewNamedResult("successful", types.SuccessResult(&TestServiceResult{200, "success"})),
+			},
+			errorExpectation: assert.NoError,
+		},
+		"single service failure result": {
+			services: []TestService{
+				TestService{Name: "failing"}.Failing(),
+			},
+			expectedResults: []*servicequeue.NamedResult[*TestServiceResult]{
+				servicequeue.NewNamedResult("failing", types.FailureResult[*TestServiceResult](errors.New("some error occurred"))),
+			},
+			errorExpectation: assert.NoError,
+		},
+		"single service nil result": {
+			services: []TestService{
+				TestService{Name: "nil-service"}.ReturningNilResult(),
+			},
+			expectedResults: []*servicequeue.NamedResult[*TestServiceResult]{
+				servicequeue.NewNamedResult("nil-service", types.FailureResult[*TestServiceResult](servicequeue.ErrEmptyResult)),
+			},
+			errorExpectation: assert.NoError,
+		},
+		"handle panic from service": {
+			services: []TestService{
+				TestService{Name: "panicing"}.Panicking(),
+			},
+			expectedResults: []*servicequeue.NamedResult[*TestServiceResult]{
+				servicequeue.NewNamedResult("panicing", types.FailureResult[*TestServiceResult](errors.New("some panic occurred"))),
+			},
+			errorExpectation: assert.NoError,
+		},
+		"multiple services with different results": {
+			services: []TestService{
+				TestService{Name: "successful"}.Successful(),
+				TestService{Name: "failing"}.Failing(),
+				TestService{Name: "ok"}.Successful(),
+				TestService{Name: "nil-service"}.ReturningNilResult(),
+				TestService{Name: "bad-thing-happened"}.Failing(),
+				TestService{Name: "good-job"}.Successful(),
+				TestService{Name: "panicing"}.Panicking(),
+			},
+			expectedResults: []*servicequeue.NamedResult[*TestServiceResult]{
+				servicequeue.NewNamedResult("successful", types.SuccessResult(&TestServiceResult{200, "success"})),
+				servicequeue.NewNamedResult("failing", types.FailureResult[*TestServiceResult](errors.New("some error occurred"))),
+				servicequeue.NewNamedResult("ok", types.SuccessResult(&TestServiceResult{200, "success"})),
+				servicequeue.NewNamedResult("nil-service", types.FailureResult[*TestServiceResult](servicequeue.ErrEmptyResult)),
+				servicequeue.NewNamedResult("bad-thing-happened", types.FailureResult[*TestServiceResult](errors.New("some error occurred"))),
+				servicequeue.NewNamedResult("good-job", types.SuccessResult(&TestServiceResult{200, "success"})),
+				servicequeue.NewNamedResult("panicing", types.FailureResult[*TestServiceResult](errors.New("some panic occurred"))),
+			},
+			errorExpectation: assert.NoError,
+		},
+	}
+	for name, test := range testCases {
+		t.Run(name+": Queue", func(t *testing.T) {
+			// given:
+			services := slices.Map(test.services, func(s TestService) *servicequeue.Service[*TestServiceResult] {
+				service := s.NewTest(t)
+				return servicequeue.NewService(service.Name, service.Do)
+			})
+
+			// and:
+			queue := servicequeue.NewQueue(
+				logging.NewTestLogger(t),
+				"Do",
+				services...,
+			)
+
+			// when:
+			results, err := queue.All(context.Background())
+
+			// then:
+			test.errorExpectation(t, err)
+			assert.Len(t, results, len(test.expectedResults))
+			assert.ElementsMatch(t, test.expectedResults, results)
+		})
+
+		t.Run(name+": Queue1", func(t *testing.T) {
+			// given:
+			services := slices.Map(test.services, func(s TestService) *servicequeue.Service1[string, *TestServiceResult] {
+				service := s.NewTest(t)
+				return servicequeue.NewService1(service.Name, service.Do1)
+			})
+
+			// and:
+			queue := servicequeue.NewQueue1(
+				logging.NewTestLogger(t),
+				"Do1",
+				services...,
+			)
+
+			// when:
+			results, err := queue.All(context.Background(), secondArgument)
+
+			// then:
+			test.errorExpectation(t, err)
+			assert.Len(t, results, len(test.expectedResults))
+			assert.ElementsMatch(t, test.expectedResults, results)
+		})
+
+		t.Run(name+": Queue2", func(t *testing.T) {
+			// given:
+			services := slices.Map(test.services, func(s TestService) *servicequeue.Service2[string, int, *TestServiceResult] {
+				service := s.NewTest(t)
+				return servicequeue.NewService2(service.Name, service.Do2)
+			})
+
+			// and:
+			queue := servicequeue.NewQueue2(
+				logging.NewTestLogger(t),
+				"Do3",
+				services...,
+			)
+
+			// when:
+			results, err := queue.All(context.Background(), secondArgument, thirdArgument)
+
+			// then:
+			test.errorExpectation(t, err)
+			assert.Len(t, results, len(test.expectedResults))
+			assert.ElementsMatch(t, test.expectedResults, results)
+		})
+
+		t.Run(name+": Queue3", func(t *testing.T) {
+			// given:
+			services := slices.Map(test.services, func(s TestService) *servicequeue.Service3[string, int, bool, *TestServiceResult] {
+				service := s.NewTest(t)
+				return servicequeue.NewService3(service.Name, service.Do3)
+			})
+
+			// and:
+			queue := servicequeue.NewQueue3(
+				logging.NewTestLogger(t),
+				"Do3",
+				services...,
+			)
+
+			// when:
+			results, err := queue.All(context.Background(), secondArgument, thirdArgument, fourthArgument)
+
+			// then:
+			test.errorExpectation(t, err)
+			assert.Len(t, results, len(test.expectedResults))
+			assert.ElementsMatch(t, test.expectedResults, results)
+		})
+	}
+
+}
+
+type TestServiceResult struct {
 	StatusCode int
 	Status     string
 }
@@ -233,39 +399,39 @@ type Result struct {
 type TestService struct {
 	Name         string
 	t            testing.TB
-	createResult func() (*Result, error)
+	createResult func() (*TestServiceResult, error)
 }
 
 func (s TestService) Successful() TestService {
-	s.createResult = func() (*Result, error) {
-		return &Result{200, "success"}, nil
+	s.createResult = func() (*TestServiceResult, error) {
+		return &TestServiceResult{200, "success"}, nil
 	}
 	return s
 }
 
 func (s TestService) Failing() TestService {
-	s.createResult = func() (*Result, error) {
+	s.createResult = func() (*TestServiceResult, error) {
 		return nil, errors.New("some error occurred")
 	}
 	return s
 }
 
 func (s TestService) ReturningNilResult() TestService {
-	s.createResult = func() (*Result, error) {
+	s.createResult = func() (*TestServiceResult, error) {
 		return nil, nil
 	}
 	return s
 }
 
 func (s TestService) Panicking() TestService {
-	s.createResult = func() (*Result, error) {
+	s.createResult = func() (*TestServiceResult, error) {
 		panic("some panic occurred")
 	}
 	return s
 }
 
 func (s TestService) ShouldNotBeCalled() TestService {
-	s.createResult = func() (*Result, error) {
+	s.createResult = func() (*TestServiceResult, error) {
 		s.t.Fatalf("service %s shouldn't be called, but was.", s.Name)
 		return nil, nil
 	}
@@ -277,22 +443,22 @@ func (s TestService) NewTest(t testing.TB) *TestService {
 	return &s
 }
 
-func (s *TestService) Do(ctx context.Context) (*Result, error) {
+func (s *TestService) Do(ctx context.Context) (*TestServiceResult, error) {
 	assert.NotNil(s.t, ctx, "expect to receive non-nil context as 1st argument")
 	return s.createResult()
 }
 
-func (s *TestService) Do1(ctx context.Context, str string) (*Result, error) {
+func (s *TestService) Do1(ctx context.Context, str string) (*TestServiceResult, error) {
 	assert.Equal(s.t, secondArgument, str, "expect to receive %#v as 2nd argument", secondArgument)
 	return s.Do(ctx)
 }
 
-func (s *TestService) Do2(ctx context.Context, str string, i int) (*Result, error) {
+func (s *TestService) Do2(ctx context.Context, str string, i int) (*TestServiceResult, error) {
 	assert.Equal(s.t, thirdArgument, i, "expect to receive %#v as 3rd argument", thirdArgument)
 	return s.Do1(ctx, str)
 }
 
-func (s *TestService) Do3(ctx context.Context, str string, i int, boolean bool) (*Result, error) {
+func (s *TestService) Do3(ctx context.Context, str string, i int, boolean bool) (*TestServiceResult, error) {
 	assert.Equal(s.t, fourthArgument, boolean, "expect to receive %#v as 4th argument", fourthArgument)
 	return s.Do2(ctx, str, i)
 }
