@@ -24,15 +24,15 @@ func (o *Outputs) FindOutputs(ctx context.Context, outputIDs iter.Seq[uint]) ([]
 	if count == 0 {
 		return nil, nil
 	}
-	idsClause := make([][]any, 0, count)
+	idsClause := make([]any, 0, count)
 	for outputID := range outputIDs {
-		idsClause = append(idsClause, []any{outputID})
+		idsClause = append(idsClause, outputID)
 	}
 
 	var outputs []*models.Output
 	err := o.db.WithContext(ctx).
 		Model(models.Output{}).
-		Preload("Transaction.TxID").
+		Preload("Transaction").
 		Where("id IN ?", idsClause).
 		Find(&outputs).Error
 

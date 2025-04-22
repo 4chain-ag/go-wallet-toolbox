@@ -29,5 +29,5 @@ type Output struct {
 	Purpose     string
 	Type        string
 
-	Transaction *Transaction
+	Transaction *Transaction `gorm:"foreignKey:TransactionID;references:ID"`
 }

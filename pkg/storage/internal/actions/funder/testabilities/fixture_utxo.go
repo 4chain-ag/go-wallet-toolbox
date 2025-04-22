@@ -1,7 +1,6 @@
 package testabilities
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -11,12 +10,6 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"gorm.io/gorm"
 )
-
-//const (
-//	MockReference        = "mock-reference"
-//	MockDerivationPrefix = "mock-derivation-prefix"
-//	MockDerivationSuffix = "mock-derivation-suffix"
-//)
 
 var FirstCreatedAt = time.Date(2006, 02, 01, 15, 4, 5, 7, time.UTC)
 
@@ -72,10 +65,6 @@ func newUtxoFixture(t testing.TB, parent UTXODatabase, index uint) *userUtxoFixt
 	}
 }
 
-func txIDTemplated(index uint) string {
-	return fmt.Sprintf("a%010de1b81dd2c9c0c6cd67f9bdf832e9c2bb12a1d57f30cb6ebbe78d9", index)
-}
-
 func (f *userUtxoFixture) InBasket(basket *wdk.TableOutputBasket) UserUTXOFixture {
 	f.basket = basket
 	return f
@@ -123,35 +112,6 @@ func (f *userUtxoFixture) Stored() {
 			MinimumDesiredUTXOValue: f.basket.MinimumDesiredUTXOValue,
 		},
 	}
-
-	//transaction := &models.Transaction{
-	//	UserID:      f.userID,
-	//	Status:      wdk.TxStatusCompleted,
-	//	Reference:   MockReference,
-	//	IsOutgoing:  false,
-	//	Satoshis:    int64(f.satoshis),
-	//	Description: "test-faucet-tx",
-	//	Version:     1,
-	//	LockTime:    0,
-	//	InputBeef:   nil,
-	//	RawTx:       nil,
-	//	TxID:        to.Ptr(txIDTemplated(f.transactionID)),
-	//	Outputs: []models.Output{
-	//		{
-	//			Vout:             f.vout,
-	//			UserID:           f.userID,
-	//			Satoshis:         int64(f.satoshis),
-	//			Spendable:        true,
-	//			Change:           true,
-	//			ProvidedBy:       string(wdk.ProvidedByStorage),
-	//			Description:      "test-faucet-output",
-	//			Purpose:          "test-faucet-purpose",
-	//			Type:             string(wdk.OutputTypeP2PKH),
-	//			DerivationPrefix: to.Ptr(MockDerivationPrefix),
-	//			DerivationSuffix: to.Ptr(MockDerivationSuffix),
-	//		},
-	//	},
-	//}
 
 	f.parent.Save(utxo)
 }
