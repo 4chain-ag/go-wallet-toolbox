@@ -12,7 +12,6 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/txutils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/configuration"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/go-resty/resty/v2"
 	"github.com/go-softwarelab/common/pkg/to"
@@ -56,7 +55,7 @@ func New(httpClient *resty.Client, logger *slog.Logger, network defs.BSVNetwork,
 	}
 }
 
-func (woc *WhatsOnChain) RawTx(ctx context.Context, txID string) (*internal.RawTxResult, error) {
+func (woc *WhatsOnChain) RawTx(ctx context.Context, txID string) (*wdk.RawTxResult, error) {
 	req := woc.httpClient.
 		R().
 		SetContext(ctx).
@@ -87,7 +86,7 @@ func (woc *WhatsOnChain) RawTx(ctx context.Context, txID string) (*internal.RawT
 		return nil, fmt.Errorf("computed txid %s doesn't match requested value %s", txIDFromRawTx, txID)
 	}
 
-	return &internal.RawTxResult{
+	return &wdk.RawTxResult{
 		Name:  "WoC",
 		TxID:  txID,
 		RawTx: txHexDecoded,
