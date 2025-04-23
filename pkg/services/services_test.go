@@ -129,7 +129,7 @@ func TestRawTxSuccess(t *testing.T) {
 		require.NoError(t, err)
 		expectedResult := wdk.RawTxResult{
 			TxID:  txID,
-			Name:  "WoC",
+			Name:  "WhatsOnChain",
 			RawTx: decodedTx,
 		}
 
