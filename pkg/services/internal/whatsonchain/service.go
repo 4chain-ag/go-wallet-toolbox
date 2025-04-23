@@ -24,6 +24,8 @@ type bsvExchangeRateResponse struct {
 	Currency string  `json:"currency"`
 }
 
+const ServiceName = "WhatsOnChain"
+
 type WhatsOnChain struct {
 	httpClient *resty.Client
 	url        string
@@ -87,7 +89,7 @@ func (woc *WhatsOnChain) RawTx(ctx context.Context, txID string) (*wdk.RawTxResu
 	}
 
 	return &wdk.RawTxResult{
-		Name:  "WoC",
+		Name:  ServiceName,
 		TxID:  txID,
 		RawTx: txHexDecoded,
 	}, nil

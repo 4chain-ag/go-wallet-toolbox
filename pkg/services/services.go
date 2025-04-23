@@ -50,7 +50,7 @@ func New(httpClient *resty.Client, logger *slog.Logger, config configuration.Wal
 		rawTxServices: servicequeue.NewQueue1(
 			logger,
 			"RawTx",
-			servicequeue.NewService1("WhatsOnChain", woc.RawTx),
+			servicequeue.NewService1(whatsonchain.ServiceName, woc.RawTx),
 		),
 	}
 }
