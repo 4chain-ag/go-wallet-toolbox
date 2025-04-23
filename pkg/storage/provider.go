@@ -256,9 +256,25 @@ func (p *Provider) CreateAction(ctx context.Context, auth wdk.AuthID, args wdk.V
 		return nil, fmt.Errorf("invalid createAction args: %w", err)
 	}
 
-	res, err := p.actions.Create(context.Background(), *auth.UserID, actions.FromValidCreateActionArgs(&args))
+	res, err := p.actions.Create(ctx, *auth.UserID, actions.FromValidCreateActionArgs(&args))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create action: %w", err)
+		return nil, fmt.Errorf("failed to process createAction: %w", err)
+	}
+	return res, nil
+}
+
+// InternalizeAction Storage level processing for wallet `internalizeAction`.
+func (p *Provider) InternalizeAction(ctx context.Context, auth wdk.AuthID, args wdk.InternalizeActionArgs) (*wdk.InternalizeActionResult, error) {
+	if auth.UserID == nil {
+		return nil, fmt.Errorf("missing user ID")
+	}
+	if err := validate.ValidInternalizeActionArgs(&args); err != nil {
+		return nil, fmt.Errorf("invalid internalizeAction args: %w", err)
+	}
+
+	res, err := p.actions.Internalize(ctx, *auth.UserID, &args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to process internalizeAction: %w", err)
 	}
 	return res, nil
 }
