@@ -69,8 +69,7 @@ func (f *faucetFixture) TopUp(satoshis satoshi.Value) {
 	}
 
 	utxo := &models.UserUTXO{
-		UserID: f.user.ID,
-		//OutputID:           f.index,
+		UserID:             f.user.ID,
 		Satoshis:           satoshis.MustUInt64(),
 		EstimatedInputSize: txutils.P2PKHEstimatedInputSize,
 		BasketID:           f.basketID,

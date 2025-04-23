@@ -43,7 +43,6 @@ type userUtxoFixture struct {
 	t                  testing.TB
 	index              uint
 	userID             int
-	transactionID      uint
 	vout               uint32
 	satoshis           uint64
 	estimatedInputSize uint64
@@ -58,7 +57,6 @@ func newUtxoFixture(t testing.TB, parent UTXODatabase, index uint) *userUtxoFixt
 		index:              index,
 		basket:             &basket,
 		userID:             1,
-		transactionID:      index,
 		vout:               uint32(index),
 		satoshis:           1,
 		estimatedInputSize: txutils.P2PKHEstimatedInputSize,
