@@ -6,6 +6,7 @@ toolchain go1.24.1
 
 require (
 	github.com/bsv-blockchain/go-sdk v1.1.22
+	github.com/bsv-blockchain/universal-test-vectors v0.5.0
 	github.com/filecoin-project/go-jsonrpc v0.8.0
 	github.com/go-resty/resty/v2 v2.16.5
 	github.com/go-softwarelab/common v0.22.0
@@ -23,7 +24,6 @@ require (
 )
 
 require (
-	github.com/bsv-blockchain/universal-test-vectors v0.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/go-sql-driver/mysql v1.7.0 // indirect
