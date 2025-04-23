@@ -15,7 +15,7 @@ type mockStruct struct {
 func TestExplicitByteArrayUnmarshall(t *testing.T) {
 	// given:
 	jValue := `{
-		"tx": [1, 2, 3, 255]
+		"tx": [1, 2, 33, 255]
 	}`
 
 	// when:
@@ -28,7 +28,7 @@ func TestExplicitByteArrayUnmarshall(t *testing.T) {
 	assert.Equal(t, 4, len(jVal.Tx))
 	assert.Equal(t, byte(1), jVal.Tx[0])
 	assert.Equal(t, byte(2), jVal.Tx[1])
-	assert.Equal(t, byte(3), jVal.Tx[2])
+	assert.Equal(t, byte(33), jVal.Tx[2])
 	assert.Equal(t, byte(255), jVal.Tx[3])
 }
 
@@ -49,7 +49,7 @@ func TestExplicitByteArrayUnmarshallOutOfRange(t *testing.T) {
 func TestExplicitByteArrayMarshall(t *testing.T) {
 	// given:
 	jVal := mockStruct{
-		Tx: ExplicitByteArray{1, 2, 3, 255},
+		Tx: ExplicitByteArray{1, 2, 33, 255},
 	}
 
 	// when:
@@ -58,5 +58,5 @@ func TestExplicitByteArrayMarshall(t *testing.T) {
 	// then:
 	require.NoError(t, err)
 
-	assert.Equal(t, `{"tx":[1,2,3,255]}`, string(marshaled))
+	assert.Equal(t, `{"tx":[1,2,33,255]}`, string(marshaled))
 }
