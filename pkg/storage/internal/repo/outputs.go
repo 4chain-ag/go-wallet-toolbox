@@ -32,7 +32,9 @@ func (o *Outputs) FindOutputs(ctx context.Context, outputIDs iter.Seq[uint]) ([]
 	var outputs []*models.Output
 	err := o.db.WithContext(ctx).
 		Model(models.Output{}).
-		Preload("Transaction").
+		Preload("Transaction", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, tx_id")
+		}).
 		Where("id IN ?", idsClause).
 		Find(&outputs).Error
 

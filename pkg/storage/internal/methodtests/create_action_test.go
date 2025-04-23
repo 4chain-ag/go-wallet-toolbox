@@ -69,6 +69,19 @@ func TestCreateActionHappyPath(t *testing.T) {
 	assert.Equal(t, providedOutput.CustomInstructions, resultOutput.CustomInstructions)
 	assert.Equal(t, providedOutput.Tags, resultOutput.Tags)
 
+	input := result.Inputs[0]
+	assert.Equal(t, 1, len(result.Inputs))
+	assert.Equal(t, 0, input.Vin)
+	assert.NotEmpty(t, input.SourceTxid)
+	assert.Equal(t, uint32(0), input.SourceVout)
+	assert.Equal(t, int64(100_000), input.SourceSatoshis)
+	assert.NotEmpty(t, input.SourceLockingScript)
+	assert.Nil(t, input.SourceTransaction)
+	assert.Equal(t, wdk.ProvidedByStorage, input.ProvidedBy)
+	assert.Equal(t, string(wdk.OutputTypeP2PKH), input.Type)
+	assert.NotEmpty(t, input.DerivationSuffix)
+	assert.NotEmpty(t, input.DerivationPrefix)
+
 	// TODO: Test DB state: but after we make actual getter methods, like ListActions
 }
 
