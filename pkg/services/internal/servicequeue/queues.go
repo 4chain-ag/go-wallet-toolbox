@@ -8,14 +8,13 @@ import (
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
-	"github.com/go-softwarelab/common/pkg/collection"
 	"github.com/go-softwarelab/common/pkg/is"
 	"github.com/go-softwarelab/common/pkg/seq"
-	"github.com/go-softwarelab/common/pkg/seq2"
 	"github.com/go-softwarelab/common/pkg/to"
 )
 
-var ErrEmptyResult = errors.New("service returns an empty result")
+var ErrEmptyResult = fmt.Errorf("service returns an empty result")
+var ErrNoServicesRegistered = fmt.Errorf("no services registered")
 
 // Queue is a structure that holds a collection of services and abstracts away the details of calling them and error handling.
 // Services are functions accepting a context and returning a result or an error.
@@ -134,59 +133,74 @@ type serv interface {
 
 func processOneByOne[S serv, R any](logger *slog.Logger, services []S, callService func(S) (R, error)) (R, error) {
 	if len(services) == 0 {
-		return to.ZeroValue[R](), errors.New("no services registered")
+		return to.ZeroValue[R](), ErrNoServicesRegistered
 	}
 
-	results := seq.MapOrErr(seq.FromSlice(services), func(s S) (collection.Tuple2[string, R], error) {
+	results := seq.Map(seq.FromSlice(services), func(s S) serviceCallResult[R] {
 		res, err := callService(s)
-		if err != nil {
-			err = fmt.Errorf("service %s responds with error: %w", s.Name(), err)
+		return serviceCallResult[R]{
+			ServiceName: s.Name(),
+			Result:      res,
+			Err:         err,
 		}
-		return collection.NewTuple2(s.Name(), res), err
 	})
 
 	results = takeUntilHaveResult(results)
 
-	results = seq2.Each(results, func(serviceResult collection.Tuple2[string, R], err error) {
-		if err != nil {
+	results = seq.Each(results, func(serviceResult serviceCallResult[R]) {
+		if serviceResult.Err != nil {
 			logger.Warn("error when calling service",
-				slog.String("service.name", serviceResult.A),
-				logging.Error(err),
+				slog.String("service.name", serviceResult.ServiceName),
+				logging.Error(serviceResult.Err),
 			)
 		}
 	})
 
-	result := seq2.Reduce(results,
-		func(res collection.Tuple2[R, error], serviceResult collection.Tuple2[string, R], err error) collection.Tuple2[R, error] {
-			ret := collection.NewTuple2[R, error](serviceResult.B, errors.Join(res.B, err))
-			return ret
-		},
-		collection.Tuple2[R, error]{},
-	)
-
-	if is.NotNil(result.A) {
-		return result.A, nil
+	var err error
+	for result := range results {
+		if result.Err != nil {
+			err = errors.Join(err, fmt.Errorf("error from service %s: %w", result.ServiceName, result.Err))
+			continue
+		}
+		return result.Result, nil
 	}
-	return result.A, fmt.Errorf("all services failed: %w", result.B)
+
+	return to.ZeroValue[R](), fmt.Errorf("all services failed: %w", err)
 }
 
-func takeUntilHaveResult[R any](seq iter.Seq2[collection.Tuple2[string, R], error]) iter.Seq2[collection.Tuple2[string, R], error] {
-	return func(yield func(collection.Tuple2[string, R], error) bool) {
-		for result, err := range seq {
-			if err != nil {
-				if !yield(result, err) {
+type serviceCallResult[R any] struct {
+	ServiceName string
+	Result      R
+	Err         error
+}
+
+func takeUntilHaveResult[R any](seq iter.Seq[serviceCallResult[R]]) iter.Seq[serviceCallResult[R]] {
+	return func(yield func(serviceCallResult[R]) bool) {
+		for result := range seq {
+			if result.Err != nil {
+				errResult := serviceCallResult[R]{
+					ServiceName: result.ServiceName,
+					Err:         result.Err,
+				}
+
+				if !yield(errResult) {
 					break
 				}
 				continue
 			}
-			if is.Nil(result.B) {
-				if !yield(result, ErrEmptyResult) {
+			if is.Nil(result.Result) {
+				nilResult := serviceCallResult[R]{
+					ServiceName: result.ServiceName,
+					Err:         ErrEmptyResult,
+				}
+
+				if !yield(nilResult) {
 					break
 				}
 				continue
 			}
 
-			yield(result, nil)
+			yield(result)
 			break
 		}
 	}
