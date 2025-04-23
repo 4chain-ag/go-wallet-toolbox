@@ -2,9 +2,10 @@ package primitives
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 type mockStruct struct {
@@ -52,10 +53,10 @@ func TestExplicitByteArrayMarshall(t *testing.T) {
 	}
 
 	// when:
-	marshalled, err := json.Marshal(jVal)
+	marshaled, err := json.Marshal(jVal)
 
 	// then:
 	require.NoError(t, err)
 
-	assert.Equal(t, `{"tx":[1,2,3,255]}`, string(marshalled))
+	assert.Equal(t, `{"tx":[1,2,3,255]}`, string(marshaled))
 }

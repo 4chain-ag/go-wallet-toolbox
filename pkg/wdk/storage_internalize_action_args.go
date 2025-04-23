@@ -2,6 +2,7 @@ package wdk
 
 import (
 	"fmt"
+
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 )
 
@@ -104,6 +105,7 @@ type InternalizeActionArgs struct {
 	SeekPermission *primitives.BooleanDefaultTrue `json:"seekPermission"`
 }
 
+// InternalizeActionResult represents the result of an internalize action with a status indicating if it was accepted or not.
 type InternalizeActionResult struct {
 	Accepted bool `json:"accepted"`
 }

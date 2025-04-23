@@ -1,11 +1,12 @@
 package fixtures
 
 import (
+	"testing"
+
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/bsv-blockchain/universal-test-vectors/pkg/testabilities"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func DefaultInternalizeActionArgs(t *testing.T) wdk.InternalizeActionArgs {

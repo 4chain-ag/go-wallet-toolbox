@@ -2,9 +2,10 @@ package actions
 
 import (
 	"context"
+	"log/slog"
+
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
-	"log/slog"
 )
 
 type internalize struct {
