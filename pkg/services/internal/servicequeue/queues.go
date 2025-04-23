@@ -147,14 +147,7 @@ func processOneByOne[S serv, R any](logger *slog.Logger, services []S, callServi
 
 	results = takeUntilHaveResult(results)
 
-	results = seq.Each(results, func(serviceResult serviceCallResult[R]) {
-		if serviceResult.Err != nil {
-			logger.Warn("error when calling service",
-				slog.String("service.name", serviceResult.ServiceName),
-				logging.Error(serviceResult.Err),
-			)
-		}
-	})
+	results = seq.Each(results, logErrorResult[R](logger))
 
 	var err error
 	for result := range results {
@@ -172,6 +165,17 @@ type serviceCallResult[R any] struct {
 	ServiceName string
 	Result      R
 	Err         error
+}
+
+func logErrorResult[R any](logger *slog.Logger) func(serviceResult serviceCallResult[R]) {
+	return func(serviceResult serviceCallResult[R]) {
+		if serviceResult.Err != nil {
+			logger.Warn("error when calling service",
+				slog.String("service.name", serviceResult.ServiceName),
+				logging.Error(serviceResult.Err),
+			)
+		}
+	}
 }
 
 func takeUntilHaveResult[R any](seq iter.Seq[serviceCallResult[R]]) iter.Seq[serviceCallResult[R]] {
