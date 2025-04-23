@@ -21,14 +21,11 @@ func NewOutputs(db *gorm.DB) *Outputs {
 }
 
 func (o *Outputs) FindOutputs(ctx context.Context, outputIDs iter.Seq[uint]) ([]*wdk.TableOutput, error) {
-	count := seq.Count(outputIDs)
-	if count == 0 {
+	if seq.IsEmpty(outputIDs) {
 		return nil, nil
 	}
-	idsClause := make([]any, 0, count)
-	for outputID := range outputIDs {
-		idsClause = append(idsClause, outputID)
-	}
+
+	idsClause := seq.Collect(outputIDs)
 
 	var outputs []*models.Output
 	err := o.db.WithContext(ctx).
