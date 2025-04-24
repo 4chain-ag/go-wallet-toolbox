@@ -331,6 +331,7 @@ func (c *create) newOutputs(
 			Type:             wdk.OutputTypeP2PKH,
 			DerivationPrefix: to.Ptr(derivationPrefix),
 			DerivationSuffix: to.Ptr(derivationSuffix),
+			Purpose:          wdk.ChangePurpose,
 		})
 	}
 
