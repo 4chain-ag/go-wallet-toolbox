@@ -1,4 +1,4 @@
-package internal
+package wdk
 
 // RawTxResult is result from RawTx method
 type RawTxResult struct {

@@ -1,13 +1,13 @@
 package services
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/txutils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/configuration"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/servicequeue"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/whatsonchain"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
@@ -16,20 +16,15 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-// RawTxResultService is an interface for services that implement RawTx method
-type RawTxResultService interface {
-	RawTx(txID string, chain defs.BSVNetwork) (*internal.RawTxResult, error)
-}
-
 // WalletServices is a struct that contains services used by a wallet
 type WalletServices struct {
-	httpClient   *resty.Client
-	logger       *slog.Logger
-	chain        defs.BSVNetwork
-	config       *configuration.WalletServices
-	whatsonchain *whatsonchain.WhatsOnChain
+	httpClient    *resty.Client
+	logger        *slog.Logger
+	chain         defs.BSVNetwork
+	config        *configuration.WalletServices
+	whatsonchain  *whatsonchain.WhatsOnChain
+	rawTxServices servicequeue.Queue1[string, *wdk.RawTxResult]
 
-	rawTxServices *servicequeue.ServicesQueue[RawTxResultService]
 	// getMerklePathServices: ServiceCollection<sdk.GetMerklePathService>
 	// getRawTxServices: ServiceCollection<sdk.GetRawTxService>
 	// postBeefServices: ServiceCollection<sdk.PostBeefService>
@@ -45,75 +40,31 @@ func New(httpClient *resty.Client, logger *slog.Logger, config configuration.Wal
 
 	woc := whatsonchain.New(httpClient, logger, config.Chain, config.WhatsOnChain)
 
-	rawTxResultServices := servicequeue.New(
-		servicequeue.ServiceExecutor[RawTxResultService]{
-			Name:    "WhatsOnChain",
-			Service: woc,
-		})
-
 	return &WalletServices{
-		httpClient:    httpClient,
-		chain:         config.Chain,
-		config:        &config,
-		logger:        logger,
-		whatsonchain:  woc,
-		rawTxServices: rawTxResultServices,
+		httpClient:   httpClient,
+		chain:        config.Chain,
+		config:       &config,
+		logger:       logger,
+		whatsonchain: woc,
+
+		rawTxServices: servicequeue.NewQueue1(
+			logger,
+			"RawTx",
+			servicequeue.NewService1(whatsonchain.ServiceName, woc.RawTx),
+		),
 	}
 }
 
 // RawTx attempts to obtain the raw transaction bytes associated with a 32 byte transaction hash (txid).
-//
-// Cycles through configured transaction processing services attempting to get a valid response.
-//
-// On success:
-// Result txid is the requested transaction hash
-// Result rawTx will be an array containing raw transaction bytes.
-// Result name will be the responding service's identifying name.
-// Returns result without incrementing active service.
-//
-// On failure:
-// Result txid is the requested transaction hash
-// Result mapi will be the first mapi response obtained (service name and response), or null
-// Result error will be the first error thrown (service name and CwiError), or null
-// Increments to next configured service and tries again until all services have been tried.
-func (s *WalletServices) RawTx(txID string) (internal.RawTxResult, error) {
-	var lastErr error
-
-	for tries := 0; tries < s.rawTxServices.Count(); tries++ {
-		srv, err := s.rawTxServices.Current()
-		if err != nil {
-			return internal.RawTxResult{}, fmt.Errorf("error while getting current service: %w", err)
+func (s *WalletServices) RawTx(txID string) (wdk.RawTxResult, error) {
+	result, err := s.rawTxServices.OneByOne(context.TODO(), txID)
+	if err != nil {
+		if errors.Is(err, servicequeue.ErrEmptyResult) {
+			return wdk.RawTxResult{}, fmt.Errorf("transaction with txID: %s not found", txID)
 		}
-
-		resp, err := srv.Service.RawTx(txID, s.chain)
-		if err != nil {
-			lastErr = fmt.Errorf("error while getting raw tx result from service: %s => %w", srv.Name, err)
-			s.logger.Error(lastErr.Error())
-			s.rawTxServices.Next()
-			continue
-		}
-
-		if resp == nil {
-			lastErr = fmt.Errorf("transaction with txID: %s not found", txID)
-			s.rawTxServices.Next()
-			continue
-		}
-
-		txIDFromRawTx := txutils.TransactionIDFromRawTx(resp.RawTx)
-		if txID != txIDFromRawTx {
-			lastErr = fmt.Errorf("computed txid %s doesn't match requested value %s", txIDFromRawTx, txID)
-			s.rawTxServices.Next()
-			continue
-		}
-
-		return *resp, nil
+		return wdk.RawTxResult{}, fmt.Errorf("couldn't get rawtx for id %s: %w", txID, err)
 	}
-
-	if lastErr != nil {
-		return internal.RawTxResult{}, fmt.Errorf("all services failed, last error: %w", lastErr)
-	}
-
-	return internal.RawTxResult{}, fmt.Errorf("internal error during getting RawTx")
+	return *result, nil
 }
 
 // ChainTracker returns service, which requires `options.chaintracks` be valid.

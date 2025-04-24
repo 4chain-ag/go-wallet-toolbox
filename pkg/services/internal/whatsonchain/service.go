@@ -1,6 +1,7 @@
 package whatsonchain
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
 	"log/slog"
@@ -9,8 +10,8 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/txutils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/configuration"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/go-resty/resty/v2"
 	"github.com/go-softwarelab/common/pkg/to"
@@ -22,6 +23,8 @@ type bsvExchangeRateResponse struct {
 	Rate     float64 `json:"rate"`
 	Currency string  `json:"currency"`
 }
+
+const ServiceName = "WhatsOnChain"
 
 type WhatsOnChain struct {
 	httpClient *resty.Client
@@ -54,13 +57,10 @@ func New(httpClient *resty.Client, logger *slog.Logger, network defs.BSVNetwork,
 	}
 }
 
-func (woc *WhatsOnChain) RawTx(txID string, chain defs.BSVNetwork) (*internal.RawTxResult, error) {
-	result := &internal.RawTxResult{
-		Name: "WoC",
-		TxID: txID,
-	}
+func (woc *WhatsOnChain) RawTx(ctx context.Context, txID string) (*wdk.RawTxResult, error) {
 	req := woc.httpClient.
 		R().
+		SetContext(ctx).
 		AddRetryCondition(func(res *resty.Response, err error) bool {
 			return res.StatusCode() == http.StatusTooManyRequests
 		})
@@ -68,7 +68,7 @@ func (woc *WhatsOnChain) RawTx(txID string, chain defs.BSVNetwork) (*internal.Ra
 	req.SetHeader("Cache-Control", "no-cache")
 
 	res, err := req.Get(fmt.Sprintf("%s/tx/%s/hex", woc.url, txID))
-	if err != nil || res.String() == "" {
+	if err != nil {
 		return nil, fmt.Errorf("failed to fetch raw tx hex: %w", err)
 	}
 	if res.StatusCode() == http.StatusNotFound {
@@ -83,8 +83,16 @@ func (woc *WhatsOnChain) RawTx(txID string, chain defs.BSVNetwork) (*internal.Ra
 		return nil, fmt.Errorf("failed to decode raw transaction hex: %w", err)
 	}
 
-	result.RawTx = txHexDecoded
-	return result, nil
+	txIDFromRawTx := txutils.TransactionIDFromRawTx(txHexDecoded)
+	if txID != txIDFromRawTx {
+		return nil, fmt.Errorf("computed txid %s doesn't match requested value %s", txIDFromRawTx, txID)
+	}
+
+	return &wdk.RawTxResult{
+		Name:  ServiceName,
+		TxID:  txID,
+		RawTx: txHexDecoded,
+	}, nil
 }
 
 func (woc *WhatsOnChain) UpdateBsvExchangeRate() (wdk.BSVExchangeRate, error) {

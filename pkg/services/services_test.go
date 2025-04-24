@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/testabilities"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/stretchr/testify/assert"
@@ -128,9 +127,9 @@ func TestRawTxSuccess(t *testing.T) {
 		// and:
 		decodedTx, err := hex.DecodeString(rawTxHex)
 		require.NoError(t, err)
-		expectedResult := internal.RawTxResult{
+		expectedResult := wdk.RawTxResult{
 			TxID:  txID,
-			Name:  "WoC",
+			Name:  "WhatsOnChain",
 			RawTx: decodedTx,
 		}
 
