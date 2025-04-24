@@ -29,8 +29,7 @@ const (
 )
 
 type UTXO struct {
-	TxID     string
-	Vout     uint32
+	OutputID uint
 	Satoshis satoshi.Value
 }
 
@@ -93,16 +92,28 @@ type TxRepo interface {
 	CreateTransaction(ctx context.Context, transaction *entity.NewTx) error
 }
 
+type OutputRepo interface {
+	FindOutputs(ctx context.Context, outputIDs iter.Seq[uint]) ([]*wdk.TableOutput, error)
+}
+
 type create struct {
 	logger        *slog.Logger
 	funder        Funder
 	basketRepo    BasketRepo
 	txRepo        TxRepo
+	outputRepo    OutputRepo
 	commission    *commission.ScriptGenerator
 	commissionCfg defs.Commission
 }
 
-func newCreateAction(logger *slog.Logger, funder Funder, commissionCfg defs.Commission, basketRepo BasketRepo, txRepo TxRepo) *create {
+func newCreateAction(
+	logger *slog.Logger,
+	funder Funder,
+	commissionCfg defs.Commission,
+	basketRepo BasketRepo,
+	txRepo TxRepo,
+	outputRepo OutputRepo,
+) *create {
 	logger = logging.Child(logger, "createAction")
 	c := &create{
 		logger:        logger,
@@ -110,6 +121,7 @@ func newCreateAction(logger *slog.Logger, funder Funder, commissionCfg defs.Comm
 		basketRepo:    basketRepo,
 		txRepo:        txRepo,
 		commissionCfg: commissionCfg,
+		outputRepo:    outputRepo,
 	}
 
 	if commissionCfg.Enabled() {
@@ -190,11 +202,8 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		Description: params.Description,
 		Satoshis:    satoshi.MustSubtract(funding.ChangeAmount, totalAllocated).Int64(),
 		Outputs:     newOutputs,
-		ReservedUTXOs: slices.Map(funding.AllocatedUTXOs, func(utxo *UTXO) *wdk.OutPoint {
-			return &wdk.OutPoint{
-				TxID: utxo.TxID,
-				Vout: utxo.Vout,
-			}
+		ReservedOutputIDs: slices.Map(funding.AllocatedUTXOs, func(utxo *UTXO) uint {
+			return utxo.OutputID
 		}),
 		Labels: params.Labels,
 
@@ -204,12 +213,18 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		return nil, fmt.Errorf("failed to create transaction: %w", err)
 	}
 
+	resultInputs, err := c.resultInputs(ctx, funding.AllocatedUTXOs)
+	if err != nil {
+		return nil, err
+	}
+
 	return &wdk.StorageCreateActionResult{
 		Reference:        reference,
 		Version:          params.Version,
 		LockTime:         params.LockTime,
 		DerivationPrefix: derivationPrefix,
 		Outputs:          c.resultOutputs(newOutputs),
+		Inputs:           resultInputs,
 	}, nil
 }
 
@@ -383,6 +398,43 @@ func (c *create) resultOutputs(newOutputs []*entity.NewOutput) []wdk.StorageCrea
 	}
 
 	return resultOutputs
+}
+
+func (c *create) resultInputs(ctx context.Context, allocatedUTXOs []*UTXO) ([]wdk.StorageCreateTransactionSdkInput, error) {
+	utxos, err := c.outputRepo.FindOutputs(ctx, seq.Map(seq.FromSlice(allocatedUTXOs), func(utxo *UTXO) uint {
+		return utxo.OutputID
+	}))
+	if err != nil {
+		return nil, fmt.Errorf("failed to find allocated outputs: %w", err)
+	}
+	if len(utxos) != len(allocatedUTXOs) {
+		return nil, fmt.Errorf("expected %d outputs, got %d", len(allocatedUTXOs), len(utxos))
+	}
+
+	resultInputs := make([]wdk.StorageCreateTransactionSdkInput, len(allocatedUTXOs))
+	for i, utxo := range utxos {
+		if utxo.Txid == nil {
+			return nil, fmt.Errorf("missing txid for output %d", i)
+		}
+		if utxo.LockingScript == nil {
+			return nil, fmt.Errorf("missing locking script for output %d", i)
+		}
+		resultInputs[i] = wdk.StorageCreateTransactionSdkInput{
+			Vin:                   i,
+			SourceTxid:            *utxo.Txid,
+			SourceVout:            utxo.Vout,
+			SourceSatoshis:        utxo.Satoshis,
+			SourceLockingScript:   *utxo.LockingScript,
+			UnlockingScriptLength: txutils.P2PKHUnlockingScriptLength,
+			ProvidedBy:            wdk.ProvidedByStorage,
+			Type:                  utxo.Type,
+			DerivationPrefix:      utxo.DerivationPrefix,
+			DerivationSuffix:      utxo.DerivationSuffix,
+
+			// TODO raw source tx when handle isSignAction
+		}
+	}
+	return resultInputs, nil
 }
 
 func randomDerivation() (string, error) {

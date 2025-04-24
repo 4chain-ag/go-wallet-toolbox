@@ -7,6 +7,7 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder/errfunder"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
@@ -72,6 +73,21 @@ func TestCreateActionHappyPath(t *testing.T) {
 	assert.Equal(t, providedOutput.LockingScript, resultOutput.LockingScript)
 	assert.Equal(t, providedOutput.CustomInstructions, resultOutput.CustomInstructions)
 	assert.Equal(t, providedOutput.Tags, resultOutput.Tags)
+
+	input := result.Inputs[0]
+	assert.Equal(t, 1, len(result.Inputs))
+	assert.Equal(t, 0, input.Vin)
+	assert.NotEmpty(t, input.SourceTxid)
+	assert.Equal(t, uint32(0), input.SourceVout)
+	assert.Equal(t, int64(100_000), input.SourceSatoshis)
+	assert.NotEmpty(t, input.SourceLockingScript)
+	assert.Nil(t, input.SourceTransaction)
+	assert.Equal(t, wdk.ProvidedByStorage, input.ProvidedBy)
+	assert.Equal(t, string(wdk.OutputTypeP2PKH), input.Type)
+	require.NotEmpty(t, input.DerivationPrefix)
+	assert.Equal(t, 24, len(*input.DerivationPrefix))
+	require.NotEmpty(t, input.DerivationSuffix)
+	assert.Equal(t, 24, len(*input.DerivationSuffix))
 
 	// TODO: Test DB state: but after we make actual getter methods, like ListActions
 }
@@ -232,7 +248,7 @@ func TestReservedUTXO(t *testing.T) {
 	)
 
 	// then:
-	require.Error(t, err)
+	require.ErrorIs(t, err, errfunder.NotEnoughFunds)
 }
 
 func findOutput(

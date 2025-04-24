@@ -28,4 +28,6 @@ type Output struct {
 	ProvidedBy  string
 	Purpose     string
 	Type        string
+
+	Transaction *Transaction `gorm:"foreignKey:TransactionID;references:ID"`
 }

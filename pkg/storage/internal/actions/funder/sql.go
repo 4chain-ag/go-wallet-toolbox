@@ -175,8 +175,7 @@ func (c *utxoCollector) allocateUTXO(utxo *models.UserUTXO) (err error) {
 
 func (c *utxoCollector) addToAllocated(utxo *models.UserUTXO) {
 	c.allocatedUTXOs = append(c.allocatedUTXOs, &actions.UTXO{
-		TxID:     utxo.TxID,
-		Vout:     utxo.Vout,
+		OutputID: utxo.OutputID,
 		Satoshis: satoshi.MustFrom(utxo.Satoshis),
 	})
 }

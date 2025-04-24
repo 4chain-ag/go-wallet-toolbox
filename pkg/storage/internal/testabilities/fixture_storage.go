@@ -13,7 +13,6 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/mocks"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder/testabilities"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/server"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/dbfixtures"
@@ -92,17 +91,15 @@ func (s *storageFixture) Faucet(activeStorage *storage.Provider, user testusers.
 	_, err := activeStorage.FindOrInsertUser(ctx, user.PrivKey)
 	s.require.NoError(err)
 
-	funderFixture, _ := testabilities.NewWithDatabase(s.t, s.db)
-
 	basket, err := s.db.CreateRepositories().
 		FindBasketByName(context.Background(), user.ID, wdk.BasketNameForChange)
 	require.NoError(s.t, err)
 
 	return &faucetFixture{
-		t:             s.t,
-		user:          user,
-		funderFixture: funderFixture,
-		basket:        basket,
+		t:        s.t,
+		user:     user,
+		db:       s.db,
+		basketID: basket.BasketID,
 	}
 }
 
