@@ -94,8 +94,7 @@ func (a *funderAssertion) RowIndexes(indexes ...int) SuccessFundingResultAsserti
 	a.Helper()
 	expected := slices.Map(indexes, func(index int) *actions.UTXO {
 		return &actions.UTXO{
-			TxID:     a.fixture.createdUTXOs[index].TxID,
-			Vout:     a.fixture.createdUTXOs[index].Vout,
+			OutputID: a.fixture.createdUTXOs[index].OutputID,
 			Satoshis: satoshi.MustFrom(a.fixture.createdUTXOs[index].Satoshis),
 		}
 	})

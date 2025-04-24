@@ -66,11 +66,10 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *entity.Ne
 			})
 		}
 
-		for _, reserved := range newTx.ReservedUTXOs {
+		for _, reservedOutputID := range newTx.ReservedOutputIDs {
 			model.ReservedUtxos = append(model.ReservedUtxos, models.UserUTXO{
-				UserID: newTx.UserID,
-				TxID:   reserved.TxID,
-				Vout:   reserved.Vout,
+				UserID:   newTx.UserID,
+				OutputID: reservedOutputID,
 			})
 		}
 

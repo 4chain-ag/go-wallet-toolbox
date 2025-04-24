@@ -4,8 +4,8 @@ package wdk
 type StorageCreateTransactionSdkInput struct {
 	Vin                   int
 	SourceTxid            string
-	SourceVout            int
-	SourceSatoshis        int
+	SourceVout            uint32
+	SourceSatoshis        int64
 	SourceLockingScript   string
 	SourceTransaction     []byte
 	UnlockingScriptLength int
