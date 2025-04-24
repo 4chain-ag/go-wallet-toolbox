@@ -60,6 +60,10 @@ func TestCreateActionHappyPath(t *testing.T) {
 	assert.Equal(t, 31, countOutputsWithCondition(t, result.Outputs, providedByStorageCondition))
 	assert.Equal(t, primitives.SatoshiValue(57_998), sumOutputsWithCondition(t, result.Outputs, providedByStorageCondition))
 
+	forEveryOutput(t, result.Outputs, providedByStorageCondition, func(p wdk.StorageCreateTransactionSdkOutput) {
+		assert.Equal(t, "change", p.Purpose)
+	})
+
 	resultOutput, _ := findOutput(t, result.Outputs, providedByYouCondition)
 
 	assert.Empty(t, resultOutput.Purpose)
@@ -279,4 +283,19 @@ func providedByStorageCondition(p wdk.StorageCreateTransactionSdkOutput) bool {
 
 func commissionOutputCondition(p wdk.StorageCreateTransactionSdkOutput) bool {
 	return p.Purpose == "storage-commission"
+}
+
+func forEveryOutput(
+	t *testing.T,
+	outputs []wdk.StorageCreateTransactionSdkOutput,
+	finder func(p wdk.StorageCreateTransactionSdkOutput) bool,
+	validator func(p wdk.StorageCreateTransactionSdkOutput),
+) {
+	t.Helper()
+
+	for _, output := range outputs {
+		if finder(output) {
+			validator(output)
+		}
+	}
 }
