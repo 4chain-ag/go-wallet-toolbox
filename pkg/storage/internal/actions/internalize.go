@@ -13,7 +13,7 @@ type internalize struct {
 }
 
 func newInternalizeAction(logger *slog.Logger) *internalize {
-	logger = logging.Child(logger, "createAction")
+	logger = logging.Child(logger, "internalizeAction")
 	return &internalize{
 		logger: logger,
 	}
