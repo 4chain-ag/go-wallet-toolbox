@@ -21,20 +21,20 @@ func TestInternalizeActionNilAuth(t *testing.T) {
 	activeStorage := given.Provider().GORM()
 
 	// when:
-	_, err := activeStorage.InternalizeAction(context.Background(), wdk.AuthID{UserID: nil}, fixtures.DefaultInternalizeActionArgs(t))
+	_, err := activeStorage.InternalizeAction(context.Background(), wdk.AuthID{UserID: nil}, fixtures.DefaultInternalizeActionArgs(t, wdk.WalletPaymentProtocol))
 
 	// then:
 	require.Error(t, err)
 }
 
-func TestInternalizeActionHappyPath(t *testing.T) {
+func TestInternalizeActionWalletPaymentHappyPath(t *testing.T) {
 	given := testabilities.Given(t)
 
 	// given:
 	activeStorage := given.Provider().GORM()
 
 	// and:
-	args := fixtures.DefaultInternalizeActionArgs(t)
+	args := fixtures.DefaultInternalizeActionArgs(t, wdk.WalletPaymentProtocol)
 
 	// when:
 	result, err := activeStorage.InternalizeAction(
@@ -49,6 +49,31 @@ func TestInternalizeActionHappyPath(t *testing.T) {
 	assert.Equal(t, true, result.Accepted)
 	assert.Equal(t, false, result.IsMerge)
 	assert.Equal(t, primitives.SatoshiValue(999), result.Satoshis)
+	assert.Equal(t, "a24745add717b4222d1869b3a71ad5228a3468c12f3b2bd40ce5ec84e20bf97c", result.TxID)
+}
+
+func TestInternalizeActionBasketInsertionHappyPath(t *testing.T) {
+	given := testabilities.Given(t)
+
+	// given:
+	activeStorage := given.Provider().GORM()
+
+	// and:
+	args := fixtures.DefaultInternalizeActionArgs(t, wdk.BasketInsertionProtocol)
+
+	// when:
+	result, err := activeStorage.InternalizeAction(
+		context.Background(),
+		wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
+		args,
+	)
+
+	// then:
+	require.NoError(t, err)
+
+	assert.Equal(t, true, result.Accepted)
+	assert.Equal(t, false, result.IsMerge)
+	assert.Equal(t, primitives.SatoshiValue(0), result.Satoshis)
 	assert.Equal(t, "a24745add717b4222d1869b3a71ad5228a3468c12f3b2bd40ce5ec84e20bf97c", result.TxID)
 }
 
@@ -77,7 +102,7 @@ func TestInternalizeActionErrorCases(t *testing.T) {
 			activeStorage := given.Provider().GORM()
 
 			// and:
-			args := test.modifier(fixtures.DefaultInternalizeActionArgs(t))
+			args := test.modifier(fixtures.DefaultInternalizeActionArgs(t, wdk.WalletPaymentProtocol))
 
 			// when:
 			_, err := activeStorage.InternalizeAction(
@@ -103,7 +128,7 @@ func TestInternalizeActionForStoredTransaction(t *testing.T) {
 	ownedAtomicBeef, _ := ownedTxSpec.TX().AtomicBEEF(false)
 
 	// and:
-	args := fixtures.DefaultInternalizeActionArgs(t)
+	args := fixtures.DefaultInternalizeActionArgs(t, wdk.WalletPaymentProtocol)
 	args.Tx = ownedAtomicBeef
 
 	// then:

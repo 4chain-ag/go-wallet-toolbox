@@ -22,15 +22,17 @@ type TransactionsRepo interface {
 }
 
 type internalize struct {
-	logger *slog.Logger
-	txRepo TransactionsRepo
+	logger     *slog.Logger
+	txRepo     TransactionsRepo
+	basketRepo BasketRepo
 }
 
-func newInternalizeAction(logger *slog.Logger, txRepo TransactionsRepo) *internalize {
+func newInternalizeAction(logger *slog.Logger, txRepo TransactionsRepo, basketRepo BasketRepo) *internalize {
 	logger = logging.Child(logger, "internalizeAction")
 	return &internalize{
-		logger: logger,
-		txRepo: txRepo,
+		logger:     logger,
+		txRepo:     txRepo,
+		basketRepo: basketRepo,
 	}
 }
 
@@ -41,8 +43,6 @@ func (in *internalize) Internalize(ctx context.Context, userID int, args *wdk.In
 	}
 	txID := tx.TxID().String()
 
-	satoshis := satoshi.Zero()
-
 	storedTx, err := in.txRepo.FindTransactionByUserIDAndTxID(ctx, userID, txID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find transaction by userID and txID: %w", err)
@@ -51,14 +51,54 @@ func (in *internalize) Internalize(ctx context.Context, userID int, args *wdk.In
 		panic("not implemented yet") // TODO: Implement internalize action for known transaction (with merge)
 	}
 
+	newOutputs, cumulativeSatoshis, err := in.newOutputs(ctx, userID, tx, args.Outputs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new outputs: %w", err)
+	}
+
+	reference, err := txutils.RandomBase64(referenceLength)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate random reference: %w", err)
+	}
+
+	err = in.txRepo.CreateTransaction(ctx, &entity.NewTx{
+		UserID:      userID,
+		Version:     must.ConvertToIntFromUnsigned(tx.Version),  // TODO: Refactor Version fields to be uint32
+		LockTime:    must.ConvertToIntFromUnsigned(tx.LockTime), // TODO: Refactor LockTime fields to be uint32
+		Status:      wdk.TxStatusUnproven,
+		Reference:   reference,
+		IsOutgoing:  false,
+		Description: string(args.Description),
+		Satoshis:    cumulativeSatoshis.Int64(),
+		TxID:        to.Ptr(txID),
+		Outputs:     newOutputs,
+		Labels:      args.Labels,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create transaction: %w", err)
+	}
+
+	return &wdk.InternalizeActionResult{
+		Accepted: true,
+		IsMerge:  false,
+		TxID:     txID,
+		Satoshis: primitives.SatoshiValue(cumulativeSatoshis.MustUInt64()),
+	}, nil
+}
+
+func (in *internalize) newOutputs(ctx context.Context, userID int, tx *transaction.Transaction, outputSpecs []*wdk.InternalizeOutput) ([]*entity.NewOutput, satoshi.Value, error) {
+	satoshis := satoshi.Zero()
+
+	changeBasketVerified := false
+
 	var newOutputs []*entity.NewOutput
 	outputsCountU64, err := to.UInt32(len(tx.Outputs))
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert outputs count to uint32: %w", err)
+		return nil, 0, fmt.Errorf("failed to convert outputs count to uint32: %w", err)
 	}
-	for _, outputSpec := range args.Outputs {
+	for _, outputSpec := range outputSpecs {
 		if outputSpec.OutputIndex >= outputsCountU64 {
-			return nil, fmt.Errorf("output index %d is out of range of provided tx outputs count %d", outputSpec.OutputIndex, outputsCountU64)
+			return nil, 0, fmt.Errorf("output index %d is out of range of provided tx outputs count %d", outputSpec.OutputIndex, outputsCountU64)
 		}
 
 		output := tx.Outputs[outputSpec.OutputIndex]
@@ -67,17 +107,24 @@ func (in *internalize) Internalize(ctx context.Context, userID int, args *wdk.In
 		case wdk.WalletPaymentProtocol:
 			satoshis = satoshi.MustAdd(satoshis, output.Satoshis)
 
+			if !changeBasketVerified {
+				if err := in.checkChangeBasket(ctx, userID); err != nil {
+					return nil, 0, fmt.Errorf("failed to check change basket: %w", err)
+				}
+				changeBasketVerified = true
+			}
+
 			remittance := outputSpec.PaymentRemittance
 			newOutputs = append(newOutputs, &entity.NewOutput{
 				Vout:              outputSpec.OutputIndex,
 				Spendable:         true,
 				LockingScript:     to.Ptr(primitives.HexString(output.LockingScript.String())), //TODO: Check is LockingScript can't be []byte
-				Basket:            to.Ptr(wdk.BasketNameForChange),                             // TODO: check if the basket exists before
+				Basket:            to.Ptr(wdk.BasketNameForChange),
 				Satoshis:          satoshi.MustFrom(output.Satoshis),
 				SenderIdentityKey: to.Ptr(string(remittance.SenderIdentityKey)),
 				Type:              wdk.OutputTypeP2PKH,
 				ProvidedBy:        wdk.ProvidedByStorage,
-				Purpose:           "change",
+				Purpose:           wdk.ChangePurpose,
 				Change:            true,
 				DerivationPrefix:  to.Ptr(string(remittance.DerivationPrefix)),
 				DerivationSuffix:  to.Ptr(string(remittance.DerivationSuffix)),
@@ -99,32 +146,16 @@ func (in *internalize) Internalize(ctx context.Context, userID int, args *wdk.In
 		}
 	}
 
-	reference, err := txutils.RandomBase64(referenceLength)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate random reference: %w", err)
-	}
+	return newOutputs, satoshis, nil
+}
 
-	err = in.txRepo.CreateTransaction(ctx, &entity.NewTx{
-		UserID:      userID,
-		Version:     must.ConvertToIntFromUnsigned(tx.Version),  // TODO: Refactor Version fields to be uint32
-		LockTime:    must.ConvertToIntFromUnsigned(tx.LockTime), // TODO: Refactor LockTime fields to be uint32
-		Status:      wdk.TxStatusUnproven,
-		Reference:   reference,
-		IsOutgoing:  false,
-		Description: string(args.Description),
-		Satoshis:    satoshis.Int64(),
-		TxID:        to.Ptr(txID),
-		Outputs:     newOutputs,
-		Labels:      args.Labels,
-	})
+func (in *internalize) checkChangeBasket(ctx context.Context, userID int) error {
+	basket, err := in.basketRepo.FindBasketByName(ctx, userID, wdk.BasketNameForChange)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create transaction: %w", err)
+		return fmt.Errorf("failed to find basket for change: %w", err)
 	}
-
-	return &wdk.InternalizeActionResult{
-		Accepted: true,
-		IsMerge:  false,
-		TxID:     txID,
-		Satoshis: primitives.SatoshiValue(satoshis.MustUInt64()),
-	}, nil
+	if basket == nil {
+		return fmt.Errorf("basket for change (%s) not found", wdk.BasketNameForChange)
+	}
+	return nil
 }

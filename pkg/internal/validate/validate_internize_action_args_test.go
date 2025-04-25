@@ -12,7 +12,7 @@ import (
 
 func TestForDefaultValidCreateActionArgs(t *testing.T) {
 	// given:
-	args := fixtures.DefaultInternalizeActionArgs(t)
+	args := fixtures.DefaultInternalizeActionArgs(t, wdk.WalletPaymentProtocol)
 
 	// when:
 	err := ValidInternalizeActionArgs(&args)
@@ -97,7 +97,7 @@ func TestWrongInternalizeActionArgs(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			defaultArgs := fixtures.DefaultInternalizeActionArgs(t)
+			defaultArgs := fixtures.DefaultInternalizeActionArgs(t, wdk.WalletPaymentProtocol)
 			modifiedArgs := test.modifier(defaultArgs)
 			err := ValidInternalizeActionArgs(&modifiedArgs)
 			require.Error(t, err)
