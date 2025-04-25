@@ -118,7 +118,7 @@ func (in *internalize) newOutputs(ctx context.Context, userID int, tx *transacti
 			newOutputs = append(newOutputs, &entity.NewOutput{
 				Vout:              outputSpec.OutputIndex,
 				Spendable:         true,
-				LockingScript:     to.Ptr(primitives.HexString(output.LockingScript.String())), //TODO: Check is LockingScript can't be []byte
+				LockingScript:     to.Ptr(primitives.HexString(output.LockingScript.String())),
 				Basket:            to.Ptr(wdk.BasketNameForChange),
 				Satoshis:          satoshi.MustFrom(output.Satoshis),
 				SenderIdentityKey: to.Ptr(string(remittance.SenderIdentityKey)),
@@ -135,7 +135,7 @@ func (in *internalize) newOutputs(ctx context.Context, userID int, tx *transacti
 			newOutputs = append(newOutputs, &entity.NewOutput{
 				Vout:               outputSpec.OutputIndex,
 				Spendable:          true,
-				LockingScript:      to.Ptr(primitives.HexString(output.LockingScript.String())), //TODO: Check is LockingScript can't be []byte
+				LockingScript:      to.Ptr(primitives.HexString(output.LockingScript.String())),
 				Basket:             to.Ptr(string(remittance.Basket)),
 				Satoshis:           satoshi.MustFrom(output.Satoshis),
 				Type:               wdk.OutputTypeCustom,
