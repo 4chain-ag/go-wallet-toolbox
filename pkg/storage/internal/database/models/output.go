@@ -29,5 +29,7 @@ type Output struct {
 	Purpose     string
 	Type        string
 
+	SenderIdentityKey *string
+
 	Transaction *Transaction `gorm:"foreignKey:TransactionID;references:ID"`
 }

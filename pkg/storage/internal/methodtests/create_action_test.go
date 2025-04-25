@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNilAuth(t *testing.T) {
+func TestCreateActionNilAuth(t *testing.T) {
 	given := testabilities.Given(t)
 
 	// given:

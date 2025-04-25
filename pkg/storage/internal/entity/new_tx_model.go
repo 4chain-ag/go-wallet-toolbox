@@ -20,6 +20,8 @@ type NewTx struct {
 	InputBeef   []byte
 	Description string
 
+	TxID *string
+
 	ReservedOutputIDs []uint
 	Outputs           []*NewOutput
 
@@ -41,4 +43,5 @@ type NewOutput struct {
 	DerivationSuffix   *string
 	Description        string
 	Vout               uint32
+	SenderIdentityKey  *string
 }

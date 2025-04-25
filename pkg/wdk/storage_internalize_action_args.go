@@ -63,7 +63,7 @@ func (b *BasketInsertion) Validate() error {
 
 // InternalizeOutput represents the output for the internalize action
 type InternalizeOutput struct {
-	OutputIndex         uint64              `json:"outputIndex"`
+	OutputIndex         uint32              `json:"outputIndex"`
 	Protocol            InternalizeProtocol `json:"protocol"`
 	PaymentRemittance   *WalletPayment      `json:"paymentRemittance"`
 	InsertionRemittance *BasketInsertion    `json:"insertionRemittance"`
@@ -107,5 +107,8 @@ type InternalizeActionArgs struct {
 
 // InternalizeActionResult represents the result of an internalize action with a status indicating if it was accepted or not.
 type InternalizeActionResult struct {
-	Accepted bool `json:"accepted"`
+	Accepted bool                    `json:"accepted"`
+	IsMerge  bool                    `json:"isMerge"`
+	TxID     string                  `json:"txid"`
+	Satoshis primitives.SatoshiValue `json:"satoshis"`
 }
