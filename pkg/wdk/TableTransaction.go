@@ -18,8 +18,8 @@ type TableTransaction struct {
 	IsOutgoing    bool                         `json:"isOutgoing"`
 	Satoshis      primitives.SatoshiValue      `json:"satoshis"`
 	Description   string                       `json:"description"`
-	Version       *int                         `json:"version"`
-	LockTime      *int                         `json:"lockTime"`
+	Version       *uint32                      `json:"version"`
+	LockTime      *uint32                      `json:"lockTime"`
 	TxID          *string                      `json:"txid"`
 	InputBEEF     primitives.ExplicitByteArray `json:"inputBEEF"`
 	RawTx         primitives.ExplicitByteArray `json:"rawTx"`

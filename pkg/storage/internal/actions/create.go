@@ -52,8 +52,8 @@ func (fr *FundingResult) TotalAllocated() (satoshi.Value, error) {
 }
 
 type CreateActionParams struct {
-	Version          int
-	LockTime         int
+	Version          uint32
+	LockTime         uint32
 	Description      string
 	Labels           []primitives.StringUnder300
 	Outputs          []wdk.ValidCreateActionOutput

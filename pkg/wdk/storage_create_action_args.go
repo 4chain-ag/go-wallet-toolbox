@@ -92,8 +92,8 @@ type ValidCreateActionArgs struct {
 	InputBEEF                    primitives.BEEF               `json:"inputBEEF,omitempty"`
 	Inputs                       []ValidCreateActionInput      `json:"inputs,omitempty"`
 	Outputs                      []ValidCreateActionOutput     `json:"outputs,omitempty"`
-	LockTime                     int                           `json:"lockTime,omitempty"`
-	Version                      int                           `json:"version,omitempty"`
+	LockTime                     uint32                        `json:"lockTime,omitempty"`
+	Version                      uint32                        `json:"version,omitempty"`
 	Labels                       []primitives.StringUnder300   `json:"labels,omitempty"`
 	IsSignAction                 bool                          `json:"isSignAction,omitempty"`
 	RandomVals                   *[]int                        `json:"randomVals,omitempty"`

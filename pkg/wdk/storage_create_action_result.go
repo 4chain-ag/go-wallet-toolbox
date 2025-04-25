@@ -40,9 +40,9 @@ type StorageCreateActionResult struct {
 	// DerivationPrefix is the prefix used for key derivation
 	DerivationPrefix string
 	// Version is the transaction version
-	Version int
+	Version uint32
 	// LockTime is the transaction lock time
-	LockTime int
+	LockTime uint32
 	// Reference is a unique identifier for this transaction
 	Reference string
 }

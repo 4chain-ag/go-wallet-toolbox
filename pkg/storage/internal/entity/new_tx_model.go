@@ -11,8 +11,8 @@ import (
 type NewTx struct {
 	UserID int
 
-	Version     int
-	LockTime    int
+	Version     uint32
+	LockTime    uint32
 	Status      wdk.TxStatus
 	Reference   string
 	Satoshis    int64

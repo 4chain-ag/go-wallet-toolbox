@@ -12,7 +12,6 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/bsv-blockchain/go-sdk/transaction"
-	"github.com/go-softwarelab/common/pkg/must"
 	"github.com/go-softwarelab/common/pkg/to"
 )
 
@@ -43,6 +42,8 @@ func (in *internalize) Internalize(ctx context.Context, userID int, args *wdk.In
 	}
 	txID := tx.TxID().String()
 
+	// TODO: Do SPV verification of the transaction - it requires Services::ChainTracker
+
 	storedTx, err := in.txRepo.FindTransactionByUserIDAndTxID(ctx, userID, txID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find transaction by userID and txID: %w", err)
@@ -63,8 +64,8 @@ func (in *internalize) Internalize(ctx context.Context, userID int, args *wdk.In
 
 	err = in.txRepo.CreateTransaction(ctx, &entity.NewTx{
 		UserID:      userID,
-		Version:     must.ConvertToIntFromUnsigned(tx.Version),  // TODO: Refactor Version fields to be uint32
-		LockTime:    must.ConvertToIntFromUnsigned(tx.LockTime), // TODO: Refactor LockTime fields to be uint32
+		Version:     tx.Version,
+		LockTime:    tx.LockTime,
 		Status:      wdk.TxStatusUnproven,
 		Reference:   reference,
 		IsOutgoing:  false,
