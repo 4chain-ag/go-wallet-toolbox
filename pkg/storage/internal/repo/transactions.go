@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/txutils"
 
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/txutils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/scopes"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/entity"
