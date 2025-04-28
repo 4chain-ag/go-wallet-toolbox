@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/txutils"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/scopes"
@@ -24,6 +25,8 @@ func NewTransactions(db *gorm.DB) *Transactions {
 }
 
 func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *entity.NewTx) error {
+	basketNameToID := make(map[string]int)
+
 	err := txs.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		model := &models.Transaction{
 			UserID:      newTx.UserID,
@@ -40,6 +43,7 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *entity.Ne
 			Labels:      nil,
 		}
 		for _, output := range newTx.Outputs {
+			var basketID *int
 			out := models.Output{
 				Vout:               output.Vout,
 				UserID:             newTx.UserID,
@@ -58,9 +62,38 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *entity.Ne
 			}
 
 			if output.Basket != nil {
-				out.Basket = &models.OutputBasket{
-					Name:   *output.Basket,
-					UserID: newTx.UserID,
+				if cachedBasketID, ok := basketNameToID[*output.Basket]; ok {
+					basketID = to.Ptr(cachedBasketID)
+				} else {
+					var basket models.OutputBasket
+					err := tx.
+						Where(models.OutputBasket{UserID: newTx.UserID, Name: *output.Basket}).
+						FirstOrCreate(&basket).Error
+					if err != nil {
+						return fmt.Errorf("failed to find output basket: %w", err)
+					}
+
+					basketNameToID[*output.Basket] = basket.BasketID
+					basketID = to.Ptr(basket.BasketID)
+				}
+
+				out.BasketID = basketID
+			}
+
+			if out.Spendable && out.Change && basketID != nil {
+				if out.Satoshis == 0 {
+					return fmt.Errorf("change output with zero satoshis")
+				}
+				sats, err := to.UInt64(out.Satoshis)
+				if err != nil {
+					return fmt.Errorf("failed to convert satoshis to uint64: %w", err)
+				}
+
+				out.UserUTXO = &models.UserUTXO{
+					UserID:             newTx.UserID,
+					BasketID:           *basketID,
+					Satoshis:           sats,
+					EstimatedInputSize: txutils.EstimatedInputSizeByType(output.Type),
 				}
 			}
 

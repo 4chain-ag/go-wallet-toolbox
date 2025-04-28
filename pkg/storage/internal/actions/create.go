@@ -325,7 +325,7 @@ func (c *create) newOutputs(
 		all = append(all, &entity.NewOutput{
 			Satoshis:         satoshis,
 			Basket:           to.Ptr(wdk.BasketNameForChange),
-			Spendable:        true,
+			Spendable:        false, // TODO: Make sure, these outputs turn to spendable during "processAction"
 			Change:           true,
 			ProvidedBy:       wdk.ProvidedByStorage,
 			Type:             wdk.OutputTypeP2PKH,
@@ -339,7 +339,7 @@ func (c *create) newOutputs(
 		all = append(all, &entity.NewOutput{
 			Satoshis:           satoshi.MustFrom(output.Satoshis),
 			Basket:             (*string)(output.Basket),
-			Spendable:          true,
+			Spendable:          false, // TODO: Make sure, these outputs turn to spendable during "processAction"
 			Change:             false,
 			ProvidedBy:         wdk.ProvidedByYou,
 			Type:               wdk.OutputTypeCustom,
