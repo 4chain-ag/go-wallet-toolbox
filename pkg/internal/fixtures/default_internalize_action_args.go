@@ -13,7 +13,7 @@ import (
 func DefaultInternalizeActionArgs(t *testing.T, protocol wdk.InternalizeProtocol) wdk.InternalizeActionArgs {
 	t.Helper()
 
-	spec := testabilities.GivenTX().WithInput(100).WithP2PKHOutput(999)
+	spec := testabilities.GivenTX().WithInput(1000).WithP2PKHOutput(ExpectedValueToInternalize)
 
 	atomicBeef, err := spec.TX().AtomicBEEF(false)
 	require.NoError(t, err)

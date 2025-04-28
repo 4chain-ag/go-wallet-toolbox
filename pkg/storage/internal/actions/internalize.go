@@ -93,13 +93,13 @@ func (in *internalize) newOutputs(ctx context.Context, userID int, tx *transacti
 	changeBasketVerified := false
 
 	var newOutputs []*entity.NewOutput
-	outputsCountU64, err := to.UInt32(len(tx.Outputs))
+	outputsCount, err := to.UInt32(len(tx.Outputs))
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to convert outputs count to uint32: %w", err)
 	}
 	for _, outputSpec := range outputSpecs {
-		if outputSpec.OutputIndex >= outputsCountU64 {
-			return nil, 0, fmt.Errorf("output index %d is out of range of provided tx outputs count %d", outputSpec.OutputIndex, outputsCountU64)
+		if outputSpec.OutputIndex >= outputsCount {
+			return nil, 0, fmt.Errorf("output index %d is out of range of provided tx outputs count %d", outputSpec.OutputIndex, outputsCount)
 		}
 
 		output := tx.Outputs[outputSpec.OutputIndex]

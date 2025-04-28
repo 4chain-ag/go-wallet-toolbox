@@ -1,6 +1,8 @@
 package testusers
 
-import "github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+import (
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+)
 
 // NOTE: Testabilities can modify user IDs, to match ID with database
 

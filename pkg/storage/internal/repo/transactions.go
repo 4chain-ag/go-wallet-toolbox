@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/scopes"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/entity"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
@@ -89,7 +90,7 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *entity.Ne
 
 func (txs *Transactions) FindTransactionByUserIDAndTxID(ctx context.Context, userID int, txID string) (*wdk.TableTransaction, error) {
 	var transaction models.Transaction
-	err := txs.db.WithContext(ctx).Where("user_id = ? AND tx_id = ?", userID, txID).First(&transaction).Error
+	err := txs.db.WithContext(ctx).Scopes(scopes.UserID(userID)).Where("tx_id = ?", txID).First(&transaction).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil

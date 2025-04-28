@@ -13,7 +13,6 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/go-softwarelab/common/pkg/seq"
-	"github.com/go-softwarelab/common/pkg/to"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -47,7 +46,7 @@ func TestCreateActionHappyPath(t *testing.T) {
 	// when:
 	result, err := activeStorage.CreateAction(
 		context.Background(),
-		wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
+		testusers.Alice.AuthID(),
 		args,
 	)
 
@@ -110,7 +109,7 @@ func TestCreateActionWithCommission(t *testing.T) {
 	args := fixtures.DefaultValidCreateActionArgs()
 
 	// when:
-	result, err := activeStorage.CreateAction(context.Background(), wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)}, args)
+	result, err := activeStorage.CreateAction(context.Background(), testusers.Alice.AuthID(), args)
 
 	// then:
 	require.NoError(t, err)
@@ -159,7 +158,7 @@ func TestCreateActionShuffleOutputs(t *testing.T) {
 
 		result, _ := activeStorage.CreateAction(
 			context.Background(),
-			wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
+			testusers.Alice.AuthID(),
 			args,
 		)
 
@@ -187,7 +186,7 @@ func TestZeroFunds(t *testing.T) {
 	// when:
 	_, err := activeStorage.CreateAction(
 		context.Background(),
-		wdk.AuthID{UserID: to.Ptr(testusers.Bob.ID)},
+		testusers.Bob.AuthID(),
 		args,
 	)
 
@@ -210,7 +209,7 @@ func TestInsufficientFunds(t *testing.T) {
 	// when:
 	_, err := activeStorage.CreateAction(
 		context.Background(),
-		wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
+		testusers.Alice.AuthID(),
 		args,
 	)
 
@@ -233,7 +232,7 @@ func TestReservedUTXO(t *testing.T) {
 	// when:
 	_, err := activeStorage.CreateAction(
 		context.Background(),
-		wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
+		testusers.Alice.AuthID(),
 		args,
 	)
 
@@ -243,7 +242,7 @@ func TestReservedUTXO(t *testing.T) {
 	// when:
 	_, err = activeStorage.CreateAction(
 		context.Background(),
-		wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
+		testusers.Alice.AuthID(),
 		args,
 	)
 

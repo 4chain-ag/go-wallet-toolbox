@@ -9,7 +9,6 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
-	"github.com/go-softwarelab/common/pkg/to"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -39,7 +38,7 @@ func TestInternalizeActionWalletPaymentHappyPath(t *testing.T) {
 	// when:
 	result, err := activeStorage.InternalizeAction(
 		context.Background(),
-		wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
+		testusers.Alice.AuthID(),
 		args,
 	)
 
@@ -48,8 +47,8 @@ func TestInternalizeActionWalletPaymentHappyPath(t *testing.T) {
 
 	assert.Equal(t, true, result.Accepted)
 	assert.Equal(t, false, result.IsMerge)
-	assert.Equal(t, primitives.SatoshiValue(999), result.Satoshis)
-	assert.Equal(t, "a24745add717b4222d1869b3a71ad5228a3468c12f3b2bd40ce5ec84e20bf97c", result.TxID)
+	assert.Equal(t, primitives.SatoshiValue(fixtures.ExpectedValueToInternalize), result.Satoshis)
+	assert.Equal(t, "03895fb984362a4196bc9931629318fcbb2aeba7c6293638119ea653fa31d119", result.TxID)
 }
 
 func TestInternalizeActionBasketInsertionHappyPath(t *testing.T) {
@@ -64,7 +63,7 @@ func TestInternalizeActionBasketInsertionHappyPath(t *testing.T) {
 	// when:
 	result, err := activeStorage.InternalizeAction(
 		context.Background(),
-		wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
+		testusers.Alice.AuthID(),
 		args,
 	)
 
@@ -74,7 +73,7 @@ func TestInternalizeActionBasketInsertionHappyPath(t *testing.T) {
 	assert.Equal(t, true, result.Accepted)
 	assert.Equal(t, false, result.IsMerge)
 	assert.Equal(t, primitives.SatoshiValue(0), result.Satoshis)
-	assert.Equal(t, "a24745add717b4222d1869b3a71ad5228a3468c12f3b2bd40ce5ec84e20bf97c", result.TxID)
+	assert.Equal(t, "03895fb984362a4196bc9931629318fcbb2aeba7c6293638119ea653fa31d119", result.TxID)
 }
 
 func TestInternalizeActionErrorCases(t *testing.T) {
@@ -89,7 +88,7 @@ func TestInternalizeActionErrorCases(t *testing.T) {
 		},
 		"Output index out of range of provided tx": {
 			modifier: func(args wdk.InternalizeActionArgs) wdk.InternalizeActionArgs {
-				args.Outputs[0].OutputIndex = 999
+				args.Outputs[0].OutputIndex = fixtures.ExpectedValueToInternalize
 				return args
 			},
 		},
@@ -107,7 +106,7 @@ func TestInternalizeActionErrorCases(t *testing.T) {
 			// when:
 			_, err := activeStorage.InternalizeAction(
 				context.Background(),
-				wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
+				testusers.Alice.AuthID(),
 				args,
 			)
 
@@ -136,7 +135,7 @@ func TestInternalizeActionForStoredTransaction(t *testing.T) {
 		// when:
 		_, _ = activeStorage.InternalizeAction(
 			context.Background(),
-			wdk.AuthID{UserID: to.Ptr(testusers.Alice.ID)},
+			testusers.Alice.AuthID(),
 			args,
 		)
 	})
