@@ -2,10 +2,16 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/scopes"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/entity"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
+	"github.com/go-softwarelab/common/pkg/must"
+	"github.com/go-softwarelab/common/pkg/to"
 	"gorm.io/gorm"
 )
 
@@ -30,7 +36,7 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *entity.Ne
 			LockTime:    newTx.LockTime,
 			InputBeef:   newTx.InputBeef,
 			RawTx:       nil,
-			TxID:        nil,
+			TxID:        newTx.TxID,
 			Labels:      nil,
 		}
 		for _, output := range newTx.Outputs {
@@ -48,6 +54,7 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *entity.Ne
 				DerivationSuffix:   output.DerivationSuffix,
 				LockingScript:      (*string)(output.LockingScript),
 				CustomInstructions: output.CustomInstructions,
+				SenderIdentityKey:  output.SenderIdentityKey,
 			}
 
 			if output.Basket != nil {
@@ -79,4 +86,33 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *entity.Ne
 		return fmt.Errorf("failed to create transaction: %w", err)
 	}
 	return nil
+}
+
+func (txs *Transactions) FindTransactionByUserIDAndTxID(ctx context.Context, userID int, txID string) (*wdk.TableTransaction, error) {
+	var transaction models.Transaction
+	err := txs.db.WithContext(ctx).Scopes(scopes.UserID(userID)).Where("tx_id = ?", txID).First(&transaction).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find transaction: %w", err)
+	}
+
+	return &wdk.TableTransaction{
+		CreatedAt:     transaction.CreatedAt,
+		UpdatedAt:     transaction.UpdatedAt,
+		TransactionID: transaction.ID,
+		UserID:        transaction.UserID,
+		Status:        transaction.Status,
+		Reference:     primitives.Base64String(transaction.Reference),
+		IsOutgoing:    transaction.IsOutgoing,
+		Satoshis:      primitives.SatoshiValue(must.ConvertToUInt64(transaction.Satoshis)),
+		Description:   transaction.Description,
+		Version:       to.Ptr(transaction.Version),
+		LockTime:      to.Ptr(transaction.LockTime),
+		TxID:          transaction.TxID,
+		InputBEEF:     transaction.InputBeef,
+		RawTx:         transaction.RawTx,
+	}, nil
+
 }

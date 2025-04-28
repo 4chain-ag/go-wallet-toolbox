@@ -14,8 +14,8 @@ type Transaction struct {
 	IsOutgoing  bool
 	Satoshis    int64
 	Description string `gorm:"type:string"`
-	Version     int
-	LockTime    int
+	Version     uint32
+	LockTime    uint32
 	TxID        *string
 	InputBeef   []byte
 	RawTx       []byte

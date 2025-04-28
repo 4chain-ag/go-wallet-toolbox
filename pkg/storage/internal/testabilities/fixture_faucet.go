@@ -28,7 +28,7 @@ type faucetFixture struct {
 	index    int
 }
 
-func (f *faucetFixture) TopUp(satoshis satoshi.Value) {
+func (f *faucetFixture) TopUp(satoshis satoshi.Value) (txtestabilities.TransactionSpec, *models.UserUTXO) {
 	f.t.Helper()
 
 	spec := txtestabilities.GivenTX().
@@ -78,4 +78,6 @@ func (f *faucetFixture) TopUp(satoshis satoshi.Value) {
 	}
 
 	f.db.DB.WithContext(f.t.Context()).Create(utxo)
+
+	return spec, utxo
 }

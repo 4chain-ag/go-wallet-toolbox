@@ -52,8 +52,8 @@ func (fr *FundingResult) TotalAllocated() (satoshi.Value, error) {
 }
 
 type CreateActionParams struct {
-	Version          int
-	LockTime         int
+	Version          uint32
+	LockTime         uint32
 	Description      string
 	Labels           []primitives.StringUnder300
 	Outputs          []wdk.ValidCreateActionOutput
@@ -134,7 +134,7 @@ func newCreateAction(
 func (c *create) Create(ctx context.Context, userID int, params CreateActionParams) (*wdk.StorageCreateActionResult, error) {
 	basket, err := c.basketRepo.FindBasketByName(ctx, userID, wdk.BasketNameForChange)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find basket: %w", err)
+		return nil, fmt.Errorf("failed to find basket for change: %w", err)
 	}
 	if basket == nil {
 		return nil, fmt.Errorf("basket for change (%s) not found", wdk.BasketNameForChange)
