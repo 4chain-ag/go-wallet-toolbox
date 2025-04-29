@@ -2,6 +2,7 @@ package methodtests
 
 import (
 	"context"
+	"encoding/hex"
 	"slices"
 	"testing"
 
@@ -59,6 +60,7 @@ func TestCreateActionHappyPath(t *testing.T) {
 	assert.Equal(t, 32, len(result.Outputs))
 	assert.Equal(t, 31, testutils.CountOutputsWithCondition(t, result.Outputs, testutils.ProvidedByStorageCondition))
 	assert.Equal(t, primitives.SatoshiValue(57_998), testutils.SumOutputsWithCondition(t, result.Outputs, testutils.SatoshiValue, testutils.ProvidedByStorageCondition))
+	assert.Equal(t, "0200beef0000", hex.EncodeToString(result.InputBeef))
 
 	testutils.ForEveryOutput(t, result.Outputs, testutils.ProvidedByStorageCondition, func(p wdk.StorageCreateTransactionSdkOutput) {
 		assert.Equal(t, "change", p.Purpose)
@@ -120,6 +122,7 @@ func TestCreateActionWithCommission(t *testing.T) {
 	assert.Equal(t, 33, len(result.Outputs))
 	assert.Equal(t, 32, testutils.CountOutputsWithCondition(t, result.Outputs, testutils.ProvidedByStorageCondition))
 	assert.Equal(t, primitives.SatoshiValue(57_998), testutils.SumOutputsWithCondition(t, result.Outputs, testutils.SatoshiValue, testutils.ProvidedByStorageCondition))
+	assert.Equal(t, "0200beef0000", hex.EncodeToString(result.InputBeef))
 
 	commissionOutput, _ := testutils.FindOutput(t, result.Outputs, testutils.CommissionOutputCondition)
 	assert.Equal(t, primitives.SatoshiValue(10), commissionOutput.Satoshis)

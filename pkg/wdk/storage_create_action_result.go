@@ -29,7 +29,7 @@ type StorageCreateTransactionSdkOutput struct {
 
 // StorageCreateActionResult represents the result of creating a transaction action
 type StorageCreateActionResult struct {
-	InputBeef               *[]byte                             `json:"inputBeef"`
+	InputBeef               []byte                              `json:"inputBeef"`
 	Inputs                  []StorageCreateTransactionSdkInput  `json:"inputs"`
 	Outputs                 []StorageCreateTransactionSdkOutput `json:"outputs"`
 	NoSendChangeOutputVouts *[]int                              `json:"noSendChangeOutputVouts"`

@@ -15,6 +15,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/entity"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
+	"github.com/bsv-blockchain/go-sdk/transaction"
 	"github.com/go-softwarelab/common/pkg/must"
 	"github.com/go-softwarelab/common/pkg/optional"
 	"github.com/go-softwarelab/common/pkg/seq"
@@ -192,6 +193,18 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		return nil, err
 	}
 
+	// TODO: Switch to NewBeefV2 after https://github.com/bsv-blockchain/go-sdk/pull/158 is merged
+	beef := &transaction.Beef{
+		Version:      transaction.BEEF_V2,
+		BUMPs:        []*transaction.MerklePath{},
+		Transactions: make(map[string]*transaction.BeefTx),
+	}
+
+	inputBeef, err := beef.Bytes()
+	if err != nil {
+		return nil, fmt.Errorf("failed to serialize beef: %w", err)
+	}
+
 	err = c.txRepo.CreateTransaction(ctx, &entity.NewTx{
 		UserID:      userID,
 		Version:     params.Version,
@@ -205,9 +218,8 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		ReservedOutputIDs: slices.Map(funding.AllocatedUTXOs, func(utxo *UTXO) uint {
 			return utxo.OutputID
 		}),
-		Labels: params.Labels,
-
-		// TODO: inputBEEF
+		Labels:    params.Labels,
+		InputBeef: inputBeef,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transaction: %w", err)
@@ -225,6 +237,7 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		DerivationPrefix: derivationPrefix,
 		Outputs:          c.resultOutputs(newOutputs),
 		Inputs:           resultInputs,
+		InputBeef:        inputBeef,
 	}, nil
 }
 
