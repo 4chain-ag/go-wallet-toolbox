@@ -73,6 +73,10 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *entity.Ne
 			})
 		}
 
+		if err := txs.markReservedOutputsAsNotSpendable(tx, newTx.UserID, newTx.ReservedOutputIDs); err != nil {
+			return err
+		}
+
 		return tx.Create(model).Error
 	})
 	if err != nil {
@@ -120,6 +124,21 @@ func (txs *Transactions) makeNewOutput(ctx context.Context, userID int, output *
 		}
 	}
 	return &out, nil
+}
+
+func (txs *Transactions) markReservedOutputsAsNotSpendable(tx *gorm.DB, userID int, outputIDs []uint) error {
+	if len(outputIDs) == 0 {
+		return nil
+	}
+
+	err := tx.Model(&models.Output{}).
+		Where("id IN ?", outputIDs).
+		Where("user_id = ?", userID).
+		Update("spendable", false).Error
+	if err != nil {
+		return fmt.Errorf("failed to mark reserved outputs as not spendable: %w", err)
+	}
+	return nil
 }
 
 func (txs *Transactions) FindTransactionByUserIDAndTxID(ctx context.Context, userID int, txID string) (*wdk.TableTransaction, error) {
