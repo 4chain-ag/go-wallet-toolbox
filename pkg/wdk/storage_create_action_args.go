@@ -61,11 +61,11 @@ type ValidProcessActionOptions struct {
 // ValidCreateActionOptions extends ValidProcessActionOptions with additional options
 type ValidCreateActionOptions struct {
 	ValidProcessActionOptions `json:",inline"`
-	SignAndProcess            bool                       `json:"signAndProcess,omitempty"`
-	TrustSelf                 *string                    `json:"trustSelf,omitempty"`
-	KnownTxids                []primitives.TXIDHexString `json:"knownTxids,omitempty"`
-	NoSendChange              []OutPoint                 `json:"noSendChange,omitempty"`
-	RandomizeOutputs          bool                       `json:"randomizeOutputs,omitempty"`
+	SignAndProcess            *primitives.BooleanDefaultTrue `json:"signAndProcess,omitempty"`
+	TrustSelf                 *string                        `json:"trustSelf,omitempty"`
+	KnownTxids                []primitives.TXIDHexString     `json:"knownTxids,omitempty"`
+	NoSendChange              []OutPoint                     `json:"noSendChange,omitempty"`
+	RandomizeOutputs          bool                           `json:"randomizeOutputs"`
 }
 
 // ValidProcessActionArgs represents arguments for processing an action.

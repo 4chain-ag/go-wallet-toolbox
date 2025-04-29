@@ -26,7 +26,7 @@ func ValidCreateActionArgs(args *wdk.ValidCreateActionArgs) error {
 		return fmt.Errorf("create action is meant to create a new transaction")
 	}
 
-	deducedIsSignAction := args.IsNewTx && !args.Options.SignAndProcess && containsNilUnlockingScript(args.Inputs)
+	deducedIsSignAction := args.IsNewTx && (!args.Options.SignAndProcess.Value() || containsNilUnlockingScript(args.Inputs))
 	if args.IsSignAction != deducedIsSignAction {
 		return fmt.Errorf("inconsistent IsSignAction with IsNewTx and Options.SignAndProcess and Inputs.UnlockingScript")
 	}

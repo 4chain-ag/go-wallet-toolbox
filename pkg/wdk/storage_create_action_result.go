@@ -2,47 +2,39 @@ package wdk
 
 // StorageCreateTransactionSdkInput represents the input for SDK transaction creation
 type StorageCreateTransactionSdkInput struct {
-	Vin                   int
-	SourceTxid            string
-	SourceVout            uint32
-	SourceSatoshis        int64
-	SourceLockingScript   string
-	SourceTransaction     []byte
-	UnlockingScriptLength int
-	ProvidedBy            ProvidedBy
-	Type                  string
-	SpendingDescription   *string
-	DerivationPrefix      *string
-	DerivationSuffix      *string
-	SenderIdentityKey     *string
+	Vin                   int        `json:"vin"`
+	SourceTxid            string     `json:"sourceTxid"`
+	SourceVout            uint32     `json:"sourceVout"`
+	SourceSatoshis        int64      `json:"sourceSatoshis"`
+	SourceLockingScript   string     `json:"sourceLockingScript"`
+	SourceTransaction     []byte     `json:"sourceTransaction,omitempty"`
+	UnlockingScriptLength int        `json:"unlockingScriptLength"`
+	ProvidedBy            ProvidedBy `json:"providedBy"`
+	Type                  string     `json:"type"`
+	SpendingDescription   *string    `json:"spendingDescription,omitempty"`
+	DerivationPrefix      *string    `json:"derivationPrefix,omitempty"`
+	DerivationSuffix      *string    `json:"derivationSuffix,omitempty"`
+	SenderIdentityKey     *string    `json:"senderIdentityKey,omitempty"`
 }
 
 // StorageCreateTransactionSdkOutput represents the output for SDK transaction creation
 type StorageCreateTransactionSdkOutput struct {
 	ValidCreateActionOutput
 	// Additional fields
-	Vout             uint32
-	ProvidedBy       ProvidedBy
-	Purpose          string
-	DerivationSuffix *string
+	Vout             uint32     `json:"vout"`
+	ProvidedBy       ProvidedBy `json:"providedBy"`
+	Purpose          string     `json:"purpose"`
+	DerivationSuffix *string    `json:"derivationSuffix"`
 }
 
 // StorageCreateActionResult represents the result of creating a transaction action
 type StorageCreateActionResult struct {
-	// InputBeef contains the raw binary data of the input BEEF, if any
-	InputBeef *[]byte
-	// Inputs is a list of transaction inputs
-	Inputs []StorageCreateTransactionSdkInput
-	// Outputs is a list of transaction outputs
-	Outputs []StorageCreateTransactionSdkOutput
-	// NoSendChangeOutputVouts contains indices of outputs that should not be sent as change
-	NoSendChangeOutputVouts *[]int
-	// DerivationPrefix is the prefix used for key derivation
-	DerivationPrefix string
-	// Version is the transaction version
-	Version uint32
-	// LockTime is the transaction lock time
-	LockTime uint32
-	// Reference is a unique identifier for this transaction
-	Reference string
+	InputBeef               *[]byte                             `json:"inputBeef"`
+	Inputs                  []StorageCreateTransactionSdkInput  `json:"inputs"`
+	Outputs                 []StorageCreateTransactionSdkOutput `json:"outputs"`
+	NoSendChangeOutputVouts *[]int                              `json:"noSendChangeOutputVouts"`
+	DerivationPrefix        string                              `json:"derivationPrefix"`
+	Version                 uint32                              `json:"version"`
+	LockTime                uint32                              `json:"lockTime"`
+	Reference               string                              `json:"reference"`
 }
