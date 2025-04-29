@@ -20,10 +20,11 @@ func MapParallel[E any, R any](ctx context.Context, sequence iter.Seq[E], runner
 
 		ctx, cancel := context.WithCancel(ctx)
 
+	startGoRoutines:
 		for v := range sequence {
 			select {
 			case <-ctx.Done():
-				break
+				break startGoRoutines
 			default:
 				wg.Add(1)
 				go func(v E) {
