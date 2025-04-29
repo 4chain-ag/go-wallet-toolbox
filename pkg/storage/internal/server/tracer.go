@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
-	"github.com/filecoin-project/go-jsonrpc"
 	"log/slog"
 	"reflect"
+
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
+	"github.com/filecoin-project/go-jsonrpc"
 )
 
 func tracer(logger *slog.Logger) jsonrpc.Tracer {
