@@ -25,9 +25,9 @@ func NewTransactions(db *gorm.DB) *Transactions {
 }
 
 func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *entity.NewTx) error {
-	basketNameToID := make(map[string]int)
-
 	err := txs.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		basketMaker := newCachedBasketMaker(tx, newTx.UserID)
+
 		model := &models.Transaction{
 			UserID:      newTx.UserID,
 			Status:      newTx.Status,
@@ -42,72 +42,32 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *entity.Ne
 			TxID:        newTx.TxID,
 			Labels:      nil,
 		}
-		for _, output := range newTx.Outputs {
+		for _, newOut := range newTx.Outputs {
 			var basketID *int
-			out := models.Output{
-				Vout:               output.Vout,
-				UserID:             newTx.UserID,
-				Satoshis:           output.Satoshis.Int64(),
-				Spendable:          output.Spendable,
-				Change:             output.Change,
-				ProvidedBy:         string(output.ProvidedBy),
-				Description:        output.Description,
-				Purpose:            output.Purpose,
-				Type:               string(output.Type),
-				DerivationPrefix:   output.DerivationPrefix,
-				DerivationSuffix:   output.DerivationSuffix,
-				LockingScript:      (*string)(output.LockingScript),
-				CustomInstructions: output.CustomInstructions,
-				SenderIdentityKey:  output.SenderIdentityKey,
-			}
-
-			if output.Basket != nil {
-				if cachedBasketID, ok := basketNameToID[*output.Basket]; ok {
-					basketID = to.Ptr(cachedBasketID)
-				} else {
-					var basket models.OutputBasket
-					err := tx.
-						Where(models.OutputBasket{UserID: newTx.UserID, Name: *output.Basket}).
-						FirstOrCreate(&basket).Error
-					if err != nil {
-						return fmt.Errorf("failed to find output basket: %w", err)
-					}
-
-					basketNameToID[*output.Basket] = basket.BasketID
-					basketID = to.Ptr(basket.BasketID)
-				}
-
-				out.BasketID = basketID
-			}
-
-			if out.Spendable && out.Change && basketID != nil {
-				if out.Satoshis == 0 {
-					return fmt.Errorf("change output with zero satoshis")
-				}
-				sats, err := to.UInt64(out.Satoshis)
+			if newOut.Basket != nil {
+				var err error
+				basketID, err = basketMaker.findOrCreate(ctx, *newOut.Basket, wdk.DefaultNumberOfDesiredUTXOs, wdk.DefaultMinimumDesiredUTXOValue)
 				if err != nil {
-					return fmt.Errorf("failed to convert satoshis to uint64: %w", err)
-				}
-
-				out.UserUTXO = &models.UserUTXO{
-					UserID:             newTx.UserID,
-					BasketID:           *basketID,
-					Satoshis:           sats,
-					EstimatedInputSize: txutils.EstimatedInputSizeByType(output.Type),
+					return fmt.Errorf("failed to find or create output basket: %w", err)
 				}
 			}
 
-			model.Outputs = append(model.Outputs, out)
+			output, err := txs.makeNewOutput(ctx, newTx.UserID, newOut, basketID)
+			if err != nil {
+				return err
+			}
+
+			model.Outputs = append(model.Outputs, output)
 		}
 		for _, label := range newTx.Labels {
-			model.Labels = append(model.Labels, models.Label{
+			model.Labels = append(model.Labels, &models.Label{
 				Name:   string(label),
 				UserID: newTx.UserID,
 			})
 		}
 
 		for _, reservedOutputID := range newTx.ReservedOutputIDs {
-			model.ReservedUtxos = append(model.ReservedUtxos, models.UserUTXO{
+			model.ReservedUtxos = append(model.ReservedUtxos, &models.UserUTXO{
 				UserID:   newTx.UserID,
 				OutputID: reservedOutputID,
 			})
@@ -119,6 +79,47 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *entity.Ne
 		return fmt.Errorf("failed to create transaction: %w", err)
 	}
 	return nil
+}
+
+func (txs *Transactions) makeNewOutput(ctx context.Context, userID int, output *entity.NewOutput, basketID *int) (*models.Output, error) {
+	out := models.Output{
+		Vout:               output.Vout,
+		UserID:             userID,
+		Satoshis:           output.Satoshis.Int64(),
+		Spendable:          output.Spendable,
+		Change:             output.Change,
+		ProvidedBy:         string(output.ProvidedBy),
+		Description:        output.Description,
+		Purpose:            output.Purpose,
+		Type:               string(output.Type),
+		DerivationPrefix:   output.DerivationPrefix,
+		DerivationSuffix:   output.DerivationSuffix,
+		LockingScript:      (*string)(output.LockingScript),
+		CustomInstructions: output.CustomInstructions,
+		SenderIdentityKey:  output.SenderIdentityKey,
+		BasketID:           basketID,
+	}
+
+	if out.Spendable && out.Change {
+		if basketID == nil {
+			return nil, fmt.Errorf("basket ID is nil for change output")
+		}
+		if out.Satoshis == 0 {
+			return nil, fmt.Errorf("change output with zero satoshis")
+		}
+		sats, err := to.UInt64(out.Satoshis)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert satoshis to uint64: %w", err)
+		}
+
+		out.UserUTXO = &models.UserUTXO{
+			UserID:             userID,
+			BasketID:           *basketID,
+			Satoshis:           sats,
+			EstimatedInputSize: txutils.EstimatedInputSizeByType(output.Type),
+		}
+	}
+	return &out, nil
 }
 
 func (txs *Transactions) FindTransactionByUserIDAndTxID(ctx context.Context, userID int, txID string) (*wdk.TableTransaction, error) {

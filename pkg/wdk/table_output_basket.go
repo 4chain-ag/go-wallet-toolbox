@@ -25,7 +25,7 @@ type TableOutputBasket struct {
 func DefaultBasketConfiguration() BasketConfiguration {
 	return BasketConfiguration{
 		Name:                    BasketNameForChange,
-		NumberOfDesiredUTXOs:    32,
-		MinimumDesiredUTXOValue: 1000,
+		NumberOfDesiredUTXOs:    NumberOfDesiredUTXOsForChange,
+		MinimumDesiredUTXOValue: MinimumDesiredUTXOValue,
 	}
 }
