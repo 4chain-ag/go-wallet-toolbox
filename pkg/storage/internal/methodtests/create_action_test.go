@@ -2,6 +2,7 @@ package methodtests
 
 import (
 	"context"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testutils"
 	"slices"
 	"testing"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
-	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -57,14 +57,14 @@ func TestCreateActionHappyPath(t *testing.T) {
 	assert.Equal(t, args.Version, result.Version)
 	assert.Equal(t, args.LockTime, result.LockTime)
 	assert.Equal(t, 32, len(result.Outputs))
-	assert.Equal(t, 31, countOutputsWithCondition(t, result.Outputs, providedByStorageCondition))
-	assert.Equal(t, primitives.SatoshiValue(57_998), sumOutputsWithCondition(t, result.Outputs, providedByStorageCondition))
+	assert.Equal(t, 31, testutils.CountOutputsWithCondition(t, result.Outputs, testutils.ProvidedByStorageCondition))
+	assert.Equal(t, primitives.SatoshiValue(57_998), testutils.SumOutputsWithCondition(t, result.Outputs, testutils.SatoshiValue, testutils.ProvidedByStorageCondition))
 
-	forEveryOutput(t, result.Outputs, providedByStorageCondition, func(p wdk.StorageCreateTransactionSdkOutput) {
+	testutils.ForEveryOutput(t, result.Outputs, testutils.ProvidedByStorageCondition, func(p wdk.StorageCreateTransactionSdkOutput) {
 		assert.Equal(t, "change", p.Purpose)
 	})
 
-	resultOutput, _ := findOutput(t, result.Outputs, providedByYouCondition)
+	resultOutput, _ := testutils.FindOutput(t, result.Outputs, testutils.ProvidedByYouCondition)
 
 	assert.Empty(t, resultOutput.Purpose)
 	assert.Equal(t, providedOutput.Satoshis, resultOutput.Satoshis)
@@ -118,10 +118,10 @@ func TestCreateActionWithCommission(t *testing.T) {
 	assert.Equal(t, args.Version, result.Version)
 	assert.Equal(t, args.LockTime, result.LockTime)
 	assert.Equal(t, 33, len(result.Outputs))
-	assert.Equal(t, 32, countOutputsWithCondition(t, result.Outputs, providedByStorageCondition))
-	assert.Equal(t, primitives.SatoshiValue(57_998), sumOutputsWithCondition(t, result.Outputs, providedByStorageCondition))
+	assert.Equal(t, 32, testutils.CountOutputsWithCondition(t, result.Outputs, testutils.ProvidedByStorageCondition))
+	assert.Equal(t, primitives.SatoshiValue(57_998), testutils.SumOutputsWithCondition(t, result.Outputs, testutils.SatoshiValue, testutils.ProvidedByStorageCondition))
 
-	commissionOutput, _ := findOutput(t, result.Outputs, commissionOutputCondition)
+	commissionOutput, _ := testutils.FindOutput(t, result.Outputs, testutils.CommissionOutputCondition)
 	assert.Equal(t, primitives.SatoshiValue(10), commissionOutput.Satoshis)
 	assert.Nil(t, commissionOutput.Basket)
 	assert.Equal(t, wdk.ProvidedByStorage, commissionOutput.ProvidedBy)
@@ -162,7 +162,7 @@ func TestCreateActionShuffleOutputs(t *testing.T) {
 			args,
 		)
 
-		found := slices.IndexFunc(result.Outputs, commissionOutputCondition)
+		found := slices.IndexFunc(result.Outputs, testutils.CommissionOutputCondition)
 		commissionOutputVouts[result.Outputs[found].Vout] = struct{}{}
 
 		if len(commissionOutputVouts) > 1 {
@@ -250,67 +250,4 @@ func TestReservedUTXO(t *testing.T) {
 	require.ErrorIs(t, err, errfunder.NotEnoughFunds)
 }
 
-func findOutput(
-	t *testing.T,
-	outputs []wdk.StorageCreateTransactionSdkOutput,
-	finder func(p wdk.StorageCreateTransactionSdkOutput) bool,
-) (*wdk.StorageCreateTransactionSdkOutput, uint32) {
-	t.Helper()
-	index := slices.IndexFunc(outputs, finder)
-	require.GreaterOrEqual(t, index, 0)
 
-	return &outputs[index], uint32(index)
-}
-
-func countOutputsWithCondition(
-	t *testing.T,
-	outputs []wdk.StorageCreateTransactionSdkOutput,
-	finder func(p wdk.StorageCreateTransactionSdkOutput) bool,
-) int {
-	t.Helper()
-
-	return seq.Count(seq.Filter(seq.FromSlice(outputs), finder))
-}
-
-func sumOutputsWithCondition(
-	t *testing.T,
-	outputs []wdk.StorageCreateTransactionSdkOutput,
-	finder func(p wdk.StorageCreateTransactionSdkOutput) bool,
-) primitives.SatoshiValue {
-	t.Helper()
-
-	sum := primitives.SatoshiValue(0)
-	for _, output := range outputs {
-		if finder(output) {
-			sum += output.Satoshis
-		}
-	}
-	return sum
-}
-
-func providedByYouCondition(p wdk.StorageCreateTransactionSdkOutput) bool {
-	return p.ProvidedBy == wdk.ProvidedByYou
-}
-
-func providedByStorageCondition(p wdk.StorageCreateTransactionSdkOutput) bool {
-	return p.ProvidedBy == wdk.ProvidedByStorage
-}
-
-func commissionOutputCondition(p wdk.StorageCreateTransactionSdkOutput) bool {
-	return p.Purpose == "storage-commission"
-}
-
-func forEveryOutput(
-	t *testing.T,
-	outputs []wdk.StorageCreateTransactionSdkOutput,
-	finder func(p wdk.StorageCreateTransactionSdkOutput) bool,
-	validator func(p wdk.StorageCreateTransactionSdkOutput),
-) {
-	t.Helper()
-
-	for _, output := range outputs {
-		if finder(output) {
-			validator(output)
-		}
-	}
-}
