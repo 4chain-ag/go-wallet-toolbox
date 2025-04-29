@@ -207,68 +207,49 @@ func processOneByOne[S serv, R any](logger *slog.Logger, services []S, callServi
 		return to.ZeroValue[R](), ErrNoServicesRegistered
 	}
 
-	results := seq.Map(seq.FromSlice(services), func(s S) serviceCallResult[R] {
+	results := seq.Map(seq.FromSlice(services), func(s S) *NamedResult[R] {
 		res, err := callService(s)
-		return serviceCallResult[R]{
-			ServiceName: s.Name(),
-			Result:      res,
-			Err:         err,
-		}
+		return NewNamedResult(s.Name(), types.ResultOf(res, err))
 	})
 
-	results = takeUntilHaveResult(results)
+	results = takeUntilHaveResult[R](results)
 
 	results = seq.Each(results, logErrorResult[R](logger))
 
 	var err error
 	for result := range results {
-		if result.Err != nil {
-			err = errors.Join(err, fmt.Errorf("error from service %s: %w", result.ServiceName, result.Err))
+		if result.IsError() {
+			err = errors.Join(err, fmt.Errorf("error from service %s: %w", result.Name(), result.GetError()))
 			continue
 		}
-		return result.Result, nil
+		return result.MustGetValue(), nil
 	}
 
 	return to.ZeroValue[R](), fmt.Errorf("all services failed: %w", err)
 }
 
-type serviceCallResult[R any] struct {
-	ServiceName string
-	Result      R
-	Err         error
-}
-
-func logErrorResult[R any](logger *slog.Logger) func(serviceResult serviceCallResult[R]) {
-	return func(serviceResult serviceCallResult[R]) {
-		if serviceResult.Err != nil {
+func logErrorResult[R any](logger *slog.Logger) func(serviceResult *NamedResult[R]) {
+	return func(serviceResult *NamedResult[R]) {
+		if serviceResult.IsError() {
 			logger.Warn("error when calling service",
-				slog.String("service.name", serviceResult.ServiceName),
-				logging.Error(serviceResult.Err),
+				slog.String("service.name", serviceResult.Name()),
+				logging.Error(serviceResult.GetError()),
 			)
 		}
 	}
 }
 
-func takeUntilHaveResult[R any](seq iter.Seq[serviceCallResult[R]]) iter.Seq[serviceCallResult[R]] {
-	return func(yield func(serviceCallResult[R]) bool) {
+func takeUntilHaveResult[R any](seq iter.Seq[*NamedResult[R]]) iter.Seq[*NamedResult[R]] {
+	return func(yield func(*NamedResult[R]) bool) {
 		for result := range seq {
-			if result.Err != nil {
-				errResult := serviceCallResult[R]{
-					ServiceName: result.ServiceName,
-					Err:         result.Err,
-				}
-
-				if !yield(errResult) {
+			if result.IsError() {
+				if !yield(result) {
 					break
 				}
 				continue
 			}
-			if is.Nil(result.Result) {
-				nilResult := serviceCallResult[R]{
-					ServiceName: result.ServiceName,
-					Err:         ErrEmptyResult,
-				}
-
+			if is.Nil(result.MustGetValue()) {
+				nilResult := NewNamedResult(result.Name(), types.FailureResult[R](ErrEmptyResult))
 				if !yield(nilResult) {
 					break
 				}
