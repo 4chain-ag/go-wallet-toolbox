@@ -4,8 +4,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/go-softwarelab/common/pkg/seq"
+	"github.com/go-softwarelab/common/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,15 +31,15 @@ func CountOutputsWithCondition[T any](
 	return seq.Count(seq.Filter(seq.FromSlice(outputs), finder))
 }
 
-func SumOutputsWithCondition[T any](
+func SumOutputsWithCondition[T any, S types.Number](
 	t *testing.T,
 	outputs []T,
-	getter func(p T) primitives.SatoshiValue,
+	getter func(p T) S,
 	finder func(p T) bool,
-) primitives.SatoshiValue {
+) S {
 	t.Helper()
 
-	sum := primitives.SatoshiValue(0)
+	var sum S
 	for _, output := range outputs {
 		if finder(output) {
 			sum += getter(output)

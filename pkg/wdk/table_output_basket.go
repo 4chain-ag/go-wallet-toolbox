@@ -26,6 +26,6 @@ func DefaultBasketConfiguration() BasketConfiguration {
 	return BasketConfiguration{
 		Name:                    BasketNameForChange,
 		NumberOfDesiredUTXOs:    NumberOfDesiredUTXOsForChange,
-		MinimumDesiredUTXOValue: MinimumDesiredUTXOValue,
+		MinimumDesiredUTXOValue: MinimumDesiredUTXOValueForChange,
 	}
 }
