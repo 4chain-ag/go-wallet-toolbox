@@ -35,3 +35,35 @@ func TestNopIfNil(t *testing.T) {
 	// then:
 	require.NotNil(t, logger)
 }
+
+func TestIsDebug(t *testing.T) {
+	t.Run("true", func(t *testing.T) {
+		// given:
+		stringWriter := &logging.TestWriter{}
+		logger := logging.New().
+			WithLevel(defs.LogLevelDebug).
+			WithHandler(defs.TextHandler, stringWriter).
+			Logger()
+
+		// when:
+		isDebug := logging.IsDebug(logger)
+
+		// then:
+		require.True(t, isDebug)
+	})
+
+	t.Run("false", func(t *testing.T) {
+		// given:
+		stringWriter := &logging.TestWriter{}
+		logger := logging.New().
+			WithLevel(defs.LogLevelInfo).
+			WithHandler(defs.TextHandler, stringWriter).
+			Logger()
+
+		// when:
+		isDebug := logging.IsDebug(logger)
+
+		// then:
+		require.False(t, isDebug)
+	})
+}
