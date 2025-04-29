@@ -1,11 +1,12 @@
 package testutils
 
 import (
+	"slices"
+	"testing"
+
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/stretchr/testify/require"
-	"slices"
-	"testing"
 )
 
 func FindOutput[T any](

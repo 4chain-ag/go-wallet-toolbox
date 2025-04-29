@@ -2,7 +2,6 @@ package methodtests
 
 import (
 	"context"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testutils"
 	"slices"
 	"testing"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder/errfunder"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testutils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/stretchr/testify/assert"
@@ -249,5 +249,3 @@ func TestReservedUTXO(t *testing.T) {
 	// then:
 	require.ErrorIs(t, err, errfunder.NotEnoughFunds)
 }
-
-
