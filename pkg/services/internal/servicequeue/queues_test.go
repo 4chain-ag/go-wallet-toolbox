@@ -3,7 +3,6 @@ package servicequeue_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
@@ -139,7 +138,7 @@ func TestQueueOneByOne(t *testing.T) {
 		},
 		"handle panic from service": {
 			services: []TestService{
-				TestService{Name: "panicing"}.Panicking(),
+				TestService{Name: "panicking"}.Panicking(),
 			},
 			expectedResult: nil,
 			errorExpectation: func(t assert.TestingT, err error, msgAndArgs ...interface{}) bool {
@@ -148,7 +147,7 @@ func TestQueueOneByOne(t *testing.T) {
 		},
 		"return result of second service if first service would panic": {
 			services: []TestService{
-				TestService{Name: "panicing"}.Panicking(),
+				TestService{Name: "panicking"}.Panicking(),
 				TestService{Name: "ok"}.Successful(),
 			},
 			expectedResult:   &TestServiceResult{200, "success"},
@@ -210,7 +209,7 @@ func TestQueueOneByOne(t *testing.T) {
 			// and:
 			queue := servicequeue.NewQueue2(
 				logging.NewTestLogger(t),
-				"Do3",
+				"Do2",
 				services...,
 			)
 
@@ -361,7 +360,7 @@ func TestQueueParallel(t *testing.T) {
 			// and:
 			queue := servicequeue.NewQueue2(
 				logging.NewTestLogger(t),
-				"Do3",
+				"Do2",
 				services...,
 			)
 
@@ -405,23 +404,23 @@ func TestQueueParallel(t *testing.T) {
 	}{
 		"handle panic from service": {
 			services: []TestService{
-				TestService{Name: "panicing"}.Panicking(),
+				TestService{Name: "panicking"}.Panicking(),
 			},
 			expectedResults: []*servicequeue.NamedResult[*TestServiceResult]{
 				// Error is not exactly the same, because it contains more context about the source of the panic, but ErrorIs should be the same.
-				servicequeue.NewNamedResult("panicing", types.FailureResult[*TestServiceResult](errorFromPanic)),
+				servicequeue.NewNamedResult("panicking", types.FailureResult[*TestServiceResult](errorFromPanic)),
 			},
 			errorExpectation: assert.NoError,
 		},
 		"handle panic of one service between multiple services": {
 			services: []TestService{
 				TestService{Name: "successful"}.Successful(),
-				TestService{Name: "panicing"}.Panicking(),
+				TestService{Name: "panicking"}.Panicking(),
 				TestService{Name: "ok"}.Successful(),
 			},
 			expectedResults: []*servicequeue.NamedResult[*TestServiceResult]{
 				servicequeue.NewNamedResult("successful", types.SuccessResult(&TestServiceResult{200, "success"})),
-				servicequeue.NewNamedResult("panicing", types.FailureResult[*TestServiceResult](errorFromPanic)),
+				servicequeue.NewNamedResult("panicking", types.FailureResult[*TestServiceResult](errorFromPanic)),
 				servicequeue.NewNamedResult("ok", types.SuccessResult(&TestServiceResult{200, "success"})),
 			},
 			errorExpectation: assert.NoError,
@@ -445,10 +444,10 @@ func TestQueueParallel(t *testing.T) {
 			// when:
 			results, err := queue.All(context.Background())
 
-			// debug: show example of error from panicing service
+			// debug: show example of error from panicking service
 			slices.ForEach(results, func(result *servicequeue.NamedResult[*TestServiceResult]) {
 				if result.IsError() {
-					fmt.Println(result.GetError())
+					t.Log(result.GetError())
 				}
 			})
 
@@ -525,7 +524,7 @@ func TestQueueParallel(t *testing.T) {
 			// and:
 			queue := servicequeue.NewQueue2(
 				logging.NewTestLogger(t),
-				"Do3",
+				"Do2",
 				services...,
 			)
 
