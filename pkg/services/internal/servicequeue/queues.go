@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"iter"
 	"log/slog"
+	"runtime/debug"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal"
@@ -169,7 +170,12 @@ func processParallel[S serv, R any](ctx context.Context, logger *slog.Logger, se
 	results := internal.MapParallel(ctx, seq.FromSlice(services), func(ctxParallel context.Context, s S) (result *NamedResult[R]) {
 		defer func() {
 			if r := recover(); r != nil {
-				err := fmt.Errorf("%v", r)
+				var err error
+				var ok bool
+				if err, ok = r.(error); !ok {
+					err = fmt.Errorf("%v", r)
+				}
+				err = fmt.Errorf("service %s has paniced with: %w \n %s", s.Name(), err, debug.Stack())
 				result = NewNamedResult(s.Name(), types.FailureResult[R](err))
 			}
 		}()

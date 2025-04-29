@@ -3,10 +3,12 @@ package servicequeue_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/servicequeue"
+	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/go-softwarelab/common/pkg/slices"
 	"github.com/go-softwarelab/common/pkg/types"
 	"github.com/stretchr/testify/assert"
@@ -15,6 +17,8 @@ import (
 const secondArgument = "test"
 const thirdArgument = 1
 const fourthArgument = true
+
+var errorFromPanic = errors.New("some panic occurred")
 
 func TestQueueOneByOne(t *testing.T) {
 	tests := map[string]struct {
@@ -264,15 +268,6 @@ func TestQueueParallel(t *testing.T) {
 			},
 			errorExpectation: assert.NoError,
 		},
-		"handle panic from service": {
-			services: []TestService{
-				TestService{Name: "panicing"}.Panicking(),
-			},
-			expectedResults: []*servicequeue.NamedResult[*TestServiceResult]{
-				servicequeue.NewNamedResult("panicing", types.FailureResult[*TestServiceResult](errors.New("some panic occurred"))),
-			},
-			errorExpectation: assert.NoError,
-		},
 		"multiple services with different results": {
 			services: []TestService{
 				TestService{Name: "successful"}.Successful(),
@@ -281,7 +276,6 @@ func TestQueueParallel(t *testing.T) {
 				TestService{Name: "nil-service"}.ReturningNilResult(),
 				TestService{Name: "bad-thing-happened"}.Failing(),
 				TestService{Name: "good-job"}.Successful(),
-				TestService{Name: "panicing"}.Panicking(),
 			},
 			expectedResults: []*servicequeue.NamedResult[*TestServiceResult]{
 				servicequeue.NewNamedResult("successful", types.SuccessResult(&TestServiceResult{200, "success"})),
@@ -290,7 +284,6 @@ func TestQueueParallel(t *testing.T) {
 				servicequeue.NewNamedResult("nil-service", types.FailureResult[*TestServiceResult](servicequeue.ErrEmptyResult)),
 				servicequeue.NewNamedResult("bad-thing-happened", types.FailureResult[*TestServiceResult](errors.New("some error occurred"))),
 				servicequeue.NewNamedResult("good-job", types.SuccessResult(&TestServiceResult{200, "success"})),
-				servicequeue.NewNamedResult("panicing", types.FailureResult[*TestServiceResult](errors.New("some panic occurred"))),
 			},
 			errorExpectation: assert.NoError,
 		},
@@ -389,6 +382,204 @@ func TestQueueParallel(t *testing.T) {
 		})
 	}
 
+	panicTestCases := map[string]struct {
+		services         []TestService
+		expectedResults  []*servicequeue.NamedResult[*TestServiceResult]
+		errorExpectation func(t assert.TestingT, err error, msgAndArgs ...interface{}) bool
+	}{
+		"handle panic from service": {
+			services: []TestService{
+				TestService{Name: "panicing"}.Panicking(),
+			},
+			expectedResults: []*servicequeue.NamedResult[*TestServiceResult]{
+				// Error is not exactly the same, because it contains more context about the source of the panic, but ErrorIs should be the same.
+				servicequeue.NewNamedResult("panicing", types.FailureResult[*TestServiceResult](errorFromPanic)),
+			},
+			errorExpectation: assert.NoError,
+		},
+		"handle panic of one service between multiple services": {
+			services: []TestService{
+				TestService{Name: "successful"}.Successful(),
+				TestService{Name: "panicing"}.Panicking(),
+				TestService{Name: "ok"}.Successful(),
+			},
+			expectedResults: []*servicequeue.NamedResult[*TestServiceResult]{
+				servicequeue.NewNamedResult("successful", types.SuccessResult(&TestServiceResult{200, "success"})),
+				servicequeue.NewNamedResult("panicing", types.FailureResult[*TestServiceResult](errorFromPanic)),
+				servicequeue.NewNamedResult("ok", types.SuccessResult(&TestServiceResult{200, "success"})),
+			},
+			errorExpectation: assert.NoError,
+		},
+	}
+	for name, test := range panicTestCases {
+		t.Run(name+": Queue", func(t *testing.T) {
+			// given:
+			services := slices.Map(test.services, func(s TestService) *servicequeue.Service[*TestServiceResult] {
+				service := s.NewTest(t)
+				return servicequeue.NewService(service.Name, service.Do)
+			})
+
+			// and:
+			queue := servicequeue.NewQueue(
+				logging.NewTestLogger(t),
+				"Do",
+				services...,
+			)
+
+			// when:
+			results, err := queue.All(context.Background())
+
+			// debug: show example of error from panicing service
+			slices.ForEach(results, func(result *servicequeue.NamedResult[*TestServiceResult]) {
+				if result.IsError() {
+					fmt.Println(result.GetError())
+				}
+			})
+
+			// then:
+			test.errorExpectation(t, err)
+			assert.Len(t, results, len(test.expectedResults))
+
+			expectedResults := seq.FromSlice(test.expectedResults)
+			slices.ForEach(results, func(result *servicequeue.NamedResult[*TestServiceResult]) {
+				expected, err := seq.Find(expectedResults, func(r *servicequeue.NamedResult[*TestServiceResult]) bool {
+					return result.Name() == r.Name()
+				}).OrError(errors.New("got unexpected result from unknown service:" + result.Name()))
+				if err != nil {
+					t.Error(err)
+					return
+				}
+
+				assert.Equal(t, expected.IsError(), result.IsError(), "got unexpected result type for service %s", result.Name())
+				if result.IsError() {
+					assert.ErrorIs(t, result.GetError(), expected.GetError(), "got unexpected error for service %s", result.Name())
+				} else {
+					assert.Equal(t, expected.MustGetValue(), result.MustGetValue(), "got unexpected result for service %s", result.Name())
+				}
+			})
+		})
+
+		t.Run(name+": Queue1", func(t *testing.T) {
+			// given:
+			services := slices.Map(test.services, func(s TestService) *servicequeue.Service1[string, *TestServiceResult] {
+				service := s.NewTest(t)
+				return servicequeue.NewService1(service.Name, service.Do1)
+			})
+
+			// and:
+			queue := servicequeue.NewQueue1(
+				logging.NewTestLogger(t),
+				"Do1",
+				services...,
+			)
+
+			// when:
+			results, err := queue.All(context.Background(), secondArgument)
+
+			// then:
+			test.errorExpectation(t, err)
+			assert.Len(t, results, len(test.expectedResults))
+
+			expectedResults := seq.FromSlice(test.expectedResults)
+			slices.ForEach(results, func(result *servicequeue.NamedResult[*TestServiceResult]) {
+				expected, err := seq.Find(expectedResults, func(r *servicequeue.NamedResult[*TestServiceResult]) bool {
+					return result.Name() == r.Name()
+				}).OrError(errors.New("got unexpected result from unknown service:" + result.Name()))
+				if err != nil {
+					t.Error(err)
+					return
+				}
+
+				assert.Equal(t, expected.IsError(), result.IsError(), "got unexpected result type for service %s", result.Name())
+				if result.IsError() {
+					assert.ErrorIs(t, result.GetError(), expected.GetError(), "got unexpected error for service %s", result.Name())
+				} else {
+					assert.Equal(t, expected.MustGetValue(), result.MustGetValue(), "got unexpected result for service %s", result.Name())
+				}
+			})
+		})
+
+		t.Run(name+": Queue2", func(t *testing.T) {
+			// given:
+			services := slices.Map(test.services, func(s TestService) *servicequeue.Service2[string, int, *TestServiceResult] {
+				service := s.NewTest(t)
+				return servicequeue.NewService2(service.Name, service.Do2)
+			})
+
+			// and:
+			queue := servicequeue.NewQueue2(
+				logging.NewTestLogger(t),
+				"Do3",
+				services...,
+			)
+
+			// when:
+			results, err := queue.All(context.Background(), secondArgument, thirdArgument)
+
+			// then:
+			test.errorExpectation(t, err)
+			assert.Len(t, results, len(test.expectedResults))
+
+			expectedResults := seq.FromSlice(test.expectedResults)
+			slices.ForEach(results, func(result *servicequeue.NamedResult[*TestServiceResult]) {
+				expected, err := seq.Find(expectedResults, func(r *servicequeue.NamedResult[*TestServiceResult]) bool {
+					return result.Name() == r.Name()
+				}).OrError(errors.New("got unexpected result from unknown service:" + result.Name()))
+				if err != nil {
+					t.Error(err)
+					return
+				}
+
+				assert.Equal(t, expected.IsError(), result.IsError(), "got unexpected result type for service %s", result.Name())
+				if result.IsError() {
+					assert.ErrorIs(t, result.GetError(), expected.GetError(), "got unexpected error for service %s", result.Name())
+				} else {
+					assert.Equal(t, expected.MustGetValue(), result.MustGetValue(), "got unexpected result for service %s", result.Name())
+				}
+			})
+		})
+
+		t.Run(name+": Queue3", func(t *testing.T) {
+			// given:
+			services := slices.Map(test.services, func(s TestService) *servicequeue.Service3[string, int, bool, *TestServiceResult] {
+				service := s.NewTest(t)
+				return servicequeue.NewService3(service.Name, service.Do3)
+			})
+
+			// and:
+			queue := servicequeue.NewQueue3(
+				logging.NewTestLogger(t),
+				"Do3",
+				services...,
+			)
+
+			// when:
+			results, err := queue.All(context.Background(), secondArgument, thirdArgument, fourthArgument)
+
+			// then:
+			test.errorExpectation(t, err)
+			assert.Len(t, results, len(test.expectedResults))
+
+			expectedResults := seq.FromSlice(test.expectedResults)
+			slices.ForEach(results, func(result *servicequeue.NamedResult[*TestServiceResult]) {
+				expected, err := seq.Find(expectedResults, func(r *servicequeue.NamedResult[*TestServiceResult]) bool {
+					return result.Name() == r.Name()
+				}).OrError(errors.New("got unexpected result from unknown service:" + result.Name()))
+				if err != nil {
+					t.Error(err)
+					return
+				}
+
+				assert.Equal(t, expected.IsError(), result.IsError(), "got unexpected result type for service %s", result.Name())
+				if result.IsError() {
+					assert.ErrorIs(t, result.GetError(), expected.GetError(), "got unexpected error for service %s", result.Name())
+				} else {
+					assert.Equal(t, expected.MustGetValue(), result.MustGetValue(), "got unexpected result for service %s", result.Name())
+				}
+			})
+		})
+	}
+
 }
 
 type TestServiceResult struct {
@@ -425,7 +616,7 @@ func (s TestService) ReturningNilResult() TestService {
 
 func (s TestService) Panicking() TestService {
 	s.createResult = func() (*TestServiceResult, error) {
-		panic("some panic occurred")
+		panic(errorFromPanic)
 	}
 	return s
 }

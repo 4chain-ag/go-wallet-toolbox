@@ -6,6 +6,8 @@ import (
 	"sync"
 )
 
+const defaultChannelBuffer = 100
+
 func MapParallel[E any, R any](ctx context.Context, sequence iter.Seq[E], runner func(context.Context, E) R) iter.Seq[R] {
 	if sequence == nil {
 		return func(yield func(R) bool) {}
@@ -14,31 +16,29 @@ func MapParallel[E any, R any](ctx context.Context, sequence iter.Seq[E], runner
 	return func(yield func(R) bool) {
 		wg := &sync.WaitGroup{}
 
-		results := make(chan R, 100)
+		results := make(chan R, defaultChannelBuffer)
 
 		ctx, cancel := context.WithCancel(ctx)
 
 		for v := range sequence {
-			wg.Add(1)
-			go func(v E) {
-				defer wg.Done()
+			select {
+			case <-ctx.Done():
+				break
+			default:
+				wg.Add(1)
+				go func(v E) {
+					defer wg.Done()
 
-				var result R
-				select {
-				case <-ctx.Done():
-					return
-				default:
-					result = runner(ctx, v)
-				}
+					result := runner(ctx, v)
 
-				select {
-				case <-ctx.Done():
-					return
-				default:
-					results <- result
-				}
-
-			}(v)
+					select {
+					case <-ctx.Done():
+						return
+					default:
+						results <- result
+					}
+				}(v)
+			}
 		}
 
 		go func() {
