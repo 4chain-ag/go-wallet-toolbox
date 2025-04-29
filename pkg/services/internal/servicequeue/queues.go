@@ -207,9 +207,21 @@ func processOneByOne[S serv, R any](logger *slog.Logger, services []S, callServi
 		return to.ZeroValue[R](), ErrNoServicesRegistered
 	}
 
-	results := seq.Map(seq.FromSlice(services), func(s S) *NamedResult[R] {
+	results := seq.Map(seq.FromSlice(services), func(s S) (result *NamedResult[R]) {
+		defer func() {
+			if r := recover(); r != nil {
+				var err error
+				var ok bool
+				if err, ok = r.(error); !ok {
+					err = fmt.Errorf("%v", r)
+				}
+				err = fmt.Errorf("service %s has paniced with: %w \n %s", s.Name(), err, debug.Stack())
+				result = NewNamedResult(s.Name(), types.FailureResult[R](err))
+			}
+		}()
 		res, err := callService(s)
-		return NewNamedResult(s.Name(), types.ResultOf(res, err))
+		result = NewNamedResult(s.Name(), types.ResultOf(res, err))
+		return
 	})
 
 	results = takeUntilHaveResult[R](results)

@@ -26,6 +26,11 @@ func TestQueueOneByOne(t *testing.T) {
 		expectedResult   *TestServiceResult
 		errorExpectation func(t assert.TestingT, err error, msgAndArgs ...interface{}) bool
 	}{
+		"empty queue should return error": {
+			services:         []TestService{},
+			expectedResult:   nil,
+			errorExpectation: assert.Error,
+		},
 		"single service returning success should return success": {
 			services: []TestService{
 				TestService{Name: "successful"}.Successful(),
@@ -132,13 +137,24 @@ func TestQueueOneByOne(t *testing.T) {
 			expectedResult:   &TestServiceResult{200, "success"},
 			errorExpectation: assert.NoError,
 		},
-		"empty queue should return error": {
-			services:         []TestService{},
-			expectedResult:   nil,
-			errorExpectation: assert.Error,
+		"handle panic from service": {
+			services: []TestService{
+				TestService{Name: "panicing"}.Panicking(),
+			},
+			expectedResult: nil,
+			errorExpectation: func(t assert.TestingT, err error, msgAndArgs ...interface{}) bool {
+				return assert.ErrorIs(t, err, errorFromPanic, msgAndArgs...)
+			},
+		},
+		"return result of second service if first service would panic": {
+			services: []TestService{
+				TestService{Name: "panicing"}.Panicking(),
+				TestService{Name: "ok"}.Successful(),
+			},
+			expectedResult:   &TestServiceResult{200, "success"},
+			errorExpectation: assert.NoError,
 		},
 	}
-
 	for name, test := range tests {
 		t.Run(name+": Queue", func(t *testing.T) {
 			// given:
