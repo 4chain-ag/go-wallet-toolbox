@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -43,4 +44,8 @@ func DefaultIfNil(logger *slog.Logger) *slog.Logger {
 		return slog.Default()
 	}
 	return logger
+}
+
+func IsDebug(logger *slog.Logger) bool {
+	return logger.Enabled(context.Background(), slog.LevelDebug)
 }
