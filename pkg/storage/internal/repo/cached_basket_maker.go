@@ -1,7 +1,6 @@
 package repo
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
@@ -22,13 +21,13 @@ func newCachedBasketMaker(tx *gorm.DB, userID int) *cachedBasketMaker {
 	}
 }
 
-func (c *cachedBasketMaker) findOrCreate(ctx context.Context, name string, numberOfDesiredUTXOs int64, minimumDesiredUTXOValue uint64) (*int, error) {
+func (c *cachedBasketMaker) findOrCreate(tx *gorm.DB, name string, numberOfDesiredUTXOs int64, minimumDesiredUTXOValue uint64) (*int, error) {
 	if cachedID, ok := c.nameToID[name]; ok {
 		return cachedID, nil
 	}
 
 	var basket models.OutputBasket
-	err := c.tx.WithContext(ctx).
+	err := tx.
 		Where(models.OutputBasket{UserID: c.userID, Name: name}).
 		Attrs(models.OutputBasket{NumberOfDesiredUTXOs: numberOfDesiredUTXOs, MinimumDesiredUTXOValue: minimumDesiredUTXOValue}).
 		FirstOrCreate(&basket).
