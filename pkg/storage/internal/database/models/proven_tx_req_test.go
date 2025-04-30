@@ -1,11 +1,12 @@
 package models
 
 import (
+	"testing"
+	"time"
+
 	"github.com/go-softwarelab/common/pkg/to"
 	"github.com/stretchr/testify/require"
 	"gorm.io/datatypes"
-	"testing"
-	"time"
 )
 
 var mockWhen = time.Date(2023, 7, 25, 15, 4, 5, 0, time.UTC)

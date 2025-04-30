@@ -2,9 +2,10 @@ package models
 
 import (
 	"encoding/json"
+	"time"
+
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"gorm.io/datatypes"
-	"time"
 )
 
 type ProvenTxReq struct {
@@ -23,7 +24,6 @@ type ProvenTxReq struct {
 	History datatypes.JSON
 	Notify  datatypes.JSON
 }
-
 
 func (p *ProvenTxReq) AddNote(when *time.Time, what string, attrs map[string]any) {
 	var history HistoryModel
