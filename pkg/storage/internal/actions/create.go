@@ -193,12 +193,7 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		return nil, err
 	}
 
-	// TODO: Switch to NewBeefV2 after https://github.com/bsv-blockchain/go-sdk/pull/158 is merged
-	beef := &transaction.Beef{
-		Version:      transaction.BEEF_V2,
-		BUMPs:        []*transaction.MerklePath{},
-		Transactions: make(map[string]*transaction.BeefTx),
-	}
+	beef := transaction.NewBeefV2()
 
 	inputBeef, err := beef.Bytes()
 	if err != nil {
