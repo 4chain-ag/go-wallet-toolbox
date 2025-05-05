@@ -63,7 +63,7 @@ func TestInternalizePlusCreate(t *testing.T) {
 
 		require.Equal(t, 1, len(result.Inputs))
 		allocatedUTXO := result.Inputs[0]
-		assert.Equal(t, internalizedTxID, allocatedUTXO.SourceTxid)
+		assert.Equal(t, internalizedTxID, allocatedUTXO.SourceTxID)
 	})
 }
 
@@ -104,7 +104,7 @@ func TestInternalizePlusTooHighCreate(t *testing.T) {
 	})
 }
 
-func TestInternalizeBasketInsertionThenCreat(t *testing.T) {
+func TestInternalizeBasketInsertionThenCreate(t *testing.T) {
 	given := testabilities.Given(t)
 	activeStorage := given.Provider().GORM()
 

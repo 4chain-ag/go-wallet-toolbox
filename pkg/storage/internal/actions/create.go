@@ -429,7 +429,7 @@ func (c *create) resultInputs(ctx context.Context, allocatedUTXOs []*UTXO) ([]wd
 		}
 		resultInputs[i] = wdk.StorageCreateTransactionSdkInput{
 			Vin:                   i,
-			SourceTxid:            *utxo.Txid,
+			SourceTxID:            *utxo.Txid,
 			SourceVout:            utxo.Vout,
 			SourceSatoshis:        utxo.Satoshis,
 			SourceLockingScript:   *utxo.LockingScript,

@@ -13,8 +13,6 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/go-softwarelab/common/pkg/is"
 	"github.com/go-softwarelab/common/pkg/must"
-	"github.com/go-softwarelab/common/pkg/optional"
-	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/go-softwarelab/common/pkg/slices"
 	"github.com/go-softwarelab/common/pkg/to"
 	"gorm.io/gorm"
@@ -92,10 +90,10 @@ func (txs *Transactions) toTransactionModel(newTx *entity.NewTx) (*models.Transa
 
 func (txs *Transactions) connectOutputsWithBaskets(tx *gorm.DB, newTx *entity.NewTx, model *models.Transaction) error {
 	basketMaker := newCachedBasketMaker(tx, newTx.UserID)
-	outputsWithBasket := seq.Filter(seq.FromSlice(model.Outputs), func(out *models.Output) bool {
-		return out.Basket != nil && out.Basket.Name != ""
-	})
-	for out := range outputsWithBasket {
+	for _, out := range model.Outputs {
+		if out.Basket == nil || out.Basket.Name == "" {
+			continue
+		}
 		basketID, err := basketMaker.findOrCreate(tx, out.Basket.Name, wdk.DefaultNumberOfDesiredUTXOs, wdk.DefaultMinimumDesiredUTXOValue)
 		if err != nil || basketID == nil {
 			return fmt.Errorf("failed to find or create output basket: %w", err)
@@ -126,9 +124,13 @@ func (txs *Transactions) makeNewOutput(userID int, output *entity.NewOutput) (*m
 		LockingScript:      (*string)(output.LockingScript),
 		CustomInstructions: output.CustomInstructions,
 		SenderIdentityKey:  output.SenderIdentityKey,
-		Basket: &models.OutputBasket{
-			Name: optional.OfPtr(output.Basket).OrZeroValue(),
-		},
+	}
+
+	if output.Basket != nil && *output.Basket != "" {
+		// This won't create a new basket, the name is just passed for further processing (see connectOutputsWithBaskets())
+		out.Basket = &models.OutputBasket{
+			Name: *output.Basket,
+		}
 	}
 
 	if out.Spendable && out.Change {

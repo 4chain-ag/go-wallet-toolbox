@@ -3,7 +3,7 @@ package wdk
 // StorageCreateTransactionSdkInput represents the input for SDK transaction creation
 type StorageCreateTransactionSdkInput struct {
 	Vin                   int        `json:"vin"`
-	SourceTxid            string     `json:"sourceTxid"`
+	SourceTxID            string     `json:"sourceTxid"`
 	SourceVout            uint32     `json:"sourceVout"`
 	SourceSatoshis        int64      `json:"sourceSatoshis"`
 	SourceLockingScript   string     `json:"sourceLockingScript"`

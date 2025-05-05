@@ -78,7 +78,7 @@ func TestCreateActionHappyPath(t *testing.T) {
 	input := result.Inputs[0]
 	assert.Equal(t, 1, len(result.Inputs))
 	assert.Equal(t, 0, input.Vin)
-	assert.NotEmpty(t, input.SourceTxid)
+	assert.NotEmpty(t, input.SourceTxID)
 	assert.Equal(t, uint32(0), input.SourceVout)
 	assert.Equal(t, int64(100_000), input.SourceSatoshis)
 	assert.NotEmpty(t, input.SourceLockingScript)
