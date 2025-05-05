@@ -66,8 +66,9 @@ func TestCreateActionHappyPath(t *testing.T) {
 		assert.Equal(t, "change", p.Purpose)
 	})
 
-	resultOutput, _ := testutils.FindOutput(t, result.Outputs, testutils.ProvidedByYouCondition)
+	resultOutput := result.Outputs[0]
 
+	require.Equal(t, wdk.ProvidedByYou, resultOutput.ProvidedBy)
 	assert.Empty(t, resultOutput.Purpose)
 	assert.Equal(t, providedOutput.Satoshis, resultOutput.Satoshis)
 	assert.Equal(t, providedOutput.Basket, resultOutput.Basket)
