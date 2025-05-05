@@ -9,7 +9,7 @@ require (
 	github.com/bsv-blockchain/universal-test-vectors v0.5.0
 	github.com/filecoin-project/go-jsonrpc v0.8.0
 	github.com/go-resty/resty/v2 v2.16.5
-	github.com/go-softwarelab/common v0.22.0
+	github.com/go-softwarelab/common v0.26.0
 	github.com/go-viper/mapstructure/v2 v2.2.1
 	github.com/jarcoal/httpmock v1.4.0
 	github.com/mattn/go-sqlite3 v1.14.28

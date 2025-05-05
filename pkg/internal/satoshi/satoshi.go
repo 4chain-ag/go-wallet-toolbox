@@ -6,7 +6,7 @@ import (
 	"reflect"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
-	"github.com/go-softwarelab/common/types"
+	"github.com/go-softwarelab/common/pkg/types"
 )
 
 type Value int64
