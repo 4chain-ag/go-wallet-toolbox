@@ -19,7 +19,7 @@ type Transaction struct {
 	TxID        *string
 	InputBeef   []byte
 
-	Outputs       []Output   `gorm:"foreignKey:TransactionID"`
-	Labels        []Label    `gorm:"many2many:transaction_labels;"`
-	ReservedUtxos []UserUTXO `gorm:"foreignKey:ReservedByID"`
+	Outputs       []*Output   `gorm:"foreignKey:TransactionID"`
+	Labels        []*Label    `gorm:"many2many:transaction_labels;"`
+	ReservedUtxos []*UserUTXO `gorm:"foreignKey:ReservedByID"`
 }

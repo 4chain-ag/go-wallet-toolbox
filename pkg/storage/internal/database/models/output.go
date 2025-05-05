@@ -32,4 +32,5 @@ type Output struct {
 	SenderIdentityKey *string
 
 	Transaction *Transaction `gorm:"foreignKey:TransactionID;references:ID"`
+	UserUTXO    *UserUTXO    `gorm:"foreignKey:OutputID"`
 }

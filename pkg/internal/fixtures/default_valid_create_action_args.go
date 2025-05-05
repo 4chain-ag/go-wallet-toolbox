@@ -26,7 +26,7 @@ func DefaultValidCreateActionArgs() wdk.ValidCreateActionArgs {
 				AcceptDelayedBroadcast: to.Ptr[primitives.BooleanDefaultTrue](false),
 				SendWith:               []primitives.TXIDHexString{},
 			},
-			SignAndProcess:   true,
+			SignAndProcess:   to.Ptr(primitives.BooleanDefaultTrue(true)),
 			KnownTxids:       []primitives.TXIDHexString{},
 			NoSendChange:     []wdk.OutPoint{},
 			RandomizeOutputs: false,
