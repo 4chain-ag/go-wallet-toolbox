@@ -317,25 +317,6 @@ func (c *create) newOutputs(
 
 	all := make([]*entity.NewOutput, 0, len32)
 
-	for satoshis := range changeDistribution {
-		derivationSuffix, err := randomDerivation()
-		if err != nil {
-			return nil, fmt.Errorf("failed to generate random derivation suffix: %w", err)
-		}
-
-		all = append(all, &entity.NewOutput{
-			Satoshis:         satoshis,
-			Basket:           to.Ptr(wdk.BasketNameForChange),
-			Spendable:        false, // TODO: Make sure, these outputs turn to spendable during "processAction"
-			Change:           true,
-			ProvidedBy:       wdk.ProvidedByStorage,
-			Type:             wdk.OutputTypeP2PKH,
-			DerivationPrefix: to.Ptr(derivationPrefix),
-			DerivationSuffix: to.Ptr(derivationSuffix),
-			Purpose:          wdk.ChangePurpose,
-		})
-	}
-
 	for _, output := range providedOutputs {
 		all = append(all, &entity.NewOutput{
 			Satoshis:           satoshi.MustFrom(output.Satoshis),
@@ -360,6 +341,25 @@ func (c *create) newOutputs(
 			ProvidedBy:    wdk.ProvidedByStorage,
 			Type:          wdk.OutputTypeCustom,
 			Purpose:       wdk.StorageCommissionPurpose,
+		})
+	}
+
+	for satoshis := range changeDistribution {
+		derivationSuffix, err := randomDerivation()
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate random derivation suffix: %w", err)
+		}
+
+		all = append(all, &entity.NewOutput{
+			Satoshis:         satoshis,
+			Basket:           to.Ptr(wdk.BasketNameForChange),
+			Spendable:        false, // TODO: Make sure, these outputs turn to spendable during "processAction"
+			Change:           true,
+			ProvidedBy:       wdk.ProvidedByStorage,
+			Type:             wdk.OutputTypeP2PKH,
+			DerivationPrefix: to.Ptr(derivationPrefix),
+			DerivationSuffix: to.Ptr(derivationSuffix),
+			Purpose:          wdk.ChangePurpose,
 		})
 	}
 
