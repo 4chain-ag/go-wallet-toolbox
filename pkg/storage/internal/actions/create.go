@@ -60,6 +60,7 @@ type CreateActionParams struct {
 	Outputs          []wdk.ValidCreateActionOutput
 	Inputs           []wdk.ValidCreateActionInput
 	RandomizeOutputs bool
+	IsSignAction     bool
 }
 
 func FromValidCreateActionArgs(args *wdk.ValidCreateActionArgs) CreateActionParams {
@@ -72,6 +73,7 @@ func FromValidCreateActionArgs(args *wdk.ValidCreateActionArgs) CreateActionPara
 		Outputs:          args.Outputs,
 		Inputs:           args.Inputs,
 		RandomizeOutputs: args.Options.RandomizeOutputs,
+		IsSignAction:     args.IsSignAction,
 	}
 }
 
@@ -85,24 +87,13 @@ type Funder interface {
 	Fund(ctx context.Context, targetSat satoshi.Value, currentTxSize uint64, basket *wdk.TableOutputBasket, userID int) (*FundingResult, error)
 }
 
-type BasketRepo interface {
-	FindBasketByName(ctx context.Context, userID int, name string) (*wdk.TableOutputBasket, error)
-}
-
-type TxRepo interface {
-	CreateTransaction(ctx context.Context, transaction *entity.NewTx) error
-}
-
-type OutputRepo interface {
-	FindOutputs(ctx context.Context, outputIDs iter.Seq[uint]) ([]*wdk.TableOutput, error)
-}
-
 type create struct {
 	logger        *slog.Logger
 	funder        Funder
 	basketRepo    BasketRepo
-	txRepo        TxRepo
+	txRepo        TransactionsRepo
 	outputRepo    OutputRepo
+	provenTxRepo  ProvenTxRepo
 	commission    *commission.ScriptGenerator
 	commissionCfg defs.Commission
 }
@@ -112,8 +103,9 @@ func newCreateAction(
 	funder Funder,
 	commissionCfg defs.Commission,
 	basketRepo BasketRepo,
-	txRepo TxRepo,
+	txRepo TransactionsRepo,
 	outputRepo OutputRepo,
+	provenTxRepo ProvenTxRepo,
 ) *create {
 	logger = logging.Child(logger, "createAction")
 	c := &create{
@@ -123,6 +115,7 @@ func newCreateAction(
 		txRepo:        txRepo,
 		commissionCfg: commissionCfg,
 		outputRepo:    outputRepo,
+		provenTxRepo:  provenTxRepo,
 	}
 
 	if commissionCfg.Enabled() {
@@ -220,7 +213,7 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		return nil, fmt.Errorf("failed to create transaction: %w", err)
 	}
 
-	resultInputs, err := c.resultInputs(ctx, funding.AllocatedUTXOs)
+	resultInputs, err := c.resultInputs(ctx, funding.AllocatedUTXOs, params.IsSignAction)
 	if err != nil {
 		return nil, err
 	}
@@ -408,7 +401,7 @@ func (c *create) resultOutputs(newOutputs []*entity.NewOutput) []wdk.StorageCrea
 	return resultOutputs
 }
 
-func (c *create) resultInputs(ctx context.Context, allocatedUTXOs []*UTXO) ([]wdk.StorageCreateTransactionSdkInput, error) {
+func (c *create) resultInputs(ctx context.Context, allocatedUTXOs []*UTXO, isSignAction bool) ([]wdk.StorageCreateTransactionSdkInput, error) {
 	utxos, err := c.outputRepo.FindOutputs(ctx, seq.Map(seq.FromSlice(allocatedUTXOs), func(utxo *UTXO) uint {
 		return utxo.OutputID
 	}))
@@ -427,9 +420,10 @@ func (c *create) resultInputs(ctx context.Context, allocatedUTXOs []*UTXO) ([]wd
 		if utxo.LockingScript == nil {
 			return nil, fmt.Errorf("missing locking script for output %d", i)
 		}
+		txID := *utxo.Txid
 		resultInputs[i] = wdk.StorageCreateTransactionSdkInput{
 			Vin:                   i,
-			SourceTxID:            *utxo.Txid,
+			SourceTxID:            txID,
 			SourceVout:            utxo.Vout,
 			SourceSatoshis:        utxo.Satoshis,
 			SourceLockingScript:   *utxo.LockingScript,
@@ -438,9 +432,19 @@ func (c *create) resultInputs(ctx context.Context, allocatedUTXOs []*UTXO) ([]wd
 			Type:                  utxo.Type,
 			DerivationPrefix:      utxo.DerivationPrefix,
 			DerivationSuffix:      utxo.DerivationSuffix,
-
-			// TODO raw source tx when handle isSignAction
 		}
+
+		if isSignAction {
+			sourceTx, err := c.provenTxRepo.FindProvenTxRawTX(ctx, txID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to find source transaction of TxID = %s: %w", txID, err)
+			}
+			if len(sourceTx) == 0 {
+				return nil, fmt.Errorf("source transaction of TxID = %s is empty", txID)
+			}
+			resultInputs[i].SourceTransaction = sourceTx
+		}
+
 	}
 	return resultInputs, nil
 }

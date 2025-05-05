@@ -15,15 +15,6 @@ import (
 	"github.com/go-softwarelab/common/pkg/to"
 )
 
-type TransactionsRepo interface {
-	CreateTransaction(ctx context.Context, transaction *entity.NewTx) error
-	FindTransactionByUserIDAndTxID(ctx context.Context, userID int, txID string) (*wdk.TableTransaction, error)
-}
-
-type ProvenTxRepo interface {
-	UpsertProvenTxReq(ctx context.Context, req *entity.UpsertProvenTxReq, historyNote string, historyAttrs map[string]any) error
-}
-
 type internalize struct {
 	logger       *slog.Logger
 	txRepo       TransactionsRepo

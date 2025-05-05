@@ -42,3 +42,15 @@ func (p *ProvenTxReq) UpsertProvenTxReq(ctx context.Context, req *entity.UpsertP
 	}
 	return nil
 }
+
+func (p *ProvenTxReq) FindProvenTxRawTX(ctx context.Context, txID string) ([]byte, error) {
+	var model models.ProvenTxReq
+	err := p.db.WithContext(ctx).First(&model, "tx_id = ? ", txID).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find proven tx raw tx: %w", err)
+	}
+	return model.RawTx, nil
+}
