@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-softwarelab/common/pkg/seq"
-	"github.com/go-softwarelab/common/types"
+	"github.com/go-softwarelab/common/pkg/types"
 	"github.com/stretchr/testify/require"
 )
 

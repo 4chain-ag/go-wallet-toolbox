@@ -11,7 +11,11 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/entity"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
+	"github.com/go-softwarelab/common/pkg/is"
 	"github.com/go-softwarelab/common/pkg/must"
+	"github.com/go-softwarelab/common/pkg/optional"
+	"github.com/go-softwarelab/common/pkg/seq"
+	"github.com/go-softwarelab/common/pkg/slices"
 	"github.com/go-softwarelab/common/pkg/to"
 	"gorm.io/gorm"
 )
@@ -25,55 +29,18 @@ func NewTransactions(db *gorm.DB) *Transactions {
 }
 
 func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *entity.NewTx) error {
-	err := txs.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		basketMaker := newCachedBasketMaker(tx, newTx.UserID)
+	model, err := txs.toTransactionModel(newTx)
+	if err != nil {
+		return err
+	}
 
-		model := &models.Transaction{
-			UserID:      newTx.UserID,
-			Status:      newTx.Status,
-			Reference:   newTx.Reference,
-			IsOutgoing:  newTx.IsOutgoing,
-			Satoshis:    newTx.Satoshis,
-			Description: newTx.Description,
-			Version:     newTx.Version,
-			LockTime:    newTx.LockTime,
-			InputBeef:   newTx.InputBeef,
-			RawTx:       nil,
-			TxID:        newTx.TxID,
-			Labels:      nil,
-		}
-		for _, newOut := range newTx.Outputs {
-			var basketID *int
-			if newOut.Basket != nil {
-				var err error
-				basketID, err = basketMaker.findOrCreate(ctx, *newOut.Basket, wdk.DefaultNumberOfDesiredUTXOs, wdk.DefaultMinimumDesiredUTXOValue)
-				if err != nil {
-					return fmt.Errorf("failed to find or create output basket: %w", err)
-				}
-			}
-
-			output, err := txs.makeNewOutput(ctx, newTx.UserID, newOut, basketID)
-			if err != nil {
-				return err
-			}
-
-			model.Outputs = append(model.Outputs, output)
-		}
-		for _, label := range newTx.Labels {
-			model.Labels = append(model.Labels, &models.Label{
-				Name:   string(label),
-				UserID: newTx.UserID,
-			})
+	err = txs.db.WithContext(ctx).Transaction(func(tx *gorm.DB) (err error) {
+		err = txs.connectOutputsWithBaskets(tx, newTx, model)
+		if err != nil {
+			return err
 		}
 
-		for _, reservedOutputID := range newTx.ReservedOutputIDs {
-			model.ReservedUtxos = append(model.ReservedUtxos, &models.UserUTXO{
-				UserID:   newTx.UserID,
-				OutputID: reservedOutputID,
-			})
-		}
-
-		if err := txs.markReservedOutputsAsNotSpendable(tx, newTx.UserID, newTx.ReservedOutputIDs); err != nil {
+		if err = txs.markReservedOutputsAsNotSpendable(tx, newTx.UserID, newTx.ReservedOutputIDs); err != nil {
 			return err
 		}
 
@@ -85,7 +52,65 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *entity.Ne
 	return nil
 }
 
-func (txs *Transactions) makeNewOutput(ctx context.Context, userID int, output *entity.NewOutput, basketID *int) (*models.Output, error) {
+func (txs *Transactions) toTransactionModel(newTx *entity.NewTx) (*models.Transaction, error) {
+	outputs, err := slices.MapOrError(newTx.Outputs, func(output *entity.NewOutput) (*models.Output, error) {
+		return txs.makeNewOutput(newTx.UserID, output)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create outputs: %w", err)
+	}
+
+	model := &models.Transaction{
+		UserID:      newTx.UserID,
+		Status:      newTx.Status,
+		Reference:   newTx.Reference,
+		IsOutgoing:  newTx.IsOutgoing,
+		Satoshis:    newTx.Satoshis,
+		Description: newTx.Description,
+		Version:     newTx.Version,
+		LockTime:    newTx.LockTime,
+		InputBeef:   newTx.InputBeef,
+		RawTx:       nil,
+		TxID:        newTx.TxID,
+		Labels: slices.Map(newTx.Labels, func(label primitives.StringUnder300) *models.Label {
+			return &models.Label{
+				Name:   string(label),
+				UserID: newTx.UserID,
+			}
+		}),
+		ReservedUtxos: slices.Map(newTx.ReservedOutputIDs, func(reservedOutputID uint) *models.UserUTXO {
+			return &models.UserUTXO{
+				UserID:   newTx.UserID,
+				OutputID: reservedOutputID,
+			}
+		}),
+		Outputs: outputs,
+	}
+
+	return model, nil
+}
+
+func (txs *Transactions) connectOutputsWithBaskets(tx *gorm.DB, newTx *entity.NewTx, model *models.Transaction) error {
+	basketMaker := newCachedBasketMaker(tx, newTx.UserID)
+	outputsWithBasket := seq.Filter(seq.FromSlice(model.Outputs), func(out *models.Output) bool {
+		return out.Basket != nil && out.Basket.Name != ""
+	})
+	for out := range outputsWithBasket {
+		basketID, err := basketMaker.findOrCreate(tx, out.Basket.Name, wdk.DefaultNumberOfDesiredUTXOs, wdk.DefaultMinimumDesiredUTXOValue)
+		if err != nil || basketID == nil {
+			return fmt.Errorf("failed to find or create output basket: %w", err)
+		}
+
+		out.BasketID = basketID
+		out.Basket = nil
+		if out.UserUTXO != nil {
+			out.UserUTXO.BasketID = *basketID
+		}
+	}
+	return nil
+}
+
+func (txs *Transactions) makeNewOutput(userID int, output *entity.NewOutput) (*models.Output, error) {
 	out := models.Output{
 		Vout:               output.Vout,
 		UserID:             userID,
@@ -101,12 +126,14 @@ func (txs *Transactions) makeNewOutput(ctx context.Context, userID int, output *
 		LockingScript:      (*string)(output.LockingScript),
 		CustomInstructions: output.CustomInstructions,
 		SenderIdentityKey:  output.SenderIdentityKey,
-		BasketID:           basketID,
+		Basket: &models.OutputBasket{
+			Name: optional.OfPtr(output.Basket).OrZeroValue(),
+		},
 	}
 
 	if out.Spendable && out.Change {
-		if basketID == nil {
-			return nil, fmt.Errorf("basket ID is nil for change output")
+		if is.EmptyString(output.Basket) {
+			return nil, fmt.Errorf("basket not provided for change output")
 		}
 		if out.Satoshis == 0 {
 			return nil, fmt.Errorf("change output with zero satoshis")
@@ -118,7 +145,6 @@ func (txs *Transactions) makeNewOutput(ctx context.Context, userID int, output *
 
 		out.UserUTXO = &models.UserUTXO{
 			UserID:             userID,
-			BasketID:           *basketID,
 			Satoshis:           sats,
 			EstimatedInputSize: txutils.EstimatedInputSizeByType(output.Type),
 		}
