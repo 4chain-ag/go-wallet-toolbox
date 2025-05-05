@@ -3,7 +3,6 @@ package methodtests
 import (
 	"context"
 	"encoding/hex"
-	"github.com/go-softwarelab/common/pkg/to"
 	"slices"
 	"testing"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testutils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
+	"github.com/go-softwarelab/common/pkg/to"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

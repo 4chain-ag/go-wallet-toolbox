@@ -53,27 +53,27 @@ func (fr *FundingResult) TotalAllocated() (satoshi.Value, error) {
 }
 
 type CreateActionParams struct {
-	Version          uint32
-	LockTime         uint32
-	Description      string
-	Labels           []primitives.StringUnder300
-	Outputs          []wdk.ValidCreateActionOutput
-	Inputs           []wdk.ValidCreateActionInput
-	RandomizeOutputs bool
-	IsSignAction     bool
+	Version                  uint32
+	LockTime                 uint32
+	Description              string
+	Labels                   []primitives.StringUnder300
+	Outputs                  []wdk.ValidCreateActionOutput
+	Inputs                   []wdk.ValidCreateActionInput
+	RandomizeOutputs         bool
+	IncludeInputSourceRawTxs bool
 }
 
 func FromValidCreateActionArgs(args *wdk.ValidCreateActionArgs) CreateActionParams {
 	// TODO: use only the necessary fields (no redundant fields)
 	return CreateActionParams{
-		Version:          args.Version,
-		LockTime:         args.LockTime,
-		Description:      string(args.Description),
-		Labels:           args.Labels,
-		Outputs:          args.Outputs,
-		Inputs:           args.Inputs,
-		RandomizeOutputs: args.Options.RandomizeOutputs,
-		IsSignAction:     args.IsSignAction,
+		Version:                  args.Version,
+		LockTime:                 args.LockTime,
+		Description:              string(args.Description),
+		Labels:                   args.Labels,
+		Outputs:                  args.Outputs,
+		Inputs:                   args.Inputs,
+		RandomizeOutputs:         args.Options.RandomizeOutputs,
+		IncludeInputSourceRawTxs: args.IsSignAction && args.IncludeAllSourceTransactions,
 	}
 }
 
@@ -213,7 +213,7 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		return nil, fmt.Errorf("failed to create transaction: %w", err)
 	}
 
-	resultInputs, err := c.resultInputs(ctx, funding.AllocatedUTXOs, params.IsSignAction)
+	resultInputs, err := c.resultInputs(ctx, funding.AllocatedUTXOs, params.IncludeInputSourceRawTxs)
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +401,7 @@ func (c *create) resultOutputs(newOutputs []*entity.NewOutput) []wdk.StorageCrea
 	return resultOutputs
 }
 
-func (c *create) resultInputs(ctx context.Context, allocatedUTXOs []*UTXO, isSignAction bool) ([]wdk.StorageCreateTransactionSdkInput, error) {
+func (c *create) resultInputs(ctx context.Context, allocatedUTXOs []*UTXO, includeRawTxs bool) ([]wdk.StorageCreateTransactionSdkInput, error) {
 	utxos, err := c.outputRepo.FindOutputs(ctx, seq.Map(seq.FromSlice(allocatedUTXOs), func(utxo *UTXO) uint {
 		return utxo.OutputID
 	}))
@@ -434,7 +434,7 @@ func (c *create) resultInputs(ctx context.Context, allocatedUTXOs []*UTXO, isSig
 			DerivationSuffix:      utxo.DerivationSuffix,
 		}
 
-		if isSignAction {
+		if includeRawTxs {
 			sourceTx, err := c.provenTxRepo.FindProvenTxRawTX(ctx, txID)
 			if err != nil {
 				return nil, fmt.Errorf("failed to find source transaction of TxID = %s: %w", txID, err)
