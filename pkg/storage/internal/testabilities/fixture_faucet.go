@@ -12,6 +12,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	txtestabilities "github.com/bsv-blockchain/universal-test-vectors/pkg/testabilities"
 	"github.com/go-softwarelab/common/pkg/to"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -36,6 +37,16 @@ func (f *faucetFixture) TopUp(satoshis satoshi.Value) (txtestabilities.Transacti
 		WithP2PKHOutput(satoshis.MustUInt64()).
 		WithOPReturn(fmt.Sprintf("faucet index %d", f.index))
 
+	beef, err := spec.TX().BEEF()
+	require.NoError(f.t, err)
+
+	provenTxReq := &models.ProvenTxReq{
+		TxID:      spec.ID(),
+		Status:    wdk.ProvenTxStatusUnmined,
+		RawTx:     spec.TX().Bytes(),
+		InputBeef: beef,
+	}
+
 	transaction := &models.Transaction{
 		UserID:      f.user.ID,
 		Status:      wdk.TxStatusCompleted,
@@ -46,7 +57,6 @@ func (f *faucetFixture) TopUp(satoshis satoshi.Value) (txtestabilities.Transacti
 		Version:     1,
 		LockTime:    0,
 		InputBeef:   nil,
-		RawTx:       spec.TX().Bytes(),
 		TxID:        to.Ptr(spec.ID()),
 	}
 
@@ -77,7 +87,9 @@ func (f *faucetFixture) TopUp(satoshis satoshi.Value) (txtestabilities.Transacti
 		Output: output,
 	}
 
-	f.db.DB.WithContext(f.t.Context()).Create(utxo)
+	tx := f.db.DB.WithContext(f.t.Context())
+	tx.Create(utxo)
+	tx.Create(provenTxReq)
 
 	return spec, utxo
 }

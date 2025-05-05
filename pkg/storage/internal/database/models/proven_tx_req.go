@@ -22,10 +22,9 @@ type ProvenTxReq struct {
 	InputBeef []byte
 
 	History datatypes.JSON
-	Notify  datatypes.JSON
 }
 
-func (p *ProvenTxReq) AddNote(when *time.Time, what string, attrs map[string]any) {
+func (p *ProvenTxReq) AddNote(when time.Time, what string, attrs map[string]any) {
 	var history HistoryModel
 	if p.History != nil {
 		// in case of unmarshalling error, we will just create a new history

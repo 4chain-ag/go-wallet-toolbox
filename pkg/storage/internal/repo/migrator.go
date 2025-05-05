@@ -26,6 +26,7 @@ func (m *Migrator) Migrate(ctx context.Context) error {
 		models.UserUTXO{},
 		models.Transaction{},
 		models.Output{},
+		models.ProvenTxReq{},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to migrate settings: %w", err)

@@ -18,7 +18,6 @@ type Transaction struct {
 	LockTime    uint32
 	TxID        *string
 	InputBeef   []byte
-	RawTx       []byte
 
 	Outputs       []Output   `gorm:"foreignKey:TransactionID"`
 	Labels        []Label    `gorm:"many2many:transaction_labels;"`

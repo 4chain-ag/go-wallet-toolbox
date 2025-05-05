@@ -20,18 +20,24 @@ type TransactionsRepo interface {
 	FindTransactionByUserIDAndTxID(ctx context.Context, userID int, txID string) (*wdk.TableTransaction, error)
 }
 
-type internalize struct {
-	logger     *slog.Logger
-	txRepo     TransactionsRepo
-	basketRepo BasketRepo
+type ProvenTxRepo interface {
+	UpsertProvenTxReq(ctx context.Context, req *entity.UpsertProvenTxReq, historyNote string, historyAttrs map[string]any) error
 }
 
-func newInternalizeAction(logger *slog.Logger, txRepo TransactionsRepo, basketRepo BasketRepo) *internalize {
+type internalize struct {
+	logger       *slog.Logger
+	txRepo       TransactionsRepo
+	basketRepo   BasketRepo
+	provenTxRepo ProvenTxRepo
+}
+
+func newInternalizeAction(logger *slog.Logger, txRepo TransactionsRepo, basketRepo BasketRepo, provenTxRepo ProvenTxRepo) *internalize {
 	logger = logging.Child(logger, "internalizeAction")
 	return &internalize{
-		logger:     logger,
-		txRepo:     txRepo,
-		basketRepo: basketRepo,
+		logger:       logger,
+		txRepo:       txRepo,
+		basketRepo:   basketRepo,
+		provenTxRepo: provenTxRepo,
 	}
 }
 
@@ -60,6 +66,17 @@ func (in *internalize) Internalize(ctx context.Context, userID int, args *wdk.In
 	reference, err := txutils.RandomBase64(referenceLength)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate random reference: %w", err)
+	}
+
+	// TODO: Don't upsert ProvenTxReq if the transaction is already known in ProvenTx (not *Req)
+	err = in.provenTxRepo.UpsertProvenTxReq(ctx, &entity.UpsertProvenTxReq{
+		TxID:      txID,
+		RawTx:     tx.Bytes(),
+		InputBeef: args.Tx,
+		Status:    wdk.ProvenTxStatusUnmined,
+	}, entity.InternalizeActionHistoryNote, entity.UserIDHistoryAttr(userID))
+	if err != nil {
+		return nil, fmt.Errorf("failed to upsert proven tx request: %w", err)
 	}
 
 	err = in.txRepo.CreateTransaction(ctx, &entity.NewTx{

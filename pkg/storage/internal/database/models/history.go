@@ -11,7 +11,7 @@ type HistoryModel struct {
 }
 
 type HistoryNote struct {
-	When  *time.Time
+	When  time.Time
 	What  string
 	Attrs map[string]any
 }
@@ -20,9 +20,7 @@ func (h HistoryNote) MarshalJSON() ([]byte, error) {
 	result := make(map[string]any)
 
 	result["what"] = h.What
-	if h.When != nil {
-		result["when"] = *h.When
-	}
+	result["when"] = h.When
 
 	for k, v := range h.Attrs {
 		result[k] = v
@@ -40,8 +38,8 @@ func (h *HistoryNote) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("HistoryNote: nil pointer dereference")
 	}
 	var partial struct {
-		What string     `json:"what"`
-		When *time.Time `json:"when"`
+		What string    `json:"what"`
+		When time.Time `json:"when"`
 	}
 	if err := json.Unmarshal(data, &partial); err != nil {
 		return fmt.Errorf("failed to unmarshal HistoryNote: %w", err)

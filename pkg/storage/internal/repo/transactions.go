@@ -35,7 +35,6 @@ func (txs *Transactions) CreateTransaction(ctx context.Context, newTx *entity.Ne
 			Version:     newTx.Version,
 			LockTime:    newTx.LockTime,
 			InputBeef:   newTx.InputBeef,
-			RawTx:       nil,
 			TxID:        newTx.TxID,
 			Labels:      nil,
 		}
@@ -112,7 +111,6 @@ func (txs *Transactions) FindTransactionByUserIDAndTxID(ctx context.Context, use
 		LockTime:      to.Ptr(transaction.LockTime),
 		TxID:          transaction.TxID,
 		InputBEEF:     transaction.InputBeef,
-		RawTx:         transaction.RawTx,
 	}, nil
 
 }
