@@ -15,6 +15,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/entity"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
+	"github.com/bsv-blockchain/go-sdk/transaction"
 	"github.com/go-softwarelab/common/pkg/must"
 	"github.com/go-softwarelab/common/pkg/optional"
 	"github.com/go-softwarelab/common/pkg/seq"
@@ -192,6 +193,13 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		return nil, err
 	}
 
+	beef := transaction.NewBeefV2()
+
+	inputBeef, err := beef.Bytes()
+	if err != nil {
+		return nil, fmt.Errorf("failed to serialize beef: %w", err)
+	}
+
 	err = c.txRepo.CreateTransaction(ctx, &entity.NewTx{
 		UserID:      userID,
 		Version:     params.Version,
@@ -205,9 +213,8 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		ReservedOutputIDs: slices.Map(funding.AllocatedUTXOs, func(utxo *UTXO) uint {
 			return utxo.OutputID
 		}),
-		Labels: params.Labels,
-
-		// TODO: inputBEEF
+		Labels:    params.Labels,
+		InputBeef: inputBeef,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transaction: %w", err)
@@ -225,6 +232,7 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		DerivationPrefix: derivationPrefix,
 		Outputs:          c.resultOutputs(newOutputs),
 		Inputs:           resultInputs,
+		InputBeef:        inputBeef,
 	}, nil
 }
 
@@ -325,7 +333,7 @@ func (c *create) newOutputs(
 		all = append(all, &entity.NewOutput{
 			Satoshis:         satoshis,
 			Basket:           to.Ptr(wdk.BasketNameForChange),
-			Spendable:        true,
+			Spendable:        false, // TODO: Make sure, these outputs turn to spendable during "processAction"
 			Change:           true,
 			ProvidedBy:       wdk.ProvidedByStorage,
 			Type:             wdk.OutputTypeP2PKH,
@@ -339,7 +347,7 @@ func (c *create) newOutputs(
 		all = append(all, &entity.NewOutput{
 			Satoshis:           satoshi.MustFrom(output.Satoshis),
 			Basket:             (*string)(output.Basket),
-			Spendable:          true,
+			Spendable:          false, // TODO: Make sure, these outputs turn to spendable during "processAction"
 			Change:             false,
 			ProvidedBy:         wdk.ProvidedByYou,
 			Type:               wdk.OutputTypeCustom,
@@ -421,7 +429,7 @@ func (c *create) resultInputs(ctx context.Context, allocatedUTXOs []*UTXO) ([]wd
 		}
 		resultInputs[i] = wdk.StorageCreateTransactionSdkInput{
 			Vin:                   i,
-			SourceTxid:            *utxo.Txid,
+			SourceTxID:            *utxo.Txid,
 			SourceVout:            utxo.Vout,
 			SourceSatoshis:        utxo.Satoshis,
 			SourceLockingScript:   *utxo.LockingScript,
