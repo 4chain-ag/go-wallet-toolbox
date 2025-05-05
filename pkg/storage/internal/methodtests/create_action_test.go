@@ -3,6 +3,7 @@ package methodtests
 import (
 	"context"
 	"encoding/hex"
+	"github.com/go-softwarelab/common/pkg/to"
 	"slices"
 	"testing"
 
@@ -91,6 +92,33 @@ func TestCreateActionHappyPath(t *testing.T) {
 	assert.Equal(t, 24, len(*input.DerivationSuffix))
 
 	// TODO: Test DB state: but after we make actual getter methods, like ListActions
+}
+
+func TestCreateActionIsSignActionHappyPath(t *testing.T) {
+	given := testabilities.Given(t)
+
+	// given:
+	activeStorage := given.Provider().GORM()
+
+	// and:
+	given.Faucet(activeStorage, testusers.Alice).TopUp(100_000)
+
+	// and:
+	args := fixtures.DefaultValidCreateActionArgs()
+	args.IsSignAction = true
+	args.Options.SignAndProcess = to.Ptr[primitives.BooleanDefaultTrue](false)
+
+	// when:
+	result, err := activeStorage.CreateAction(
+		context.Background(),
+		testusers.Alice.AuthID(),
+		args,
+	)
+
+	// then:
+	require.NoError(t, err)
+	input := result.Inputs[0]
+	require.NotEmpty(t, input.SourceTransaction)
 }
 
 func TestCreateActionWithCommission(t *testing.T) {
