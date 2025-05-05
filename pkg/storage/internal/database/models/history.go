@@ -16,7 +16,6 @@ type HistoryNote struct {
 	Attrs map[string]any
 }
 
-// MarshalJSON implements json.Marshaler interface for HistoryNote
 func (h HistoryNote) MarshalJSON() ([]byte, error) {
 	result := make(map[string]any)
 
