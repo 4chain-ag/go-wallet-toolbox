@@ -7,7 +7,6 @@ import (
 )
 
 func ProcessActionArgs(args *wdk.ProcessActionArgs) error {
-
 	if args.IsNewTx {
 		if args.Reference == nil {
 			return fmt.Errorf("missing reference argument for new transaction")
