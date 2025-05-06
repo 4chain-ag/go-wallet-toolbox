@@ -10,4 +10,5 @@ const (
 	DerivationSuffix           = "Su=="
 	CustomBasket               = "custom-basket"
 	ExpectedValueToInternalize = 999
+	Reference                  = "0LFT4CuWAMEgEa7I"
 )
