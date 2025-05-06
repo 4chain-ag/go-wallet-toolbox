@@ -50,40 +50,17 @@ func (o *ValidCreateActionOutput) ScriptLength() (uint64, error) {
 	return lengthInBytes, nil
 }
 
-// ValidProcessActionOptions represents options for processing an action
-type ValidProcessActionOptions struct {
+// ValidCreateActionOptions represents options for createAction
+type ValidCreateActionOptions struct {
 	AcceptDelayedBroadcast *primitives.BooleanDefaultTrue  `json:"acceptDelayedBroadcast,omitempty"`
 	ReturnTXIDOnly         *primitives.BooleanDefaultFalse `json:"returnTXIDOnly,omitempty"`
 	NoSend                 *primitives.BooleanDefaultFalse `json:"noSend,omitempty"`
 	SendWith               []primitives.TXIDHexString      `json:"sendWith,omitempty"`
-}
-
-// ValidCreateActionOptions extends ValidProcessActionOptions with additional options
-type ValidCreateActionOptions struct {
-	ValidProcessActionOptions `json:",inline"`
-	SignAndProcess            *primitives.BooleanDefaultTrue `json:"signAndProcess,omitempty"`
-	TrustSelf                 *string                        `json:"trustSelf,omitempty"`
-	KnownTxids                []primitives.TXIDHexString     `json:"knownTxids,omitempty"`
-	NoSendChange              []OutPoint                     `json:"noSendChange,omitempty"`
-	RandomizeOutputs          bool                           `json:"randomizeOutputs"`
-}
-
-// ValidProcessActionArgs represents arguments for processing an action.
-// It contains the core parameters needed to process a transaction.
-type ValidProcessActionArgs struct {
-	// Options contains configuration settings for how the action should be processed
-	Options ValidProcessActionOptions `json:"options,omitempty"`
-	// IsSendWith is true if a batch of transactions is included for processing
-	IsSendWith bool `json:"isSendWith,omitempty"`
-	// IsNewTx is true if there is a new transaction (not no inputs and no outputs)
-	IsNewTx bool `json:"isNewTx,omitempty"`
-	// IsRemixChange is true if this is a request to remix change
-	// When true, IsNewTx will also be true and IsSendWith must be false
-	IsRemixChange bool `json:"isRemixChange,omitempty"`
-	// IsNoSend is true if any new transaction should NOT be sent to the network
-	IsNoSend bool `json:"isNoSend,omitempty"`
-	// IsDelayed is true if options.AcceptDelayedBroadcast is true
-	IsDelayed bool `json:"isDelayed,omitempty"`
+	SignAndProcess         *primitives.BooleanDefaultTrue  `json:"signAndProcess,omitempty"`
+	TrustSelf              *string                         `json:"trustSelf,omitempty"`
+	KnownTxids             []primitives.TXIDHexString      `json:"knownTxids,omitempty"`
+	NoSendChange           []OutPoint                      `json:"noSendChange,omitempty"`
+	RandomizeOutputs       bool                            `json:"randomizeOutputs"`
 }
 
 // ValidCreateActionArgs represents the arguments for creating a transaction action
