@@ -9,6 +9,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/txutils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/entity"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/history"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/bsv-blockchain/go-sdk/transaction"
@@ -65,7 +66,7 @@ func (in *internalize) Internalize(ctx context.Context, userID int, args *wdk.In
 		RawTx:     tx.Bytes(),
 		InputBeef: args.Tx,
 		Status:    wdk.ProvenTxStatusUnmined,
-	}, entity.InternalizeActionHistoryNote, entity.UserIDHistoryAttr(userID))
+	}, history.InternalizeActionHistoryNote, history.UserIDHistoryAttr(userID))
 	if err != nil {
 		return nil, fmt.Errorf("failed to upsert proven tx request: %w", err)
 	}
