@@ -1,7 +1,6 @@
 package models
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
@@ -21,23 +20,21 @@ type ProvenTxReq struct {
 	RawTx     []byte
 	InputBeef []byte
 
-	History datatypes.JSON
+	History datatypes.JSONType[*HistoryModel]
 }
 
 func (p *ProvenTxReq) AddNote(when time.Time, what string, attrs map[string]any) {
-	var history HistoryModel
-	if p.History != nil {
-		// in case of unmarshalling error, we will just create a new history
-		_ = json.Unmarshal(p.History, &history)
-	}
-
 	note := HistoryNote{
 		When:  when,
 		What:  what,
 		Attrs: attrs,
 	}
-	history.Notes = append(history.Notes, note)
 
-	data, _ := json.Marshal(history)
-	p.History = data
+	history := p.History.Data()
+	if history == nil {
+		history = &HistoryModel{}
+		p.History = datatypes.NewJSONType(history)
+	}
+
+	history.Notes = append(history.Notes, note)
 }
