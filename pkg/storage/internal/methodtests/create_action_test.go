@@ -95,7 +95,7 @@ func TestCreateActionHappyPath(t *testing.T) {
 	// TODO: Test DB state: but after we make actual getter methods, like ListActions
 }
 
-func TestCreateActionIsSignActionHappyPath(t *testing.T) {
+func TestCreateActionWithSignActionHappyPath(t *testing.T) {
 	given := testabilities.Given(t)
 
 	// given:
