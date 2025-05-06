@@ -3,10 +3,10 @@ package repo
 import (
 	"context"
 	"fmt"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/scopes"
 	"iter"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/scopes"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/go-softwarelab/common/pkg/slices"

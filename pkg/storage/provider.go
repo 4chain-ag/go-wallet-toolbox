@@ -279,6 +279,7 @@ func (p *Provider) InternalizeAction(ctx context.Context, auth wdk.AuthID, args 
 	return res, nil
 }
 
+// ProcessAction Storage level processing for wallet `processAction`.
 func (p *Provider) ProcessAction(ctx context.Context, auth wdk.AuthID, args wdk.ProcessActionArgs) (*wdk.ProcessActionResult, error) {
 	if auth.UserID == nil {
 		return nil, fmt.Errorf("missing user ID")

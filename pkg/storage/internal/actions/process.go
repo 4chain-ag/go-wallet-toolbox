@@ -3,11 +3,12 @@ package actions
 import (
 	"context"
 	"fmt"
+	"log/slog"
+
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/bsv-blockchain/go-sdk/transaction"
 	"github.com/go-softwarelab/common/pkg/must"
-	"log/slog"
 )
 
 type process struct {

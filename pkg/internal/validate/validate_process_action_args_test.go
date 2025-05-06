@@ -1,13 +1,14 @@
 package validate_test
 
 import (
+	"testing"
+
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/validate"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/go-softwarelab/common/pkg/to"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestForDefaultProcessActionArgs(t *testing.T) {
@@ -64,4 +65,3 @@ func TestWrongProcessActionArgs(t *testing.T) {
 		})
 	}
 }
-
