@@ -22,5 +22,4 @@ type TableTransaction struct {
 	LockTime      *uint32                      `json:"lockTime"`
 	TxID          *string                      `json:"txid"`
 	InputBEEF     primitives.ExplicitByteArray `json:"inputBEEF"`
-	RawTx         primitives.ExplicitByteArray `json:"rawTx"`
 }

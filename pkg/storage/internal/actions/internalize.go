@@ -9,29 +9,27 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/txutils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/entity"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/history"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/bsv-blockchain/go-sdk/transaction"
 	"github.com/go-softwarelab/common/pkg/to"
 )
 
-type TransactionsRepo interface {
-	CreateTransaction(ctx context.Context, transaction *entity.NewTx) error
-	FindTransactionByUserIDAndTxID(ctx context.Context, userID int, txID string) (*wdk.TableTransaction, error)
-}
-
 type internalize struct {
-	logger     *slog.Logger
-	txRepo     TransactionsRepo
-	basketRepo BasketRepo
+	logger       *slog.Logger
+	txRepo       TransactionsRepo
+	basketRepo   BasketRepo
+	provenTxRepo ProvenTxRepo
 }
 
-func newInternalizeAction(logger *slog.Logger, txRepo TransactionsRepo, basketRepo BasketRepo) *internalize {
+func newInternalizeAction(logger *slog.Logger, txRepo TransactionsRepo, basketRepo BasketRepo, provenTxRepo ProvenTxRepo) *internalize {
 	logger = logging.Child(logger, "internalizeAction")
 	return &internalize{
-		logger:     logger,
-		txRepo:     txRepo,
-		basketRepo: basketRepo,
+		logger:       logger,
+		txRepo:       txRepo,
+		basketRepo:   basketRepo,
+		provenTxRepo: provenTxRepo,
 	}
 }
 
@@ -60,6 +58,17 @@ func (in *internalize) Internalize(ctx context.Context, userID int, args *wdk.In
 	reference, err := txutils.RandomBase64(referenceLength)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate random reference: %w", err)
+	}
+
+	// TODO: Don't upsert ProvenTxReq if the transaction is already known in ProvenTx (not *Req)
+	err = in.provenTxRepo.UpsertProvenTxReq(ctx, &entity.UpsertProvenTxReq{
+		TxID:      txID,
+		RawTx:     tx.Bytes(),
+		InputBeef: args.Tx,
+		Status:    wdk.ProvenTxStatusUnmined,
+	}, history.InternalizeActionHistoryNote, history.UserIDHistoryAttr(userID))
+	if err != nil {
+		return nil, fmt.Errorf("failed to upsert proven tx request: %w", err)
 	}
 
 	err = in.txRepo.CreateTransaction(ctx, &entity.NewTx{

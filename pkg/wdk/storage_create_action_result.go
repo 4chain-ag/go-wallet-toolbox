@@ -1,20 +1,22 @@
 package wdk
 
+import "github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
+
 // StorageCreateTransactionSdkInput represents the input for SDK transaction creation
 type StorageCreateTransactionSdkInput struct {
-	Vin                   int        `json:"vin"`
-	SourceTxID            string     `json:"sourceTxid"`
-	SourceVout            uint32     `json:"sourceVout"`
-	SourceSatoshis        int64      `json:"sourceSatoshis"`
-	SourceLockingScript   string     `json:"sourceLockingScript"`
-	SourceTransaction     []byte     `json:"sourceTransaction,omitempty"`
-	UnlockingScriptLength int        `json:"unlockingScriptLength"`
-	ProvidedBy            ProvidedBy `json:"providedBy"`
-	Type                  string     `json:"type"`
-	SpendingDescription   *string    `json:"spendingDescription,omitempty"`
-	DerivationPrefix      *string    `json:"derivationPrefix,omitempty"`
-	DerivationSuffix      *string    `json:"derivationSuffix,omitempty"`
-	SenderIdentityKey     *string    `json:"senderIdentityKey,omitempty"`
+	Vin                   int                          `json:"vin"`
+	SourceTxID            string                       `json:"sourceTxid"`
+	SourceVout            uint32                       `json:"sourceVout"`
+	SourceSatoshis        int64                        `json:"sourceSatoshis"`
+	SourceLockingScript   string                       `json:"sourceLockingScript"`
+	SourceTransaction     primitives.ExplicitByteArray `json:"sourceTransaction,omitempty"`
+	UnlockingScriptLength int                          `json:"unlockingScriptLength"`
+	ProvidedBy            ProvidedBy                   `json:"providedBy"`
+	Type                  string                       `json:"type"`
+	SpendingDescription   *string                      `json:"spendingDescription,omitempty"`
+	DerivationPrefix      *string                      `json:"derivationPrefix,omitempty"`
+	DerivationSuffix      *string                      `json:"derivationSuffix,omitempty"`
+	SenderIdentityKey     *string                      `json:"senderIdentityKey,omitempty"`
 }
 
 // StorageCreateTransactionSdkOutput represents the output for SDK transaction creation
@@ -29,7 +31,7 @@ type StorageCreateTransactionSdkOutput struct {
 
 // StorageCreateActionResult represents the result of creating a transaction action
 type StorageCreateActionResult struct {
-	InputBeef               []byte                              `json:"inputBeef"`
+	InputBeef               primitives.ExplicitByteArray        `json:"inputBeef"`
 	Inputs                  []StorageCreateTransactionSdkInput  `json:"inputs"`
 	Outputs                 []StorageCreateTransactionSdkOutput `json:"outputs"`
 	NoSendChangeOutputVouts *[]int                              `json:"noSendChangeOutputVouts"`

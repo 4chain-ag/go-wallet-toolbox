@@ -57,7 +57,6 @@ func (txs *Transactions) toTransactionModel(newTx *entity.NewTx) (*models.Transa
 	if err != nil {
 		return nil, fmt.Errorf("failed to create outputs: %w", err)
 	}
-
 	model := &models.Transaction{
 		UserID:      newTx.UserID,
 		Status:      newTx.Status,
@@ -68,7 +67,6 @@ func (txs *Transactions) toTransactionModel(newTx *entity.NewTx) (*models.Transa
 		Version:     newTx.Version,
 		LockTime:    newTx.LockTime,
 		InputBeef:   newTx.InputBeef,
-		RawTx:       nil,
 		TxID:        newTx.TxID,
 		Labels: slices.Map(newTx.Labels, func(label primitives.StringUnder300) *models.Label {
 			return &models.Label{
@@ -193,7 +191,6 @@ func (txs *Transactions) FindTransactionByUserIDAndTxID(ctx context.Context, use
 		LockTime:      to.Ptr(transaction.LockTime),
 		TxID:          transaction.TxID,
 		InputBEEF:     transaction.InputBeef,
-		RawTx:         transaction.RawTx,
 	}, nil
 
 }
