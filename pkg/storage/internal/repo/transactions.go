@@ -212,6 +212,5 @@ func (txs *Transactions) mapModelToTableTransaction(model *models.Transaction) *
 		LockTime:      to.Ptr(model.LockTime),
 		TxID:          model.TxID,
 		InputBEEF:     model.InputBeef,
-	}, nil
-
+	}
 }
