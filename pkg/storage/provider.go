@@ -278,3 +278,18 @@ func (p *Provider) InternalizeAction(ctx context.Context, auth wdk.AuthID, args 
 	}
 	return res, nil
 }
+
+func (p *Provider) ProcessAction(ctx context.Context, auth wdk.AuthID, args wdk.ProcessActionArgs) (*wdk.ProcessActionResult, error) {
+	if auth.UserID == nil {
+		return nil, fmt.Errorf("missing user ID")
+	}
+	if err := validate.ProcessActionArgs(&args); err != nil {
+		return nil, fmt.Errorf("invalid processAction args: %w", err)
+	}
+
+	res, err := p.actions.Process(ctx, *auth.UserID, &args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to process processAction: %w", err)
+	}
+	return res, nil
+}

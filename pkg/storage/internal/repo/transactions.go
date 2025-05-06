@@ -177,20 +177,41 @@ func (txs *Transactions) FindTransactionByUserIDAndTxID(ctx context.Context, use
 		return nil, fmt.Errorf("failed to find transaction: %w", err)
 	}
 
+	return txs.mapModelToTableTransaction(&transaction), nil
+
+}
+
+func (txs *Transactions) FindTransactionByReference(ctx context.Context, userID int, reference string) (*wdk.TableTransaction, error) {
+	transaction := models.Transaction{}
+	err := txs.db.WithContext(ctx).
+		Scopes(scopes.UserID(userID)).
+		Where("reference = ?", reference).
+		First(&transaction).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find transaction by reference: %w", err)
+	}
+
+	return txs.mapModelToTableTransaction(&transaction), nil
+}
+
+func (txs *Transactions) mapModelToTableTransaction(model *models.Transaction) *wdk.TableTransaction {
 	return &wdk.TableTransaction{
-		CreatedAt:     transaction.CreatedAt,
-		UpdatedAt:     transaction.UpdatedAt,
-		TransactionID: transaction.ID,
-		UserID:        transaction.UserID,
-		Status:        transaction.Status,
-		Reference:     primitives.Base64String(transaction.Reference),
-		IsOutgoing:    transaction.IsOutgoing,
-		Satoshis:      primitives.SatoshiValue(must.ConvertToUInt64(transaction.Satoshis)),
-		Description:   transaction.Description,
-		Version:       to.Ptr(transaction.Version),
-		LockTime:      to.Ptr(transaction.LockTime),
-		TxID:          transaction.TxID,
-		InputBEEF:     transaction.InputBeef,
+		CreatedAt:     model.CreatedAt,
+		UpdatedAt:     model.UpdatedAt,
+		TransactionID: model.ID,
+		UserID:        model.UserID,
+		Status:        model.Status,
+		Reference:     primitives.Base64String(model.Reference),
+		IsOutgoing:    model.IsOutgoing,
+		Satoshis:      primitives.SatoshiValue(must.ConvertToUInt64(model.Satoshis)),
+		Description:   model.Description,
+		Version:       to.Ptr(model.Version),
+		LockTime:      to.Ptr(model.LockTime),
+		TxID:          model.TxID,
+		InputBEEF:     model.InputBeef,
 	}, nil
 
 }

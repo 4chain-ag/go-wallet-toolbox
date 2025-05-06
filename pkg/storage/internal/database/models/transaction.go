@@ -10,7 +10,7 @@ type Transaction struct {
 
 	UserID      int
 	Status      wdk.TxStatus
-	Reference   string
+	Reference   string `gorm:"index"`
 	IsOutgoing  bool
 	Satoshis    int64
 	Description string `gorm:"type:string"`
@@ -20,6 +20,7 @@ type Transaction struct {
 	InputBeef   []byte
 
 	Outputs       []*Output   `gorm:"foreignKey:TransactionID"`
+	Inputs        []*Output   `gorm:"foreignKey:SpentBy"`
 	Labels        []*Label    `gorm:"many2many:transaction_labels;"`
 	ReservedUtxos []*UserUTXO `gorm:"foreignKey:ReservedByID"`
 }

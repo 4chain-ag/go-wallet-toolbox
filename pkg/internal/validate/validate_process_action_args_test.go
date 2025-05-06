@@ -31,6 +31,27 @@ func TestWrongProcessActionArgs(t *testing.T) {
 				return args
 			},
 		},
+		"NewTx missing reference": {
+			modifier: func(args wdk.ProcessActionArgs) wdk.ProcessActionArgs {
+				args.IsNewTx = true
+				args.Reference = nil
+				return args
+			},
+		},
+		"NewTx missing rawTx": {
+			modifier: func(args wdk.ProcessActionArgs) wdk.ProcessActionArgs {
+				args.IsNewTx = true
+				args.RawTx = nil
+				return args
+			},
+		},
+		"NewTx missing txID": {
+			modifier: func(args wdk.ProcessActionArgs) wdk.ProcessActionArgs {
+				args.IsNewTx = true
+				args.TxID = nil
+				return args
+			},
+		},
 	}
 
 	for name, test := range tests {

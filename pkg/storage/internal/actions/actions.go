@@ -10,11 +10,13 @@ import (
 type Actions struct {
 	*create
 	*internalize
+	*process
 }
 
 func New(logger *slog.Logger, funder Funder, commission defs.Commission, repos *repo.Repositories) *Actions {
 	return &Actions{
 		create:      newCreateAction(logger, funder, commission, repos.OutputBaskets, repos.Transactions, repos.Outputs, repos.ProvenTxReq),
 		internalize: newInternalizeAction(logger, repos.Transactions, repos.OutputBaskets, repos.ProvenTxReq),
+		process:     newProcessAction(logger, repos.Transactions, repos.Outputs),
 	}
 }
