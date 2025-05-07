@@ -14,7 +14,7 @@ import (
 
 func TestPostBEEFWithARCService(t *testing.T) {
 
-	t.Run("broadcasting happy path", func(t *testing.T) {
+	t.Run("broadcast without passing txid", func(t *testing.T) {
 		// given:
 		given := testabilities.Given(t)
 
@@ -29,7 +29,42 @@ func TestPostBEEFWithARCService(t *testing.T) {
 		beef, err := sdk.NewBeefFromTransaction(tx)
 		require.NoError(t, err)
 
-		var txids = []string{tx.TxID().String()}
+		txID := tx.TxID().String()
+
+		// when:
+		res, err := service.PostBeef(context.Background(), beef, nil)
+
+		// then:
+		assert.NoError(t, err)
+		assert.NotNil(t, res)
+
+		exp := []results.PostTxID{
+			{
+				TxID: tx.TxID().String(),
+				Data: given.ARC().TxInfoJSON(txID),
+			},
+		}
+
+		require.ElementsMatch(t, exp, res.TxIDResults)
+	})
+
+	t.Run("broadcast single transaction", func(t *testing.T) {
+		// given:
+		given := testabilities.Given(t)
+
+		// setup arc server
+		given.ARC().IsUpAndRunning()
+
+		// and:
+		service := given.Services().NewArcService()
+
+		// and:
+		tx := txtestabilities.GivenTX().WithInput(100).WithP2PKHOutput(99).TX()
+		beef, err := sdk.NewBeefFromTransaction(tx)
+		require.NoError(t, err)
+
+		txID := tx.TxID().String()
+		var txids = []string{txID}
 
 		// when:
 		res, err := service.PostBeef(context.Background(), beef, txids)
@@ -41,12 +76,54 @@ func TestPostBEEFWithARCService(t *testing.T) {
 		exp := []results.PostTxID{
 			{
 				TxID: tx.TxID().String(),
-				Data: nil, // TODO
+				Data: given.ARC().TxInfoJSON(txID),
 			},
 		}
 
 		require.ElementsMatch(t, exp, res.TxIDResults)
+	})
 
+	t.Run("broadcast multiple txids", func(t *testing.T) {
+		// given:
+		given := testabilities.Given(t)
+
+		// setup arc server
+		given.ARC().IsUpAndRunning()
+
+		// and:
+		service := given.Services().NewArcService()
+
+		// and:
+		parentTx := txtestabilities.GivenTX().WithInput(100).WithP2PKHOutput(99).TX()
+		parentTxID := parentTx.TxID().String()
+
+		// and:
+		childTx := txtestabilities.GivenTX().WithInputFromUTXO(parentTx, 0).WithP2PKHOutput(98).TX()
+		childTxID := childTx.TxID().String()
+		beef, err := sdk.NewBeefFromTransaction(childTx)
+		require.NoError(t, err)
+
+		var txids = []string{parentTxID, childTxID}
+
+		// when:
+		res, err := service.PostBeef(context.Background(), beef, txids)
+
+		// then:
+		assert.NoError(t, err)
+		assert.NotNil(t, res)
+
+		exp := []results.PostTxID{
+			{
+				TxID: parentTx.TxID().String(),
+				Data: given.ARC().TxInfoJSON(parentTxID),
+			},
+			{
+				TxID: childTxID,
+				Data: given.ARC().TxInfoJSON(childTxID),
+			},
+		}
+
+		require.ElementsMatch(t, exp, res.TxIDResults)
 	})
 
 }
