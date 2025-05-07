@@ -1,8 +1,10 @@
 package wdk
 
+import "time"
+
 // ReqHistoryNote is the history representation of the request
 type ReqHistoryNote struct {
-	When        *string
-	What        string
-	ExtraFields map[string]interface{}
+	When *time.Time `json:"when"`
+	What string     `json:"what"`
+	Args map[string]any
 }

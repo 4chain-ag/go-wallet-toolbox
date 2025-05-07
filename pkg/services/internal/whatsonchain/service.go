@@ -12,6 +12,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/txutils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/configuration"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/httpx"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/go-resty/resty/v2"
 	"github.com/go-softwarelab/common/pkg/to"
@@ -41,17 +42,22 @@ func New(httpClient *resty.Client, logger *slog.Logger, network defs.BSVNetwork,
 		panic("httpClient is required")
 	}
 
-	logger = logging.Child(logger, "serviceWhatsOnChain")
+	headers := httpx.NewHeaders().
+		AcceptJSON().
+		UserAgent().Value("go-wallet-toolbox").
+		Authorization().IfNotEmpty(config.APIKey)
+
 	client := httpClient.Clone().
 		SetRetryCount(Retries).
 		SetRetryWaitTime(RetriesWaitTime).
-		SetRetryMaxWaitTime(Retries * RetriesWaitTime)
+		SetRetryMaxWaitTime(Retries * RetriesWaitTime).
+		SetHeaders(headers)
 
 	return &WhatsOnChain{
 		httpClient:        client,
 		apiKey:            config.APIKey,
 		url:               fmt.Sprintf("https://api.whatsonchain.com/v1/bsv/%s", network),
-		logger:            logger,
+		logger:            logging.Child(logger, "WoC").With(slog.String("network", string(network))),
 		bsvExchangeRate:   config.BSVExchangeRate,
 		bsvUpdateInterval: to.IfThen(config.BSVUpdateInterval != nil, *config.BSVUpdateInterval).ElseThen(DefaultBSVExchangeUpdateInterval),
 	}
@@ -64,7 +70,6 @@ func (woc *WhatsOnChain) RawTx(ctx context.Context, txID string) (*wdk.RawTxResu
 		AddRetryCondition(func(res *resty.Response, err error) bool {
 			return res.StatusCode() == http.StatusTooManyRequests
 		})
-	woc.prepareRequest(req)
 	req.SetHeader("Cache-Control", "no-cache")
 
 	res, err := req.Get(fmt.Sprintf("%s/tx/%s/hex", woc.url, txID))
@@ -109,7 +114,6 @@ func (woc *WhatsOnChain) UpdateBsvExchangeRate() (wdk.BSVExchangeRate, error) {
 		AddRetryCondition(func(res *resty.Response, err error) bool {
 			return res.StatusCode() == http.StatusTooManyRequests
 		})
-	woc.prepareRequest(req)
 
 	res, err := req.
 		SetResult(&exchangeRateResponse).
@@ -133,14 +137,4 @@ func (woc *WhatsOnChain) UpdateBsvExchangeRate() (wdk.BSVExchangeRate, error) {
 	}
 
 	return woc.bsvExchangeRate, nil
-}
-
-func (woc *WhatsOnChain) prepareRequest(req *resty.Request) *resty.Request {
-	req.SetHeader("Accept", "application/json")
-
-	if woc.apiKey != "" {
-		req.SetHeader("Authorization", woc.apiKey)
-	}
-
-	return req
 }
