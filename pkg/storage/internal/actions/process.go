@@ -42,8 +42,8 @@ func (p *process) processNewTx(ctx context.Context, userID int, args *wdk.Proces
 	if err != nil {
 		return fmt.Errorf("failed to build transaction object from raw tx bytes: %w", err)
 	}
-	txID := tx.TxID().String()
 
+	txID := tx.TxID().String()
 	if txID != string(*args.TxID) {
 		return fmt.Errorf("txID mismatch: provided %s, calculated from raw tx: %s", *args.TxID, txID)
 	}
@@ -55,7 +55,7 @@ func (p *process) processNewTx(ctx context.Context, userID int, args *wdk.Proces
 		return fmt.Errorf("failed to find transaction by reference: %w", err)
 	}
 
-	err = p.validateNewTxTable(*args.Reference, tableTx)
+	err = p.validateStateOfTableTx(*args.Reference, tableTx)
 	if err != nil {
 		return err
 	}
@@ -79,34 +79,41 @@ func (p *process) processNewTx(ctx context.Context, userID int, args *wdk.Proces
 	return nil
 }
 
-func (p *process) validateNewTxTable(reference string, tableTx *wdk.TableTransaction) error {
+func (p *process) validateStateOfTableTx(reference string, tableTx *wdk.TableTransaction) error {
 	if tableTx == nil {
 		return fmt.Errorf("transaction with reference (%s) not found in the database", reference)
 	}
+
 	if !tableTx.IsOutgoing {
 		return fmt.Errorf("transaction with reference (%s) is not outgoing", reference)
 	}
+
 	if len(tableTx.InputBEEF) == 0 {
 		return fmt.Errorf("transaction with reference (%s) has no inputBEEF", reference)
 	}
+
 	if tableTx.Status != wdk.TxStatusUnsigned && tableTx.Status != wdk.TxStatusUnprocessed {
 		return fmt.Errorf("transaction with reference (%s) is not in a valid status for processing", reference)
 	}
+
 	return nil
 }
 
 func (p *process) validateNewTxOutputs(tx *transaction.Transaction, outputs []*wdk.TableOutput) error {
 	for _, output := range outputs {
+		if output.LockingScript == nil {
+			continue
+		}
+
 		voutInt := must.ConvertToIntFromUnsigned(output.Vout)
-		if output.LockingScript != nil {
-			if voutInt >= len(tx.Outputs) {
-				return fmt.Errorf("output index %d is out of range of provided tx outputs count %d", voutInt, len(tx.Outputs))
-			}
-			fromDB := *output.LockingScript
-			providedInArgs := tx.Outputs[voutInt].LockingScript.String()
-			if providedInArgs != fromDB {
-				return fmt.Errorf("locking script mismatch as vout: %d, provided %s, calculated from raw tx: %s", voutInt, providedInArgs, fromDB)
-			}
+		if voutInt >= len(tx.Outputs) {
+			return fmt.Errorf("output index %d is out of range of provided tx outputs count %d", voutInt, len(tx.Outputs))
+		}
+
+		fromDB := *output.LockingScript
+		providedInArgs := tx.Outputs[voutInt].LockingScript.String()
+		if providedInArgs != fromDB {
+			return fmt.Errorf("locking script mismatch at vout: %d, provided %s, calculated from raw tx: %s", voutInt, providedInArgs, fromDB)
 		}
 	}
 	return nil
