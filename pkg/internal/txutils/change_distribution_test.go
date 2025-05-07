@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/randomizer"
 	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -205,7 +206,10 @@ func TestChangeDistributionWithActualRandomizer(t *testing.T) {
 	count := uint64(1000)
 
 	// and:
-	dist := NewChangeDistribution(initialValue, Rand)
+	random := randomizer.New()
+
+	// and:
+	dist := NewChangeDistribution(initialValue, random.Uint64)
 
 	// when:
 	values := dist.Distribute(count, satoshi.MustMultiply(2*count, initialValue))

@@ -7,6 +7,7 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/validate"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/randomizer"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
@@ -71,10 +72,17 @@ func NewGORMProvider(logger *slog.Logger, config GORMProviderConfig, opts ...Pro
 		funder = db.CreateFunder(config.FeeModel)
 	}
 
+	var random wdk.Randomizer
+	if options.randomizer != nil {
+		random = options.randomizer
+	} else {
+		random = randomizer.New()
+	}
+
 	return &Provider{
 		Chain:   config.Chain,
 		repo:    repos,
-		actions: actions.New(logger, funder, config.Commission, repos),
+		actions: actions.New(logger, funder, config.Commission, repos, random),
 	}, nil
 }
 
