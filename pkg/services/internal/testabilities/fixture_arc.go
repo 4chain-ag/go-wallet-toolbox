@@ -1,7 +1,9 @@
 package testabilities
 
 import (
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"testing"
@@ -9,6 +11,10 @@ import (
 
 	sdk "github.com/bsv-blockchain/go-sdk/transaction"
 	"github.com/go-resty/resty/v2"
+	"github.com/go-softwarelab/common/pkg/optional"
+	"github.com/go-softwarelab/common/pkg/seq"
+	"github.com/go-softwarelab/common/pkg/seq2"
+	"github.com/go-softwarelab/common/pkg/to"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,14 +24,69 @@ const ArcURL = "https://api.taal.com/arc"
 const ArcToken = "mainnet_9596de07e92300c6287e4393594ae39c"
 const DeploymentID = "go-wallet-toolbox-test"
 
+var timestamp = time.Date(2018, time.November, 10, 23, 0, 0, 0, time.UTC).Format("2006-01-02T15:04:05.999999999Z")
+
 type ArcFixture interface {
 	IsUpAndRunning()
 	HttpClient() *resty.Client
+	TxInfoJSON(id string) string
 }
 
 type arcFixture struct {
 	testing.TB
-	transport *httpmock.MockTransport
+	transport         *httpmock.MockTransport
+	knownTransactions map[string]*knownTransaction
+}
+
+type knownTransaction struct {
+	txid        string
+	status      string
+	blockHeight uint32
+	blockHash   string
+	merklePath  string
+}
+
+func (t *knownTransaction) toResponse() (*http.Response, error) {
+	return httpmock.NewJsonResponse(t.toResponseContent())
+}
+
+func (t *knownTransaction) toResponseContent() (int, map[string]any) {
+	if t == nil {
+		return 404, map[string]any{
+			"detail":    "The requested resource could not be found",
+			"extraInfo": "transaction not found",
+			"instance":  nil,
+			"status":    404,
+			"title":     "Not found",
+			"txid":      nil,
+			"type":      "https://bitcoin-sv.github.io/arc/#/errors?id=_404",
+		}
+	}
+
+	return 200, map[string]any{
+		"blockHash":    t.blockHash,
+		"blockHeight":  t.blockHeight,
+		"competingTxs": nil,
+		"extraInfo":    "",
+		"merklePath":   t.merklePath,
+		"timestamp":    timestamp,
+		"txStatus":     t.status,
+		"txid":         t.txid,
+	}
+}
+
+func (f *arcFixture) TxInfoJSON(id string) string {
+	_, content := f.knownTransactions[id].toResponseContent()
+	b, err := json.Marshal(content)
+	require.NoError(f, err, "failed to marshal response content")
+	return string(b)
+}
+
+func (t *knownTransaction) toResponseOrError() (*http.Response, error) {
+	if t == nil {
+		return nil, errors.New("unexpectedly cannot find transaction in known transactions")
+	}
+	return t.toResponse()
 }
 
 func NewArcFixture(t testing.TB) ArcFixture {
@@ -37,8 +98,9 @@ func NewArcFixtureWithTransport(t testing.TB, transport *httpmock.MockTransport)
 	require.NotNil(t, transport, "http.RoundTripper must be provided")
 
 	return &arcFixture{
-		TB:        t,
-		transport: transport,
+		TB:                t,
+		transport:         transport,
+		knownTransactions: make(map[string]*knownTransaction),
 	}
 }
 
@@ -88,23 +150,42 @@ func (f *arcFixture) IsUpAndRunning() {
 			})
 		}
 
-		id := tx.TxID()
+		f.store(txHex)
 
-		content := map[string]any{
-			"blockHash":    "",
-			"blockHeight":  0,
-			"competingTxs": nil,
-			"extraInfo":    "",
-			"merklePath":   "",
-			"timestamp":    time.Now().Format("2006-01-02T15:04:05.999999999Z"),
-			"txStatus":     "SEEN_ON_NETWORK",
-			"txid":         id,
+		return f.knownTransactions[tx.TxID().String()].toResponseOrError()
+	})
+
+	f.transport.RegisterResponder("GET", "=~"+ArcURL+"/v1/tx/.*", func(req *http.Request) (*http.Response, error) {
+		txid := req.URL.String()[len(ArcURL+"/v1/tx/"):]
+		return f.knownTransactions[txid].toResponse()
+	})
+}
+
+func (f *arcFixture) store(txHex string) {
+	beefBytes, err := hex.DecodeString(txHex)
+	require.NoError(f, err, "failed to decode BEEF hex")
+
+	beef, err := sdk.NewBeefFromBytes(beefBytes)
+	require.NoError(f, err, "failed to create BEEF from bytes")
+
+	transactions := seq2.FromMap(beef.Transactions)
+	includedTransactions := seq2.MapTo(transactions, func(txID string, tx *sdk.BeefTx) *knownTransaction {
+		merklePath := optional.OfPtr(tx.Transaction.MerklePath)
+
+		return &knownTransaction{
+			txid:        txID,
+			status:      to.IfThen(merklePath.IsEmpty(), "SEEN_ON_NETWORK").ElseThen("MINED"),
+			blockHeight: optional.Map(merklePath, func(it sdk.MerklePath) uint32 { return it.BlockHeight }).OrZeroValue(),
+			blockHash: optional.Map(merklePath, func(it sdk.MerklePath) string {
+				// it's not that important so, let's ignore the error here
+				root, _ := it.ComputeRootHex(&txID)
+				return root
+			}).OrZeroValue(),
+			merklePath: optional.Map(merklePath, func(it sdk.MerklePath) string { return it.Hex() }).OrZeroValue(),
 		}
+	})
 
-		responder, err := httpmock.NewJsonResponder(200, content)
-		require.NoError(f, err)
-
-		f.transport.RegisterResponder("GET", ArcURL+"/v1/tx/"+id.String(), responder)
-		return responder(req)
+	seq.ForEach(includedTransactions, func(it *knownTransaction) {
+		f.knownTransactions[it.txid] = it
 	})
 }
