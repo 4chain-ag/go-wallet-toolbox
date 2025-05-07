@@ -2,6 +2,7 @@ package testabilities
 
 import (
 	"context"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/randomizer"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -83,6 +84,7 @@ func (s *storageFixture) Provider() ProviderFixture {
 		network:    defs.NetworkTestnet,
 		commission: defs.Commission{},
 		feeModel:   defs.DefaultFeeModel(),
+		randomizer: randomizer.New(),
 	}
 }
 

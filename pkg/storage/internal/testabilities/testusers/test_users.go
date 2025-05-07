@@ -2,6 +2,9 @@ package testusers
 
 import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	primitives "github.com/bsv-blockchain/go-sdk/primitives/ec"
+	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 // NOTE: Testabilities can modify user IDs, to match ID with database
@@ -29,6 +32,15 @@ func (u User) AuthID() wdk.AuthID {
 	return wdk.AuthID{
 		UserID: &u.ID,
 	}
+}
+
+func (u User) PubKey(t *testing.T) string {
+	t.Helper()
+
+	priv, err := primitives.PrivateKeyFromHex(u.PrivKey)
+	require.NoError(t, err)
+
+	return priv.PubKey().ToDERHex()
 }
 
 func All() []*User {

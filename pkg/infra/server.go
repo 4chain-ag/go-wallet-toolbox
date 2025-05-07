@@ -3,6 +3,7 @@ package infra
 import (
 	"context"
 	"fmt"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/randomizer"
 	"log/slog"
 	"os"
 
@@ -56,7 +57,7 @@ func NewServer(opts ...InitOption) (*Server, error) {
 		Chain:      cfg.BSVNetwork,
 		FeeModel:   cfg.FeeModel,
 		Commission: cfg.Commission,
-	})
+	}, storage.WithRandomizer(randomizer.NewTestRandomizer()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create storage provider: %w", err)
 	}

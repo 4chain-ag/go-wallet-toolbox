@@ -18,6 +18,7 @@ type ProviderFixture interface {
 	WithNetwork(network defs.BSVNetwork) ProviderFixture
 	WithCommission(commission defs.Commission) ProviderFixture
 	WithFeeModel(feeModel defs.FeeModel) ProviderFixture
+	WithRandomizer(randomizer wdk.Randomizer) ProviderFixture
 
 	GORM() *storage.Provider
 	GORMWithCleanDatabase() *storage.Provider
@@ -27,6 +28,7 @@ type providerFixture struct {
 	network    defs.BSVNetwork
 	commission defs.Commission
 	feeModel   defs.FeeModel
+	randomizer wdk.Randomizer
 
 	t       testing.TB
 	require *require.Assertions
@@ -49,6 +51,11 @@ func (p *providerFixture) WithFeeModel(feeModel defs.FeeModel) ProviderFixture {
 	return p
 }
 
+func (p *providerFixture) WithRandomizer(randomizer wdk.Randomizer) ProviderFixture {
+	p.randomizer = randomizer
+	return p
+}
+
 func (p *providerFixture) GORM() *storage.Provider {
 	p.t.Helper()
 	provider := p.GORMWithCleanDatabase()
@@ -68,7 +75,7 @@ func (p *providerFixture) GORMWithCleanDatabase() *storage.Provider {
 		Chain:      p.network,
 		FeeModel:   p.feeModel,
 		Commission: p.commission,
-	}, storage.WithGORM(p.db.DB))
+	}, storage.WithGORM(p.db.DB), storage.WithRandomizer(p.randomizer))
 	p.require.NoError(err)
 
 	_, err = activeStorage.Migrate(context.Background(), fixtures.StorageName, storageIdentityKey)

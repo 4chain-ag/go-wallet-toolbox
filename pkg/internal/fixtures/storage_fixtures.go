@@ -10,4 +10,5 @@ const (
 	DerivationSuffix           = "Su=="
 	CustomBasket               = "custom-basket"
 	ExpectedValueToInternalize = 999
+	AnyoneIdentityKey          = "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798" // generated in TS by: new PrivateKey(1).toPublicKey().toString()
 )
