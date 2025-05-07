@@ -2,10 +2,11 @@ package tsgenerated
 
 import (
 	"encoding/hex"
+	"testing"
+
 	"github.com/bsv-blockchain/go-sdk/chainhash"
 	"github.com/bsv-blockchain/go-sdk/transaction"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 /*

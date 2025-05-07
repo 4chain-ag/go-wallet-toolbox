@@ -1,10 +1,11 @@
 package testusers
 
 import (
+	"testing"
+
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	primitives "github.com/bsv-blockchain/go-sdk/primitives/ec"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 // NOTE: Testabilities can modify user IDs, to match ID with database

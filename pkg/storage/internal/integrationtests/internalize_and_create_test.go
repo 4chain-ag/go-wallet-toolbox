@@ -4,17 +4,17 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/randomizer"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/integrationtests/tsgenerated"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
-	"github.com/go-softwarelab/common/pkg/to"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/randomizer"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder/errfunder"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/integrationtests/tsgenerated"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
+	"github.com/go-softwarelab/common/pkg/to"
 	"github.com/stretchr/testify/require"
 )
 
