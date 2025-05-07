@@ -6,5 +6,5 @@ import "time"
 type ReqHistoryNote struct {
 	When *time.Time `json:"when"`
 	What string     `json:"what"`
-	Args map[string]interface{}
+	Args map[string]any
 }

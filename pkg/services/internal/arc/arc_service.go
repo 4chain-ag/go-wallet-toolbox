@@ -64,11 +64,11 @@ func NewARCService(logger *slog.Logger, httpClient *resty.Client, config Config)
 // PostBeef attempts to post beef with given txIDs
 func (s *Service) PostBeef(ctx context.Context, beef *transaction.Beef, txids []string) (*results.PostBEEF, error) {
 	beefTxs := seq2.Values(seq2.FromMap(beef.Transactions))
-	canBeV1 := seq.Every(beefTxs, func(tx *transaction.BeefTx) bool {
+	canBeSerializedToBEEFV1 := seq.Every(beefTxs, func(tx *transaction.BeefTx) bool {
 		return tx.DataFormat != transaction.TxIDOnly && tx.Transaction != nil
 	})
 
-	if !canBeV1 {
+	if !canBeSerializedToBEEFV1 {
 		return nil, fmt.Errorf("arc is not supporting beef v2 and provided beef cannot be converted to v1")
 	}
 
@@ -98,8 +98,9 @@ func (s *Service) PostBeef(ctx context.Context, beef *transaction.Beef, txids []
 }
 
 func toHex(beef *transaction.Beef) (string, error) {
-	// this is a temporary solution until go-sdk would implement correctly BEEF serialization
-	// We want to search for the subject transaction and convert it to BEEF hex.
+	// This is a temporary solution until go-sdk properly implements BEEF serialization
+	// It searches for the subject transaction in transaction.Beef and serializes this one to BEEF hex.
+	// For now, it's not supporting more than one subject transaction.
 	idToTx := seq2.FromMap(beef.Transactions)
 
 	// inDegree will contain the number of transactions for which the given tx is a parent
