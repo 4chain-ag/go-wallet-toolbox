@@ -3,7 +3,6 @@ package testabilities
 import (
 	"fmt"
 	"log/slog"
-	"net/http"
 	"testing"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/configuration"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/arc"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/whatsonchain"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/go-resty/resty/v2"
@@ -21,6 +21,7 @@ import (
 
 type ServicesFixture interface {
 	WhatsOnChain() WhatsOnChainFixture
+	ARC() ArcFixture
 
 	Services() WalletServicesFixture
 	NewServicesWithConfig(config configuration.WalletServices) *services.WalletServices
@@ -30,11 +31,8 @@ type WalletServicesFixture interface {
 	WithDefaultConfig() *services.WalletServices
 
 	WithBsvExchangeRate(exchangeRate wdk.BSVExchangeRate) *services.WalletServices
-}
-type WhatsOnChainFixture interface {
-	WillRespondWithRates(status int, content string, err error) WhatsOnChainFixture
 
-	WillRespondWithRawTx(status int, txID, rawTx string, err error) WhatsOnChainFixture
+	NewArcService(opts ...func(*arc.Config)) *arc.Service
 }
 
 type servicesFixture struct {
@@ -45,78 +43,8 @@ type servicesFixture struct {
 	httpClient           *resty.Client
 	transport            *httpmock.MockTransport
 	walletServicesConfig *configuration.WalletServices
-}
-
-func (s *servicesFixture) WhatsOnChain() WhatsOnChainFixture {
-	return s
-}
-
-func (s *servicesFixture) WithDefaultConfig() *services.WalletServices {
-	s.t.Helper()
-
-	walletServices := services.New(s.httpClient, s.logger, *s.walletServicesConfig)
-	s.services = walletServices
-
-	return s.services
-}
-
-func (s *servicesFixture) WithBsvExchangeRate(exchangeRate wdk.BSVExchangeRate) *services.WalletServices {
-	s.t.Helper()
-	s.walletServicesConfig.WhatsOnChain.BSVExchangeRate = exchangeRate
-
-	walletServices := services.New(s.httpClient, s.logger, *s.walletServicesConfig)
-	s.services = walletServices
-
-	return s.services
-}
-
-func (s *servicesFixture) Services() WalletServicesFixture {
-	return s
-}
-
-func (s *servicesFixture) NewServicesWithConfig(config configuration.WalletServices) *services.WalletServices {
-	s.t.Helper()
-
-	walletServices := services.New(s.httpClient, s.logger, config)
-
-	s.services = walletServices
-
-	return s.services
-}
-
-func (s *servicesFixture) WillRespondWithRawTx(status int, txID, rawTx string, err error) WhatsOnChainFixture {
-	responder := func(status int, content string) func(req *http.Request) (*http.Response, error) {
-		return func(req *http.Request) (*http.Response, error) {
-			if err != nil {
-				return nil, err
-			}
-			res := httpmock.NewStringResponse(status, content)
-			res.Header.Set("Content-Type", "text/plain")
-			return res, nil
-		}
-	}
-
-	url := fmt.Sprintf("https://api.whatsonchain.com/v1/bsv/test/tx/%s/hex", txID)
-	s.transport.RegisterResponder("GET", url, responder(status, rawTx))
-
-	return s
-}
-
-func (s *servicesFixture) WillRespondWithRates(status int, content string, err error) WhatsOnChainFixture {
-	responder := func(status int, content string) func(req *http.Request) (*http.Response, error) {
-		return func(req *http.Request) (*http.Response, error) {
-			if err != nil {
-				return nil, err
-			}
-			res := httpmock.NewStringResponse(status, content)
-			res.Header.Set("Content-Type", "application/json")
-			return res, nil
-		}
-	}
-
-	s.transport.RegisterResponder("GET", "https://api.whatsonchain.com/v1/bsv/test/exchangerate", responder(status, content))
-
-	return s
+	woc                  WhatsOnChainFixture
+	arc                  ArcFixture
 }
 
 func Given(t testing.TB) ServicesFixture {
@@ -126,6 +54,9 @@ func Given(t testing.TB) ServicesFixture {
 
 	servicesConfig := servicesCfg(defs.NetworkTestnet)
 
+	wocFx := NewWoCFixtureWithTransport(t, transport)
+	arcFx := NewArcFixtureWithTransport(t, transport)
+
 	return &servicesFixture{
 		t:                    t,
 		require:              require.New(t),
@@ -133,7 +64,65 @@ func Given(t testing.TB) ServicesFixture {
 		httpClient:           client,
 		transport:            transport,
 		walletServicesConfig: &servicesConfig,
+		woc:                  wocFx,
+		arc:                  arcFx,
 	}
+}
+
+func (f *servicesFixture) WhatsOnChain() WhatsOnChainFixture {
+	return f.woc
+}
+
+func (f *servicesFixture) ARC() ArcFixture {
+	return f.arc
+}
+
+func (f *servicesFixture) WithDefaultConfig() *services.WalletServices {
+	f.t.Helper()
+
+	walletServices := services.New(f.httpClient, f.logger, *f.walletServicesConfig)
+	f.services = walletServices
+
+	return f.services
+}
+
+func (f *servicesFixture) WithBsvExchangeRate(exchangeRate wdk.BSVExchangeRate) *services.WalletServices {
+	f.t.Helper()
+	f.walletServicesConfig.WhatsOnChain.BSVExchangeRate = exchangeRate
+
+	walletServices := services.New(f.httpClient, f.logger, *f.walletServicesConfig)
+	f.services = walletServices
+
+	return f.services
+}
+
+func (f *servicesFixture) NewArcService(opts ...func(*arc.Config)) *arc.Service {
+	logger := logging.NewTestLogger(f.t)
+	httpClient := f.arc.HttpClient()
+	config := to.OptionsWithDefault(arc.Config{
+		URL:           ArcURL,
+		Token:         ArcToken,
+		DeploymentID:  DeploymentID,
+		WaitFor:       "",
+		CallbackURL:   "",
+		CallbackToken: "",
+	}, opts...)
+
+	return arc.NewARCService(logger, httpClient, config)
+}
+
+func (f *servicesFixture) Services() WalletServicesFixture {
+	return f
+}
+
+func (f *servicesFixture) NewServicesWithConfig(config configuration.WalletServices) *services.WalletServices {
+	f.t.Helper()
+
+	walletServices := services.New(f.httpClient, f.logger, config)
+
+	f.services = walletServices
+
+	return f.services
 }
 
 func servicesCfg(chain defs.BSVNetwork) configuration.WalletServices {
