@@ -6,6 +6,7 @@ import (
 	"iter"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/scopes"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/go-softwarelab/common/pkg/slices"
@@ -40,27 +41,53 @@ func (o *Outputs) FindOutputs(ctx context.Context, outputIDs iter.Seq[uint]) ([]
 		return nil, fmt.Errorf("failed to find outputs: %w", err)
 	}
 
-	return slices.Map(outputs, func(output *models.Output) *wdk.TableOutput {
-		return &wdk.TableOutput{
-			CreatedAt:          output.CreatedAt,
-			UpdatedAt:          output.UpdatedAt,
-			OutputID:           output.ID,
-			UserID:             output.UserID,
-			TransactionID:      output.TransactionID,
-			BasketID:           output.BasketID,
-			Spendable:          output.Spendable,
-			Change:             output.Change,
-			OutputDescription:  output.Description,
-			Vout:               output.Vout,
-			Satoshis:           output.Satoshis,
-			ProvidedBy:         output.ProvidedBy,
-			Purpose:            output.Purpose,
-			Type:               output.Type,
-			Txid:               output.Transaction.TxID,
-			DerivationPrefix:   output.DerivationPrefix,
-			DerivationSuffix:   output.DerivationSuffix,
-			CustomInstructions: output.CustomInstructions,
-			LockingScript:      output.LockingScript,
-		}
-	}), nil
+	return slices.Map(outputs, o.mapModelToTableOutput), nil
+}
+
+func (o *Outputs) FindInputsAndOutputsOfTransaction(ctx context.Context, userID int, txID string) (inputs []*wdk.TableOutput, outputs []*wdk.TableOutput, err error) {
+	var inputModels []*models.Output
+	var outputModels []*models.Output
+
+	query := o.db.WithContext(ctx).
+		Model(models.Transaction{}).
+		Scopes(scopes.UserID(userID)).
+		Where("tx_id = ?", txID)
+
+	err = query.Association("Inputs").Find(&inputModels)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to find inputs: %w", err)
+	}
+
+	err = query.Association("Outputs").Find(&outputModels)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to find outputs: %w", err)
+	}
+
+	inputs = slices.Map(inputModels, o.mapModelToTableOutput)
+	outputs = slices.Map(outputModels, o.mapModelToTableOutput)
+	return
+}
+
+func (o *Outputs) mapModelToTableOutput(model *models.Output) *wdk.TableOutput {
+	return &wdk.TableOutput{
+		CreatedAt:          model.CreatedAt,
+		UpdatedAt:          model.UpdatedAt,
+		OutputID:           model.ID,
+		UserID:             model.UserID,
+		TransactionID:      model.TransactionID,
+		BasketID:           model.BasketID,
+		Spendable:          model.Spendable,
+		Change:             model.Change,
+		OutputDescription:  model.Description,
+		Vout:               model.Vout,
+		Satoshis:           model.Satoshis,
+		ProvidedBy:         model.ProvidedBy,
+		Purpose:            model.Purpose,
+		Type:               model.Type,
+		Txid:               model.Transaction.TxID,
+		DerivationPrefix:   model.DerivationPrefix,
+		DerivationSuffix:   model.DerivationSuffix,
+		CustomInstructions: model.CustomInstructions,
+		LockingScript:      model.LockingScript,
+	}
 }

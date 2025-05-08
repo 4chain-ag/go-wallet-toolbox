@@ -11,6 +11,7 @@ import (
 type Actions struct {
 	*create
 	*internalize
+	*process
 }
 
 func New(logger *slog.Logger, funder Funder, commission defs.Commission, repos *repo.Repositories, randomizer wdk.Randomizer) *Actions {
@@ -32,5 +33,6 @@ func New(logger *slog.Logger, funder Funder, commission defs.Commission, repos *
 			repos.ProvenTxReq,
 			randomizer,
 		),
+    process: newProcessAction(logger, repos.Transactions, repos.Outputs),
 	}
 }

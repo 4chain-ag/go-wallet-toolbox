@@ -121,4 +121,4 @@ func (pkh PubKeyHex) Validate() error {
 }
 
 // TXIDHexString is a hexadecimal transaction ID
-type TXIDHexString string
+type TXIDHexString = HexString
