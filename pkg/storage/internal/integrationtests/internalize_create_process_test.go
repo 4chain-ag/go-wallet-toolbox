@@ -11,7 +11,6 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder/errfunder"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/integrationtests/tsgenerated"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testmode"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
@@ -23,7 +22,6 @@ import (
 var createActionResultJSON string
 
 func TestInternalizeThenCreateThenProcess(t *testing.T) {
-	testmode.DevelopmentOnly_SetFileSQLiteMode(t)
 	given := testabilities.Given(t)
 	activeStorage := given.Provider().
 		WithRandomizer(randomizer.NewTestRandomizer()).

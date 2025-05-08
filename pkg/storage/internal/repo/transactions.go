@@ -207,7 +207,7 @@ func (txs *Transactions) UpdateTransaction(
 	err := txs.db.WithContext(ctx).Transaction(func(tx *gorm.DB) (err error) {
 		err = tx.Model(models.Transaction{}).
 			Scopes(scopes.UserID(userID)).
-			Where("user_id = ? and id = ?", userID, transactionID).
+			Where("id = ?", transactionID).
 			Updates(map[string]any{
 				"tx_id":      updatedTx.TxID,
 				"input_beef": nil,
