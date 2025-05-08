@@ -45,23 +45,47 @@ func (o *Outputs) FindOutputs(ctx context.Context, outputIDs iter.Seq[uint]) ([]
 }
 
 func (o *Outputs) FindInputsAndOutputsOfTransaction(ctx context.Context, userID int, transactionID uint) (inputs []*wdk.TableOutput, outputs []*wdk.TableOutput, err error) {
-	var readModel struct {
-		Outputs []*models.Output
-		Inputs  []*models.Output
-	}
-	err = o.db.WithContext(ctx).
+	session := o.db.WithContext(ctx)
+
+	var transaction models.Transaction
+	err = session.
 		Model(models.Transaction{}).
-		Preload("Outputs").
-		Preload("Inputs").
+		Select("id, tx_id").
 		Scopes(scopes.UserID(userID)).
-		First(&readModel, transactionID).Error
-
+		Where("id = ?", transactionID).
+		First(&transaction).Error
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to find transaction and its inputs & outputs: %w", err)
+		return nil, nil, fmt.Errorf("failed to find transaction by userID: %d and transactionID: %d: %w", userID, transactionID, err)
 	}
 
-	inputs = slices.Map(readModel.Outputs, o.mapModelToTableOutput)
-	outputs = slices.Map(readModel.Inputs, o.mapModelToTableOutput)
+	var outputRows []*models.Output
+	err = session.
+		Model(models.Output{}).
+		Where("transaction_id = ?", transactionID).
+		Find(&outputRows).Error
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to find outputs for transactionID: %d: %w", transactionID, err)
+	}
+
+	for i := range outputRows {
+		outputRows[i].Transaction = &transaction
+	}
+
+	var inputRows []*models.Output
+	err = session.
+		Model(models.Output{}).
+		Where("spent_by = ?", transactionID).
+		Find(&inputRows).Error
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to find inputs for transactionID: %d: %w", transactionID, err)
+	}
+
+	for i := range inputRows {
+		inputRows[i].Transaction = &transaction
+	}
+
+	inputs = slices.Map(inputRows, o.mapModelToTableOutput)
+	outputs = slices.Map(outputRows, o.mapModelToTableOutput)
 	return
 }
 
