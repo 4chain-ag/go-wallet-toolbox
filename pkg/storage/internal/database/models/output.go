@@ -9,6 +9,7 @@ type Output struct {
 
 	UserID        int    `gorm:"index"`
 	TransactionID uint   `gorm:"index"`
+	SpentBy       *uint  `gorm:"index"`
 	Vout          uint32 `gorm:"index"`
 	Satoshis      int64
 
@@ -31,6 +32,8 @@ type Output struct {
 
 	SenderIdentityKey *string
 
-	Transaction *Transaction `gorm:"foreignKey:TransactionID;references:ID"`
-	UserUTXO    *UserUTXO    `gorm:"foreignKey:OutputID"`
+	Transaction        *Transaction `gorm:"foreignKey:TransactionID;references:ID"`
+	SpentByTransaction *Transaction `gorm:"foreignKey:SpentBy;references:ID"`
+
+	UserUTXO *UserUTXO `gorm:"foreignKey:OutputID"`
 }

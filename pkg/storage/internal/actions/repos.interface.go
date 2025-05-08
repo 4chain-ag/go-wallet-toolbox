@@ -14,11 +14,13 @@ type BasketRepo interface {
 
 type OutputRepo interface {
 	FindOutputs(ctx context.Context, outputIDs iter.Seq[uint]) ([]*wdk.TableOutput, error)
+	FindInputsAndOutputsOfTransaction(ctx context.Context, userID int, txID string) (inputs []*wdk.TableOutput, outputs []*wdk.TableOutput, err error)
 }
 
 type TransactionsRepo interface {
 	CreateTransaction(ctx context.Context, transaction *entity.NewTx) error
 	FindTransactionByUserIDAndTxID(ctx context.Context, userID int, txID string) (*wdk.TableTransaction, error)
+	FindTransactionByReference(ctx context.Context, userID int, reference string) (*wdk.TableTransaction, error)
 }
 
 type ProvenTxRepo interface {
