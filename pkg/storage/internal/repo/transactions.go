@@ -197,6 +197,47 @@ func (txs *Transactions) FindTransactionByReference(ctx context.Context, userID 
 	return txs.mapModelToTableTransaction(&transaction), nil
 }
 
+func (txs *Transactions) UpdateTransaction(
+	ctx context.Context,
+	userID int,
+	transactionID uint,
+	updatedTx entity.UpdatedTx,
+	historyNote string,
+	historyAttrs map[string]any,
+) error {
+	err := txs.db.WithContext(ctx).Transaction(func(tx *gorm.DB) (err error) {
+		err = tx.Model(models.Transaction{}).
+			Scopes(scopes.UserID(userID)).
+			Where("user_id = ? and id = ?", userID, transactionID).
+			Updates(map[string]any{
+				"tx_id":      updatedTx.TxID,
+				"input_beef": nil,
+				"status":     updatedTx.TxStatus,
+			}).Error
+		if err != nil {
+			return err
+		}
+
+		err = tx.Model(models.Output{}).
+			Where("user_id = ? and transaction_id = ?", userID, transactionID).
+			Update("spendable", updatedTx.Spendable).Error
+		if err != nil {
+			return err
+		}
+
+		return upsertProvenTxReq(tx, &entity.UpsertProvenTxReq{
+			TxID:      updatedTx.TxID,
+			Status:    updatedTx.ReqTxStatus,
+			RawTx:     updatedTx.RawTx,
+			InputBeef: updatedTx.InputBeef,
+		}, historyNote, historyAttrs)
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update transaction: %w", err)
+	}
+	return nil
+}
+
 func (txs *Transactions) mapModelToTableTransaction(model *models.Transaction) *wdk.TableTransaction {
 	return &wdk.TableTransaction{
 		CreatedAt:     model.CreatedAt,

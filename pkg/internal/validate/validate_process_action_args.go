@@ -7,6 +7,10 @@ import (
 )
 
 func ProcessActionArgs(args *wdk.ProcessActionArgs) error {
+	if args.IsNoSend && !args.IsSendWith {
+		return fmt.Errorf("inconsistent IsNoSend with IsSendWith - logic error")
+	}
+
 	if args.IsNewTx {
 		if args.Reference == nil {
 			return fmt.Errorf("missing reference argument for new transaction")

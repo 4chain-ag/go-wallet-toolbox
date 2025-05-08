@@ -53,6 +53,13 @@ func TestWrongProcessActionArgs(t *testing.T) {
 				return args
 			},
 		},
+		"IsNoSend with IsSendWith false": {
+			modifier: func(args wdk.ProcessActionArgs) wdk.ProcessActionArgs {
+				args.IsNoSend = true
+				args.IsSendWith = false
+				return args
+			},
+		},
 	}
 
 	for name, test := range tests {

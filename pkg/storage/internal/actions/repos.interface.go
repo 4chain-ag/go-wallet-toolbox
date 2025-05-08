@@ -21,6 +21,14 @@ type TransactionsRepo interface {
 	CreateTransaction(ctx context.Context, transaction *entity.NewTx) error
 	FindTransactionByUserIDAndTxID(ctx context.Context, userID int, txID string) (*wdk.TableTransaction, error)
 	FindTransactionByReference(ctx context.Context, userID int, reference string) (*wdk.TableTransaction, error)
+	UpdateTransaction(
+		ctx context.Context,
+		userID int,
+		transactionID uint,
+		updatedTx entity.UpdatedTx,
+		historyNote string,
+		historyAttrs map[string]any,
+	) error
 }
 
 type ProvenTxRepo interface {

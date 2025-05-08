@@ -3,6 +3,8 @@ package actions
 import (
 	"context"
 	"fmt"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/entity"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/history"
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
@@ -76,6 +78,17 @@ func (p *process) processNewTx(ctx context.Context, userID int, args *wdk.Proces
 
 	// TODO: Remove too long locking scripts (len > storage.maxOutputScript)
 
+	newTxStatus, newReqStatus := p.newStatuses(args)
+
+	err = p.txRepo.UpdateTransaction(ctx, userID, tableTx.TransactionID, entity.UpdatedTx{
+		Spendable:   true,
+		TxID:        txID,
+		TxStatus:    newTxStatus,
+		ReqTxStatus: newReqStatus,
+		RawTx:       args.RawTx,
+		InputBeef:   tableTx.InputBEEF,
+	}, history.ProcessActionHistoryNote, history.UserIDHistoryAttr(userID))
+
 	return nil
 }
 
@@ -121,4 +134,21 @@ func (p *process) validateNewTxOutputs(tx *transaction.Transaction, outputs []*w
 		}
 	}
 	return nil
+}
+
+func (p *process) newStatuses(args *wdk.ProcessActionArgs) (txStatus wdk.TxStatus, reqStatus wdk.ProvenTxReqStatus) {
+	if args.IsNoSend {
+		reqStatus = wdk.ProvenTxStatusNoSend
+		txStatus = wdk.TxStatusNoSend
+		return
+	}
+
+	if args.IsDelayed {
+		reqStatus = wdk.ProvenTxStatusUnsent
+	} else {
+		reqStatus = wdk.ProvenTxStatusUnprocessed
+	}
+
+	txStatus = wdk.TxStatusUnprocessed
+	return
 }
