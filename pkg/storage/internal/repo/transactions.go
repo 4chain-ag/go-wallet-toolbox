@@ -12,7 +12,6 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/go-softwarelab/common/pkg/is"
-	"github.com/go-softwarelab/common/pkg/must"
 	"github.com/go-softwarelab/common/pkg/slices"
 	"github.com/go-softwarelab/common/pkg/to"
 	"gorm.io/gorm"
@@ -247,7 +246,7 @@ func (txs *Transactions) mapModelToTableTransaction(model *models.Transaction) *
 		Status:        model.Status,
 		Reference:     primitives.Base64String(model.Reference),
 		IsOutgoing:    model.IsOutgoing,
-		Satoshis:      primitives.SatoshiValue(must.ConvertToUInt64(model.Satoshis)),
+		Satoshis:      model.Satoshis,
 		Description:   model.Description,
 		Version:       to.Ptr(model.Version),
 		LockTime:      to.Ptr(model.LockTime),

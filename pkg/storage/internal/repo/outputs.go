@@ -44,27 +44,24 @@ func (o *Outputs) FindOutputs(ctx context.Context, outputIDs iter.Seq[uint]) ([]
 	return slices.Map(outputs, o.mapModelToTableOutput), nil
 }
 
-func (o *Outputs) FindInputsAndOutputsOfTransaction(ctx context.Context, userID int, txID string) (inputs []*wdk.TableOutput, outputs []*wdk.TableOutput, err error) {
-	var inputModels []*models.Output
-	var outputModels []*models.Output
-
-	query := o.db.WithContext(ctx).
+func (o *Outputs) FindInputsAndOutputsOfTransaction(ctx context.Context, userID int, transactionID uint) (inputs []*wdk.TableOutput, outputs []*wdk.TableOutput, err error) {
+	var readModel struct {
+		Outputs []*models.Output
+		Inputs  []*models.Output
+	}
+	err = o.db.WithContext(ctx).
 		Model(models.Transaction{}).
+		Preload("Outputs").
+		Preload("Inputs").
 		Scopes(scopes.UserID(userID)).
-		Where("tx_id = ?", txID)
+		First(&readModel, transactionID).Error
 
-	err = query.Association("Inputs").Find(&inputModels)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to find inputs: %w", err)
+		return nil, nil, fmt.Errorf("failed to find transaction and its inputs & outputs: %w", err)
 	}
 
-	err = query.Association("Outputs").Find(&outputModels)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to find outputs: %w", err)
-	}
-
-	inputs = slices.Map(inputModels, o.mapModelToTableOutput)
-	outputs = slices.Map(outputModels, o.mapModelToTableOutput)
+	inputs = slices.Map(readModel.Outputs, o.mapModelToTableOutput)
+	outputs = slices.Map(readModel.Inputs, o.mapModelToTableOutput)
 	return
 }
 

@@ -16,7 +16,7 @@ type TableTransaction struct {
 	Status        TxStatus                     `json:"status"`
 	Reference     primitives.Base64String      `json:"reference"`
 	IsOutgoing    bool                         `json:"isOutgoing"`
-	Satoshis      primitives.SatoshiValue      `json:"satoshis"`
+	Satoshis      int64                        `json:"satoshis"`
 	Description   string                       `json:"description"`
 	Version       *uint32                      `json:"version"`
 	LockTime      *uint32                      `json:"lockTime"`
