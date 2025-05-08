@@ -71,11 +71,16 @@ func (p *providerFixture) GORMWithCleanDatabase() *storage.Provider {
 	storageIdentityKey, err := wdk.IdentityKey(fixtures.StorageServerPrivKey)
 	p.require.NoError(err)
 
-	activeStorage, err := storage.NewGORMProvider(p.logger, storage.GORMProviderConfig{
-		Chain:      p.network,
-		FeeModel:   p.feeModel,
-		Commission: p.commission,
-	}, storage.WithGORM(p.db.DB), storage.WithRandomizer(p.randomizer))
+	activeStorage, err := storage.NewGORMProvider(
+		p.logger,
+		storage.GORMProviderConfig{
+			Chain:      p.network,
+			FeeModel:   p.feeModel,
+			Commission: p.commission,
+		},
+		storage.WithGORM(p.db.DB),
+		storage.WithRandomizer(p.randomizer),
+	)
 	p.require.NoError(err)
 
 	_, err = activeStorage.Migrate(context.Background(), fixtures.StorageName, storageIdentityKey)
