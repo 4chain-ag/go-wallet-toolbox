@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"iter"
 	"log/slog"
-	"math/rand/v2"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/defs"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
@@ -96,6 +95,7 @@ type create struct {
 	provenTxRepo  ProvenTxRepo
 	commission    *commission.ScriptGenerator
 	commissionCfg defs.Commission
+	random        wdk.Randomizer
 }
 
 func newCreateAction(
@@ -106,6 +106,7 @@ func newCreateAction(
 	txRepo TransactionsRepo,
 	outputRepo OutputRepo,
 	provenTxRepo ProvenTxRepo,
+	random wdk.Randomizer,
 ) *create {
 	logger = logging.Child(logger, "createAction")
 	c := &create{
@@ -116,6 +117,7 @@ func newCreateAction(
 		commissionCfg: commissionCfg,
 		outputRepo:    outputRepo,
 		provenTxRepo:  provenTxRepo,
+		random:        random,
 	}
 
 	if commissionCfg.Enabled() {
@@ -161,7 +163,7 @@ func (c *create) Create(ctx context.Context, userID int, params CreateActionPara
 		return nil, fmt.Errorf("funding failed: %w", err)
 	}
 
-	changeDistribution := txutils.NewChangeDistribution(satoshi.MustFrom(basket.MinimumDesiredUTXOValue), txutils.Rand).
+	changeDistribution := txutils.NewChangeDistribution(satoshi.MustFrom(basket.MinimumDesiredUTXOValue), c.random.Uint64).
 		Distribute(funding.ChangeCount, funding.ChangeAmount)
 
 	derivationPrefix, reference, err := c.randomValues()
@@ -287,12 +289,12 @@ func (c *create) txSize(xinputs iter.Seq[*wdk.ValidCreateActionInput], xoutputs 
 }
 
 func (c *create) randomValues() (derivationPrefix string, reference string, err error) {
-	derivationPrefix, err = randomDerivation()
+	derivationPrefix, err = c.randomDerivation()
 	if err != nil {
 		return
 	}
 
-	reference, err = txutils.RandomBase64(referenceLength)
+	reference, err = c.random.Base64(referenceLength)
 	if err != nil {
 		err = fmt.Errorf("failed to generate random reference: %w", err)
 		return
@@ -345,7 +347,7 @@ func (c *create) newOutputs(
 	}
 
 	for satoshis := range changeDistribution {
-		derivationSuffix, err := randomDerivation()
+		derivationSuffix, err := c.randomDerivation()
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate random derivation suffix: %w", err)
 		}
@@ -364,7 +366,7 @@ func (c *create) newOutputs(
 	}
 
 	if randomizeOutputs {
-		rand.Shuffle(len(all), func(i, j int) {
+		c.random.Shuffle(len(all), func(i, j int) {
 			all[i], all[j] = all[j], all[i]
 		})
 	}
@@ -449,8 +451,8 @@ func (c *create) resultInputs(ctx context.Context, allocatedUTXOs []*UTXO, inclu
 	return resultInputs, nil
 }
 
-func randomDerivation() (string, error) {
-	suffix, err := txutils.RandomBase64(derivationLength)
+func (c *create) randomDerivation() (string, error) {
+	suffix, err := c.random.Base64(derivationLength)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate random derivation: %w", err)
 	}

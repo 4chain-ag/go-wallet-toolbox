@@ -12,6 +12,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/mocks"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/randomizer"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
@@ -83,6 +84,7 @@ func (s *storageFixture) Provider() ProviderFixture {
 		network:    defs.NetworkTestnet,
 		commission: defs.Commission{},
 		feeModel:   defs.DefaultFeeModel(),
+		randomizer: randomizer.New(),
 	}
 }
 

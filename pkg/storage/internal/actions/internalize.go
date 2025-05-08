@@ -7,7 +7,6 @@ import (
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/txutils"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/entity"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/history"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
@@ -21,15 +20,23 @@ type internalize struct {
 	txRepo       TransactionsRepo
 	basketRepo   BasketRepo
 	provenTxRepo ProvenTxRepo
+	random       wdk.Randomizer
 }
 
-func newInternalizeAction(logger *slog.Logger, txRepo TransactionsRepo, basketRepo BasketRepo, provenTxRepo ProvenTxRepo) *internalize {
+func newInternalizeAction(
+	logger *slog.Logger,
+	txRepo TransactionsRepo,
+	basketRepo BasketRepo,
+	provenTxRepo ProvenTxRepo,
+	random wdk.Randomizer,
+) *internalize {
 	logger = logging.Child(logger, "internalizeAction")
 	return &internalize{
 		logger:       logger,
 		txRepo:       txRepo,
 		basketRepo:   basketRepo,
 		provenTxRepo: provenTxRepo,
+		random:       random,
 	}
 }
 
@@ -55,7 +62,7 @@ func (in *internalize) Internalize(ctx context.Context, userID int, args *wdk.In
 		return nil, fmt.Errorf("failed to create new outputs: %w", err)
 	}
 
-	reference, err := txutils.RandomBase64(referenceLength)
+	reference, err := in.random.Base64(referenceLength)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate random reference: %w", err)
 	}

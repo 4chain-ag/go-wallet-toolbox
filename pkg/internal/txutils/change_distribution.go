@@ -1,13 +1,10 @@
 package txutils
 
 import (
-	"crypto/rand"
 	"fmt"
 	"iter"
-	"math/big"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/satoshi"
-	"github.com/go-softwarelab/common/pkg/must"
 	"github.com/go-softwarelab/common/pkg/seq"
 )
 
@@ -122,12 +119,4 @@ func (d *ChangeDistribution) randomNoise(count uint64, distribution iter.Seq[uin
 		noise = append(noise, randomized)
 	}
 	return noise
-}
-
-func Rand(max uint64) uint64 {
-	nBig, err := rand.Int(rand.Reader, big.NewInt(must.ConvertToInt64FromUnsigned(max)))
-	if err != nil {
-		panic(fmt.Errorf("failed to generate random number: %w", err))
-	}
-	return nBig.Uint64()
 }
