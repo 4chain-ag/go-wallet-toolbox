@@ -39,15 +39,15 @@ func TestPostBEEFWithARCService(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, res)
 
-		exp := []results.PostTxID{
-			{
-				Result: results.ResultStatusSuccess,
-				TxID:   tx.TxID().String(),
-				Data:   given.ARC().TxInfoJSON(txID),
-			},
-		}
-
-		require.ElementsMatch(t, exp, res.TxIDResults)
+		require.ElementsMatch(t,
+			res.TxIDResults,
+			[]results.PostTxID{
+				{
+					Result: results.ResultStatusSuccess,
+					TxID:   tx.TxID().String(),
+					Data:   given.ARC().TxInfoJSON(txID),
+				},
+			})
 	})
 
 	t.Run("broadcast single transaction", func(t *testing.T) {
@@ -75,15 +75,15 @@ func TestPostBEEFWithARCService(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, res)
 
-		exp := []results.PostTxID{
-			{
-				Result: results.ResultStatusSuccess,
-				TxID:   tx.TxID().String(),
-				Data:   given.ARC().TxInfoJSON(txID),
-			},
-		}
-
-		require.ElementsMatch(t, exp, res.TxIDResults)
+		require.ElementsMatch(t,
+			res.TxIDResults,
+			[]results.PostTxID{
+				{
+					Result: results.ResultStatusSuccess,
+					TxID:   tx.TxID().String(),
+					Data:   given.ARC().TxInfoJSON(txID),
+				},
+			})
 	})
 
 	t.Run("broadcast multiple txids", func(t *testing.T) {
@@ -115,20 +115,20 @@ func TestPostBEEFWithARCService(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, res)
 
-		exp := []results.PostTxID{
-			{
-				Result: results.ResultStatusSuccess,
-				TxID:   parentTx.TxID().String(),
-				Data:   given.ARC().TxInfoJSON(parentTxID),
-			},
-			{
-				Result: results.ResultStatusSuccess,
-				TxID:   childTxID,
-				Data:   given.ARC().TxInfoJSON(childTxID),
-			},
-		}
-
-		require.ElementsMatch(t, exp, res.TxIDResults)
+		require.ElementsMatch(t,
+			res.TxIDResults,
+			[]results.PostTxID{
+				{
+					Result: results.ResultStatusSuccess,
+					TxID:   parentTx.TxID().String(),
+					Data:   given.ARC().TxInfoJSON(parentTxID),
+				},
+				{
+					Result: results.ResultStatusSuccess,
+					TxID:   childTxID,
+					Data:   given.ARC().TxInfoJSON(childTxID),
+				},
+			})
 	})
 
 	invalidBEEFTestCases := map[string]struct {

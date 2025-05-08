@@ -95,18 +95,16 @@ func (s *Service) PostBeef(ctx context.Context, beef *transaction.Beef, txIDs []
 }
 
 func (s *Service) getTxIDResults(ctx context.Context, txInfo *TXInfo, txIDs []string) iter.Seq[results.PostTxID] {
-	subjectTxResult := internal.NewNamedResult(txInfo.TxID, types.SuccessResult(txInfo))
-
-	txIDsToGetStatus := seq.Filter(seq.FromSlice(txIDs), func(txID string) bool {
+	txIDsWithMissingTxInfo := seq.Filter(seq.FromSlice(txIDs), func(txID string) bool {
 		return txInfo.TxID != txID
 	})
 
-	txsData := internal.MapParallel(ctx, txIDsToGetStatus, s.getTransactionData)
+	txsData := internal.MapParallel(ctx, txIDsWithMissingTxInfo, s.getTransactionData)
 
+	subjectTxResult := internal.NewNamedResult(txInfo.TxID, types.SuccessResult(txInfo))
 	txsData = seq.Prepend(txsData, subjectTxResult)
 
-	resultsForTxID := seq.Map(txsData, toResultForPostTxID)
-	return resultsForTxID
+	return seq.Map(txsData, toResultForPostTxID)
 }
 
 func toResultForPostTxID(it *internal.NamedResult[*TXInfo]) results.PostTxID {

@@ -161,8 +161,8 @@ func (f *arcFixture) store(txHex string) {
 			status:      to.IfThen(merklePath.IsEmpty(), "SEEN_ON_NETWORK").ElseThen("MINED"),
 			blockHeight: optional.Map(merklePath, func(it sdk.MerklePath) uint32 { return it.BlockHeight }).OrZeroValue(),
 			blockHash: optional.Map(merklePath, func(it sdk.MerklePath) string {
-				// it's not that important so, let's ignore the error here
-				root, _ := it.ComputeRootHex(&txID)
+				root, err := it.ComputeRootHex(&txID)
+				require.NoError(f, err, "failed to compute root: wrong test setup")
 				return root
 			}).OrZeroValue(),
 			merklePath: optional.Map(merklePath, func(it sdk.MerklePath) string { return it.Hex() }).OrZeroValue(),
