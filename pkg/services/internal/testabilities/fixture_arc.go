@@ -3,7 +3,6 @@ package testabilities
 import (
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"testing"
@@ -30,63 +29,13 @@ type ArcFixture interface {
 	IsUpAndRunning()
 	HttpClient() *resty.Client
 	TxInfoJSON(id string) string
+	WillAlwaysReturnStatus(httpStatus int)
 }
 
 type arcFixture struct {
 	testing.TB
 	transport         *httpmock.MockTransport
 	knownTransactions map[string]*knownTransaction
-}
-
-type knownTransaction struct {
-	txid        string
-	status      string
-	blockHeight uint32
-	blockHash   string
-	merklePath  string
-}
-
-func (t *knownTransaction) toResponse() (*http.Response, error) {
-	return httpmock.NewJsonResponse(t.toResponseContent())
-}
-
-func (t *knownTransaction) toResponseContent() (int, map[string]any) {
-	if t == nil {
-		return 404, map[string]any{
-			"detail":    "The requested resource could not be found",
-			"extraInfo": "transaction not found",
-			"instance":  nil,
-			"status":    404,
-			"title":     "Not found",
-			"txid":      nil,
-			"type":      "https://bitcoin-sv.github.io/arc/#/errors?id=_404",
-		}
-	}
-
-	return 200, map[string]any{
-		"blockHash":    t.blockHash,
-		"blockHeight":  t.blockHeight,
-		"competingTxs": nil,
-		"extraInfo":    "",
-		"merklePath":   t.merklePath,
-		"timestamp":    timestamp,
-		"txStatus":     t.status,
-		"txid":         t.txid,
-	}
-}
-
-func (f *arcFixture) TxInfoJSON(id string) string {
-	_, content := f.knownTransactions[id].toResponseContent()
-	b, err := json.Marshal(content)
-	require.NoError(f, err, "failed to marshal response content")
-	return string(b)
-}
-
-func (t *knownTransaction) toResponseOrError() (*http.Response, error) {
-	if t == nil {
-		return nil, errors.New("unexpectedly cannot find transaction in known transactions")
-	}
-	return t.toResponse()
 }
 
 func NewArcFixture(t testing.TB) ArcFixture {
@@ -108,6 +57,34 @@ func (f *arcFixture) HttpClient() *resty.Client {
 	client := resty.New()
 	client.SetTransport(f.transport)
 	return client
+}
+
+func (f *arcFixture) WillAlwaysReturnStatus(httpStatus int) {
+	var details string
+	switch httpStatus {
+	case 400:
+		details = "The request seems to be malformed and cannot be processed"
+	case 401:
+		details = "The request is not authorized"
+	case 403:
+		details = "The request is not authorized"
+	case 404:
+		details = "The requested resource could not be found"
+	case 500:
+		details = "The server encountered an internal error and was unable to complete your request"
+	}
+
+	f.transport.RegisterResponder("POST", "=~"+ArcURL+"/v1/tx.*", func(req *http.Request) (*http.Response, error) {
+		return httpmock.NewJsonResponse(httpStatus, map[string]any{
+			"error":     details,
+			"extraInfo": "",
+			"instance":  nil,
+			"status":    httpStatus,
+			"title":     http.StatusText(httpStatus),
+			"txid":      nil,
+			"type":      "https://bitcoin-sv.github.io/arc/#/errors?id=_" + to.StringFromInteger(httpStatus),
+		})
+	})
 }
 
 func (f *arcFixture) IsUpAndRunning() {
@@ -159,6 +136,13 @@ func (f *arcFixture) IsUpAndRunning() {
 		txid := req.URL.String()[len(ArcURL+"/v1/tx/"):]
 		return f.knownTransactions[txid].toResponse()
 	})
+}
+
+func (f *arcFixture) TxInfoJSON(id string) string {
+	_, content := f.knownTransactions[id].toResponseContent()
+	b, err := json.Marshal(content)
+	require.NoError(f, err, "failed to marshal response content")
+	return string(b)
 }
 
 func (f *arcFixture) store(txHex string) {

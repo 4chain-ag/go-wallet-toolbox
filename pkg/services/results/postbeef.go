@@ -44,7 +44,7 @@ type PostTxID struct {
 	BlockHeight  int64
 	MerklePath   *transaction.MerklePath
 	CompetingTxs []string
-	// TODO: Data type is object | string | PostTxResultForTxidError
+	// TODO: consider making it a string
 	Data any
 	Notes
 	Error error
