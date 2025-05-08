@@ -139,7 +139,10 @@ func (f *arcFixture) IsUpAndRunning() {
 }
 
 func (f *arcFixture) TxInfoJSON(id string) string {
-	_, content := f.knownTransactions[id].toResponseContent()
+	tx, ok := f.knownTransactions[id]
+	require.True(f, ok, "Trying to get transaction info for not existing transaction, looks like invalid test setup")
+
+	_, content := tx.toResponseContent()
 	b, err := json.Marshal(content)
 	require.NoError(f, err, "failed to marshal response content")
 	return string(b)
