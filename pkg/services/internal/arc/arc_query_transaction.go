@@ -41,6 +41,6 @@ func (s *Service) queryTransaction(ctx context.Context, txID string) (*TXInfo, e
 	case http.StatusConflict:
 		return nil, fmt.Errorf("arc respond with error: %w", arcErr)
 	default:
-		return nil, fmt.Errorf("arc returns unexpeted http status [%d %s]: %w", response.StatusCode(), response.Status(), arcErr)
+		return nil, fmt.Errorf("arc returns unexpected http status [%d %s]: %w", response.StatusCode(), response.Status(), arcErr)
 	}
 }
