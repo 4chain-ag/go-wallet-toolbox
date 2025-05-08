@@ -3,8 +3,8 @@ package arc
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"iter"
 	"log/slog"
 	"time"
 
@@ -26,8 +26,6 @@ const (
 	StatusFeeTooLow                     = 465
 	StatusCumulativeFeeValidationFailed = 473
 )
-
-var ErrProblematicStatus = errors.New("arc returned problematic status")
 
 type Service struct {
 	logger       *slog.Logger
@@ -66,13 +64,9 @@ func NewARCService(logger *slog.Logger, httpClient *resty.Client, config Config)
 
 // PostBeef attempts to post beef with given txIDs
 func (s *Service) PostBeef(ctx context.Context, beef *transaction.Beef, txIDs []string) (*results.PostBEEF, error) {
-	beefTxs := seq2.Values(seq2.FromMap(beef.Transactions))
-	canBeSerializedToBEEFV1 := seq.Every(beefTxs, func(tx *transaction.BeefTx) bool {
-		return tx.DataFormat != transaction.TxIDOnly && tx.Transaction != nil
-	})
-
-	if !canBeSerializedToBEEFV1 {
-		return nil, fmt.Errorf("arc is not supporting beef v2 and provided beef cannot be converted to v1")
+	err := s.validateBEEF(beef)
+	if err != nil {
+		return nil, err
 	}
 
 	beefHex, err := toHex(beef)
@@ -80,59 +74,92 @@ func (s *Service) PostBeef(ctx context.Context, beef *transaction.Beef, txIDs []
 		return nil, err
 	}
 
-	res, err := s.broadcast(ctx, beefHex)
+	response, err := s.broadcast(ctx, beefHex)
 	if err != nil {
 		return nil, fmt.Errorf("failed to broadcast beef: %w", err)
 	}
 
-	txIDsToGetStatus := seq.Filter(seq.FromSlice(txIDs), func(txID string) bool {
-		return res.TxID != txID
-	})
-
-	txsData := internal.MapParallel(ctx, txIDsToGetStatus, s.getTransactionData)
-
-	txsData = seq.Prepend(txsData, internal.NewNamedResult(res.TxID, types.SuccessResult(res)))
-
-	resultsForTxID := seq.Map(txsData, func(it *internal.NamedResult[*TXInfo]) results.PostTxID {
-		if it.IsError() {
-			return results.PostTxID{
-				TxID:   it.Name(),
-				Result: results.ResultStatusError,
-				Error:  it.MustGetError(),
-			}
-		}
-		info := it.MustGetValue()
-
-		result := results.PostTxID{
-			TxID:         it.Name(),
-			DoubleSpend:  info.TXStatus == DoubleSpendAttempted,
-			BlockHash:    info.BlockHash,
-			BlockHeight:  info.BlockHeight,
-			CompetingTxs: info.CompetingTxs,
-			Data:         info,
-		}
-
-		if is.NotBlankString(info.MerklePath) {
-			result.MerklePath, err = transaction.NewMerklePathFromHex(info.MerklePath)
-			if err != nil {
-				result.Error = err
-				result.Result = results.ResultStatusError
-			}
-		}
-
-		dataBytes, err := json.Marshal(info)
-		if err != nil {
-			result.Data = fmt.Sprintf("%+v", info)
-		}
-		result.Data = string(dataBytes)
-
-		return result
-	})
+	resultsForTxID := s.getTxIDResults(ctx, response, txIDs)
 
 	return &results.PostBEEF{
 		TxIDResults: seq.Collect(resultsForTxID),
 	}, nil
 
+}
+
+func (s *Service) getTxIDResults(ctx context.Context, txInfo *TXInfo, txIDs []string) iter.Seq[results.PostTxID] {
+	subjectTxResult := internal.NewNamedResult(txInfo.TxID, types.SuccessResult(txInfo))
+
+	txIDsToGetStatus := seq.Filter(seq.FromSlice(txIDs), func(txID string) bool {
+		return txInfo.TxID != txID
+	})
+
+	txsData := internal.MapParallel(ctx, txIDsToGetStatus, s.getTransactionData)
+
+	txsData = seq.Prepend(txsData, subjectTxResult)
+
+	resultsForTxID := seq.Map(txsData, toResultForPostTxID)
+	return resultsForTxID
+}
+
+func toResultForPostTxID(it *internal.NamedResult[*TXInfo]) results.PostTxID {
+	if it.IsError() {
+		return results.PostTxID{
+			TxID:   it.Name(),
+			Result: results.ResultStatusError,
+			Error:  it.MustGetError(),
+		}
+	}
+	info := it.MustGetValue()
+
+	result := results.PostTxID{
+		TxID:         it.Name(),
+		DoubleSpend:  info.TXStatus == DoubleSpendAttempted,
+		BlockHash:    info.BlockHash,
+		BlockHeight:  info.BlockHeight,
+		CompetingTxs: info.CompetingTxs,
+		Data:         info,
+	}
+
+	if is.NotBlankString(info.MerklePath) {
+		merklePath, err := transaction.NewMerklePathFromHex(info.MerklePath)
+		if err != nil {
+			result.Error = err
+			result.Result = results.ResultStatusError
+		} else {
+			result.MerklePath = merklePath
+		}
+	}
+
+	dataBytes, err := json.Marshal(info)
+	if err != nil {
+		// fallback to string representation in very unlikely case of json marshal error.
+		result.Data = fmt.Sprintf("%+v", info)
+	} else {
+		result.Data = string(dataBytes)
+	}
+
+	return result
+}
+
+func (s *Service) validateBEEF(beef *transaction.Beef) error {
+	if beef == nil {
+		return fmt.Errorf("cannot broadcast nil beef")
+	}
+
+	if len(beef.Transactions) == 0 {
+		return fmt.Errorf("cannot broadcast empty beef")
+	}
+
+	beefTxs := seq2.Values(seq2.FromMap(beef.Transactions))
+	canBeSerializedToBEEFV1 := seq.Every(beefTxs, func(tx *transaction.BeefTx) bool {
+		return tx.DataFormat != transaction.TxIDOnly && tx.Transaction != nil
+	})
+
+	if !canBeSerializedToBEEFV1 {
+		return fmt.Errorf("arc is not supporting beef v2 and provided beef cannot be converted to v1")
+	}
+	return nil
 }
 
 func (s *Service) getTransactionData(ctx context.Context, txID string) *internal.NamedResult[*TXInfo] {
