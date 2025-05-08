@@ -113,6 +113,7 @@ func toResultForPostTxID(it *internal.NamedResult[*TXInfo]) results.PostTxID {
 	info := it.MustGetValue()
 
 	result := results.PostTxID{
+		Result:       results.ResultStatusSuccess,
 		TxID:         it.Name(),
 		DoubleSpend:  info.TXStatus == DoubleSpendAttempted,
 		BlockHash:    info.BlockHash,

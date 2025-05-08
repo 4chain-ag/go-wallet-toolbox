@@ -41,8 +41,9 @@ func TestPostBEEFWithARCService(t *testing.T) {
 
 		exp := []results.PostTxID{
 			{
-				TxID: tx.TxID().String(),
-				Data: given.ARC().TxInfoJSON(txID),
+				Result: results.ResultStatusSuccess,
+				TxID:   tx.TxID().String(),
+				Data:   given.ARC().TxInfoJSON(txID),
 			},
 		}
 
@@ -76,8 +77,9 @@ func TestPostBEEFWithARCService(t *testing.T) {
 
 		exp := []results.PostTxID{
 			{
-				TxID: tx.TxID().String(),
-				Data: given.ARC().TxInfoJSON(txID),
+				Result: results.ResultStatusSuccess,
+				TxID:   tx.TxID().String(),
+				Data:   given.ARC().TxInfoJSON(txID),
 			},
 		}
 
@@ -115,12 +117,14 @@ func TestPostBEEFWithARCService(t *testing.T) {
 
 		exp := []results.PostTxID{
 			{
-				TxID: parentTx.TxID().String(),
-				Data: given.ARC().TxInfoJSON(parentTxID),
+				Result: results.ResultStatusSuccess,
+				TxID:   parentTx.TxID().String(),
+				Data:   given.ARC().TxInfoJSON(parentTxID),
 			},
 			{
-				TxID: childTxID,
-				Data: given.ARC().TxInfoJSON(childTxID),
+				Result: results.ResultStatusSuccess,
+				TxID:   childTxID,
+				Data:   given.ARC().TxInfoJSON(childTxID),
 			},
 		}
 

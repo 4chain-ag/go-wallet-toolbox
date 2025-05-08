@@ -21,6 +21,7 @@ func (p *PostBEEFError) Error() string {
 	return p.Cause.Error()
 }
 
+// ResultStatus is the status of the result which can be either success or error.
 type ResultStatus string
 
 const (
