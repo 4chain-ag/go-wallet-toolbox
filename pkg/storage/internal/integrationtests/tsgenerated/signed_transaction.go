@@ -1,9 +1,10 @@
 package tsgenerated
 
 import (
+	"testing"
+
 	"github.com/bsv-blockchain/go-sdk/transaction"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 // SignedTransactionHex is a rawTx of a transaction created from instructions from create_action_result.json

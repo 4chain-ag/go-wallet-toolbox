@@ -3,11 +3,11 @@ package actions
 import (
 	"context"
 	"fmt"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/entity"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/history"
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/entity"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/history"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/bsv-blockchain/go-sdk/transaction"
 	"github.com/go-softwarelab/common/pkg/must"
@@ -88,6 +88,9 @@ func (p *process) processNewTx(ctx context.Context, userID int, args *wdk.Proces
 		RawTx:       args.RawTx,
 		InputBeef:   tableTx.InputBEEF,
 	}, history.ProcessActionHistoryNote, history.UserIDHistoryAttr(userID))
+	if err != nil {
+		return fmt.Errorf("failed to update transaction: %w", err)
+	}
 
 	return nil
 }

@@ -3,12 +3,12 @@ package infra
 import (
 	"context"
 	"fmt"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/randomizer"
 	"log/slog"
 	"os"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/config"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/randomizer"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 )

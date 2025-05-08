@@ -3,9 +3,10 @@ package randomizer
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/go-softwarelab/common/pkg/must"
 	"slices"
 	"sync"
+
+	"github.com/go-softwarelab/common/pkg/must"
 )
 
 // TestRandomizer is a test implementation of the Randomizer interface.

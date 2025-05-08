@@ -4,7 +4,6 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testmode"
 	"testing"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/fixtures"
@@ -12,6 +11,7 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/actions/funder/errfunder"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/integrationtests/tsgenerated"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testmode"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/testabilities/testusers"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
