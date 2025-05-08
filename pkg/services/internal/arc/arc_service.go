@@ -28,11 +28,12 @@ const (
 )
 
 type Service struct {
-	logger       *slog.Logger
-	httpClient   *resty.Client
-	config       Config
-	broadcastURL string
-	queryTxURL   string
+	logger           *slog.Logger
+	httpClient       *resty.Client
+	config           Config
+	broadcastURL     string
+	queryTxURL       string
+	broadcastHeaders httpx.Headers
 }
 
 // NewARCService creates a new arc service.
@@ -52,11 +53,17 @@ func NewARCService(logger *slog.Logger, httpClient *resty.Client, config Config)
 		SetHeaders(headers)
 
 	service := &Service{
-		logger:       logging.Child(logger, "arc"),
-		httpClient:   httpClient,
-		config:       config,
+		logger:     logging.Child(logger, "arc"),
+		httpClient: httpClient,
+		config:     config,
+
 		broadcastURL: config.URL + "/v1/tx",
-		queryTxURL:   config.URL + "/v1/tx/{txID}",
+		broadcastHeaders: httpx.NewHeaders().
+			Set("X-CallbackUrl").IfNotEmpty(config.CallbackURL).
+			Set("X-CallbackToken").IfNotEmpty(config.CallbackToken).
+			Set("X-WaitFor").IfNotEmpty(config.WaitFor),
+
+		queryTxURL: config.URL + "/v1/tx/{txID}",
 	}
 
 	return service

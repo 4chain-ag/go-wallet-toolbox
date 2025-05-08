@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/httpx"
 )
 
 type broadcastRequestBody struct {
@@ -21,14 +19,9 @@ func (s *Service) broadcast(ctx context.Context, txHex string) (*TXInfo, error) 
 	result := &TXInfo{}
 	arcErr := &APIError{}
 
-	headers := httpx.NewHeaders().
-		Set("X-CallbackUrl").IfNotEmpty(s.config.CallbackURL).
-		Set("X-CallbackToken").IfNotEmpty(s.config.CallbackToken).
-		Set("X-WaitFor").IfNotEmpty(s.config.WaitFor)
-
 	req := s.httpClient.R().
 		SetContext(ctx).
-		SetHeaders(headers).
+		SetHeaders(s.broadcastHeaders).
 		SetResult(result).
 		SetError(arcErr)
 
