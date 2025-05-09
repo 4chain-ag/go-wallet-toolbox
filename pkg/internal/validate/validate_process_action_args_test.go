@@ -53,7 +53,7 @@ func TestWrongProcessActionArgs(t *testing.T) {
 				return args
 			},
 		},
-		"IsNoSend with IsSendWith false": {
+		"Inconsistent IsNoSend with IsSendWith": {
 			modifier: func(args wdk.ProcessActionArgs) wdk.ProcessActionArgs {
 				args.IsNoSend = true
 				args.IsSendWith = false
