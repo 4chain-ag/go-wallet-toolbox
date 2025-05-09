@@ -23,8 +23,6 @@ type TransactionsRepo interface {
 	FindTransactionByReference(ctx context.Context, userID int, reference string) (*wdk.TableTransaction, error)
 	UpdateTransaction(
 		ctx context.Context,
-		userID int,
-		transactionID uint,
 		updatedTx entity.UpdatedTx,
 		historyNote string,
 		historyAttrs map[string]any,

@@ -198,19 +198,17 @@ func (txs *Transactions) FindTransactionByReference(ctx context.Context, userID 
 
 func (txs *Transactions) UpdateTransaction(
 	ctx context.Context,
-	userID int,
-	transactionID uint,
 	updatedTx entity.UpdatedTx,
 	historyNote string,
 	historyAttrs map[string]any,
 ) error {
 	err := txs.db.WithContext(ctx).Transaction(func(tx *gorm.DB) (err error) {
 		err = tx.Model(models.Transaction{}).
-			Scopes(scopes.UserID(userID)).
-			Where("id = ?", transactionID).
+			Scopes(scopes.UserID(updatedTx.UserID)).
+			Where("id = ?", updatedTx.TransactionID).
 			Updates(map[string]any{
 				"tx_id":      updatedTx.TxID,
-				"input_beef": nil,
+				"input_beef": nil, // input_beef per user's transaction won't be needed anymore; it is moved to the ProvenTxReq (storage-wide)
 				"status":     updatedTx.TxStatus,
 			}).Error
 		if err != nil {
@@ -218,8 +216,8 @@ func (txs *Transactions) UpdateTransaction(
 		}
 
 		err = tx.Model(models.Output{}).
-			Scopes(scopes.UserID(userID)).
-			Where("transaction_id = ?", transactionID).
+			Scopes(scopes.UserID(updatedTx.UserID)).
+			Where("transaction_id = ?", updatedTx.TransactionID).
 			Update("spendable", updatedTx.Spendable).Error
 		if err != nil {
 			return err
