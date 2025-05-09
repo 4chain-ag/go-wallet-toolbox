@@ -6,6 +6,8 @@ import (
 	"log/slog"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/entity"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/history"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/bsv-blockchain/go-sdk/transaction"
 	"github.com/go-softwarelab/common/pkg/must"
@@ -60,7 +62,7 @@ func (p *process) processNewTx(ctx context.Context, userID int, args *wdk.Proces
 		return err
 	}
 
-	_, outputs, err := p.outputRepo.FindInputsAndOutputsOfTransaction(ctx, userID, txID)
+	_, outputs, err := p.outputRepo.FindInputsAndOutputsOfTransaction(ctx, tableTx.TransactionID)
 	if err != nil {
 		return fmt.Errorf("failed to find inputs and outputs of transaction: %w", err)
 	}
@@ -75,6 +77,22 @@ func (p *process) processNewTx(ctx context.Context, userID int, args *wdk.Proces
 	// TODO: Add db transactionID to ProvenTxReq.Notify
 
 	// TODO: Remove too long locking scripts (len > storage.maxOutputScript)
+
+	newTxStatus, newReqStatus := p.newStatuses(args)
+
+	err = p.txRepo.UpdateTransaction(ctx, entity.UpdatedTx{
+		UserID:        userID,
+		TransactionID: tableTx.TransactionID,
+		Spendable:     true,
+		TxID:          txID,
+		TxStatus:      newTxStatus,
+		ReqTxStatus:   newReqStatus,
+		RawTx:         args.RawTx,
+		InputBeef:     tableTx.InputBEEF,
+	}, history.ProcessActionHistoryNote, history.UserIDHistoryAttr(userID))
+	if err != nil {
+		return fmt.Errorf("failed to update transaction: %w", err)
+	}
 
 	return nil
 }
@@ -121,4 +139,20 @@ func (p *process) validateNewTxOutputs(tx *transaction.Transaction, outputs []*w
 		}
 	}
 	return nil
+}
+
+func (p *process) newStatuses(args *wdk.ProcessActionArgs) (txStatus wdk.TxStatus, reqStatus wdk.ProvenTxReqStatus) {
+	switch {
+	case args.IsNoSend:
+		reqStatus = wdk.ProvenTxStatusNoSend
+		txStatus = wdk.TxStatusNoSend
+	case args.IsDelayed:
+		reqStatus = wdk.ProvenTxStatusUnsent
+		txStatus = wdk.TxStatusUnprocessed
+	default:
+		reqStatus = wdk.ProvenTxStatusUnprocessed
+		txStatus = wdk.TxStatusUnprocessed
+	}
+
+	return
 }

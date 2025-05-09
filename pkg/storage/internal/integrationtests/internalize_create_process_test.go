@@ -21,11 +21,13 @@ import (
 //go:embed tsgenerated/create_action_result.json
 var createActionResultJSON string
 
-func TestInternalizePlusCreate(t *testing.T) {
+func TestInternalizeThenCreateThenProcess(t *testing.T) {
 	given := testabilities.Given(t)
 	activeStorage := given.Provider().
 		WithRandomizer(randomizer.NewTestRandomizer()).
 		GORM()
+
+	var createdTxReference string
 
 	t.Run("Internalize", func(t *testing.T) {
 		// given:
@@ -68,7 +70,7 @@ func TestInternalizePlusCreate(t *testing.T) {
 		require.JSONEq(t, `{
 		  "accepted": true,
 		  "isMerge": false,
-		  "txid": "db8ee15998a415f69144483cf9a755d05f2a7c44e3569c8fe750720a26f90fe7",
+		  "txid": "756754d5ad8f00e05c36d89a852971c0a1dc0c10f20cd7840ead347aff475ef6",
 		  "satoshis": 99904
 		}`, string(resultJSON))
 	})
@@ -122,6 +124,33 @@ func TestInternalizePlusCreate(t *testing.T) {
 		// then:
 		require.NoError(t, err)
 		require.JSONEq(t, createActionResultJSON, string(resultJSON))
+
+		// update:
+		createdTxReference = result.Reference
+	})
+
+	t.Run("Process", func(t *testing.T) {
+		// given:
+		tx := tsgenerated.SignedTransaction(t)
+		txID := tx.TxID().String()
+
+		// and:
+		args := wdk.ProcessActionArgs{
+			IsNewTx:    true,
+			IsSendWith: false,
+			IsNoSend:   false,
+			IsDelayed:  false,
+			Reference:  to.Ptr(createdTxReference),
+			TxID:       to.Ptr(primitives.TXIDHexString(txID)),
+			RawTx:      tx.Bytes(),
+			SendWith:   []string{},
+		}
+
+		// when:
+		_, err := activeStorage.ProcessAction(context.Background(), testusers.Alice.AuthID(), args)
+
+		// then:
+		require.NoError(t, err)
 	})
 }
 

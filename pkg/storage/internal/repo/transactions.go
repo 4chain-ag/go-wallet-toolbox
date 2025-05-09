@@ -12,7 +12,6 @@ import (
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk/primitives"
 	"github.com/go-softwarelab/common/pkg/is"
-	"github.com/go-softwarelab/common/pkg/must"
 	"github.com/go-softwarelab/common/pkg/slices"
 	"github.com/go-softwarelab/common/pkg/to"
 	"gorm.io/gorm"
@@ -197,6 +196,46 @@ func (txs *Transactions) FindTransactionByReference(ctx context.Context, userID 
 	return txs.mapModelToTableTransaction(&transaction), nil
 }
 
+func (txs *Transactions) UpdateTransaction(
+	ctx context.Context,
+	updatedTx entity.UpdatedTx,
+	historyNote string,
+	historyAttrs map[string]any,
+) error {
+	err := txs.db.WithContext(ctx).Transaction(func(tx *gorm.DB) (err error) {
+		err = tx.Model(models.Transaction{}).
+			Scopes(scopes.UserID(updatedTx.UserID)).
+			Where("id = ?", updatedTx.TransactionID).
+			Updates(map[string]any{
+				"tx_id":      updatedTx.TxID,
+				"input_beef": nil, // input_beef per user's transaction won't be needed anymore; it is moved to the ProvenTxReq (storage-wide)
+				"status":     updatedTx.TxStatus,
+			}).Error
+		if err != nil {
+			return err
+		}
+
+		err = tx.Model(models.Output{}).
+			Scopes(scopes.UserID(updatedTx.UserID)).
+			Where("transaction_id = ?", updatedTx.TransactionID).
+			Update("spendable", updatedTx.Spendable).Error
+		if err != nil {
+			return err
+		}
+
+		return upsertProvenTxReq(tx, &entity.UpsertProvenTxReq{
+			TxID:      updatedTx.TxID,
+			Status:    updatedTx.ReqTxStatus,
+			RawTx:     updatedTx.RawTx,
+			InputBeef: updatedTx.InputBeef,
+		}, historyNote, historyAttrs)
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update transaction: %w", err)
+	}
+	return nil
+}
+
 func (txs *Transactions) mapModelToTableTransaction(model *models.Transaction) *wdk.TableTransaction {
 	return &wdk.TableTransaction{
 		CreatedAt:     model.CreatedAt,
@@ -206,7 +245,7 @@ func (txs *Transactions) mapModelToTableTransaction(model *models.Transaction) *
 		Status:        model.Status,
 		Reference:     primitives.Base64String(model.Reference),
 		IsOutgoing:    model.IsOutgoing,
-		Satoshis:      primitives.SatoshiValue(must.ConvertToUInt64(model.Satoshis)),
+		Satoshis:      model.Satoshis,
 		Description:   model.Description,
 		Version:       to.Ptr(model.Version),
 		LockTime:      to.Ptr(model.LockTime),

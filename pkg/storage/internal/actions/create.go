@@ -416,13 +416,13 @@ func (c *create) resultInputs(ctx context.Context, allocatedUTXOs []*UTXO, inclu
 
 	resultInputs := make([]wdk.StorageCreateTransactionSdkInput, len(allocatedUTXOs))
 	for i, utxo := range utxos {
-		if utxo.Txid == nil {
+		if utxo.TxID == nil {
 			return nil, fmt.Errorf("missing txid for output %d", i)
 		}
 		if utxo.LockingScript == nil {
 			return nil, fmt.Errorf("missing locking script for output %d", i)
 		}
-		txID := *utxo.Txid
+		txID := *utxo.TxID
 		resultInputs[i] = wdk.StorageCreateTransactionSdkInput{
 			Vin:                   i,
 			SourceTxID:            txID,

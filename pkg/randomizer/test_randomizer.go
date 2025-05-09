@@ -4,17 +4,23 @@ import (
 	"encoding/base64"
 	"fmt"
 	"slices"
+	"sync"
 
 	"github.com/go-softwarelab/common/pkg/must"
 )
 
 // TestRandomizer is a test implementation of the Randomizer interface.
 // It provides deterministic outputs for testing purposes.
-type TestRandomizer struct{}
+type TestRandomizer struct {
+	base64Locker  sync.Mutex
+	baseCharacter byte
+}
 
 // NewTestRandomizer creates and returns a new instance of TestRandomizer.
 func NewTestRandomizer() *TestRandomizer {
-	return &TestRandomizer{}
+	return &TestRandomizer{
+		baseCharacter: 'a',
+	}
 }
 
 // Base64 generates a deterministic base64-encoded string of the specified length.
@@ -24,8 +30,23 @@ func (t *TestRandomizer) Base64(length uint64) (string, error) {
 		return "", fmt.Errorf("length cannot be zero")
 	}
 
-	randomBytes := slices.Repeat([]byte{'a'}, must.ConvertToIntFromUnsigned(length))
+	randomBytes := slices.Repeat([]byte{t.nextBaseCharacter()}, must.ConvertToIntFromUnsigned(length))
 	return base64.StdEncoding.EncodeToString(randomBytes), nil
+}
+
+func (t *TestRandomizer) nextBaseCharacter() byte {
+	t.base64Locker.Lock()
+	defer t.base64Locker.Unlock()
+
+	current := t.baseCharacter
+
+	if t.baseCharacter < 0x7F {
+		t.baseCharacter++
+	} else {
+		t.baseCharacter = 0x21
+	}
+
+	return current
 }
 
 // Shuffle performs a deterministic shuffle operation on a slice of size n.
