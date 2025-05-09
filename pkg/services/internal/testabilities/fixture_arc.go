@@ -22,6 +22,7 @@ import (
 const ArcURL = "https://api.taal.com/arc"
 const ArcToken = "mainnet_9596de07e92300c6287e4393594ae39c"
 const DeploymentID = "go-wallet-toolbox-test"
+const arcHttpStatusMalformed = 463
 
 var timestamp = time.Date(2018, time.November, 10, 23, 0, 0, 0, time.UTC).Format("2006-01-02T15:04:05.999999999Z")
 
@@ -62,19 +63,19 @@ func (f *arcFixture) HttpClient() *resty.Client {
 func (f *arcFixture) WillAlwaysReturnStatus(httpStatus int) {
 	var details string
 	switch httpStatus {
-	case 400:
+	case http.StatusBadRequest:
 		details = "The request seems to be malformed and cannot be processed"
-	case 401:
+	case http.StatusUnauthorized:
 		details = "The request is not authorized"
-	case 403:
+	case http.StatusForbidden:
 		details = "The request is not authorized"
-	case 404:
+	case http.StatusNotFound:
 		details = "The requested resource could not be found"
-	case 500:
+	case http.StatusInternalServerError:
 		details = "The server encountered an internal error and was unable to complete your request"
 	}
 
-	f.transport.RegisterResponder("POST", "=~"+ArcURL+"/v1/tx.*", func(req *http.Request) (*http.Response, error) {
+	f.transport.RegisterResponder(http.MethodPost, "=~"+ArcURL+"/v1/tx.*", func(req *http.Request) (*http.Response, error) {
 		return httpmock.NewJsonResponse(httpStatus, map[string]any{
 			"error":     details,
 			"extraInfo": "",
@@ -88,7 +89,7 @@ func (f *arcFixture) WillAlwaysReturnStatus(httpStatus int) {
 }
 
 func (f *arcFixture) IsUpAndRunning() {
-	f.transport.RegisterResponder("POST", ArcURL+"/v1/tx", func(req *http.Request) (*http.Response, error) {
+	f.transport.RegisterResponder(http.MethodPost, ArcURL+"/v1/tx", func(req *http.Request) (*http.Response, error) {
 		b, err := io.ReadAll(req.Body)
 		if !assert.NoError(f, err) {
 			return nil, err
@@ -102,11 +103,11 @@ func (f *arcFixture) IsUpAndRunning() {
 
 		rawTx := body["rawTx"]
 		if !assert.NotNil(f, rawTx) {
-			return httpmock.NewJsonResponse(400, map[string]any{
+			return httpmock.NewJsonResponse(http.StatusBadRequest, map[string]any{
 				"detail":    "The request seems to be malformed and cannot be processed",
 				"extraInfo": "error parsing transactions from request: no transaction found - empty request body",
 				"instance":  nil,
-				"status":    400,
+				"status":    http.StatusBadRequest,
 				"title":     "Bad request",
 				"txid":      nil,
 				"type":      "https://bitcoin-sv.github.io/arc/#/errors?id=_400",
@@ -116,11 +117,11 @@ func (f *arcFixture) IsUpAndRunning() {
 
 		tx, err := sdk.NewTransactionFromBEEFHex(txHex)
 		if !assert.NoError(f, err) {
-			return httpmock.NewJsonResponse(463, map[string]any{
+			return httpmock.NewJsonResponse(arcHttpStatusMalformed, map[string]any{
 				"detail":    "Transaction is malformed and cannot be processed",
 				"extraInfo": err.Error(),
 				"instance":  nil,
-				"status":    463,
+				"status":    arcHttpStatusMalformed,
 				"title":     "Malformed transaction",
 				"txid":      nil,
 				"type":      "https://bitcoin-sv.github.io/arc/#/errors?id=_463",

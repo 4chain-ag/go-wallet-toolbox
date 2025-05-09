@@ -18,7 +18,6 @@ func (s *Service) queryTransaction(ctx context.Context, txID string) (*TXInfo, e
 		SetPathParam("txID", txID)
 
 	response, err := req.Get(s.queryTxURL)
-
 	if err != nil {
 		var netError net.Error
 		if errors.As(err, &netError) {

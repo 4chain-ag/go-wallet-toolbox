@@ -28,18 +28,18 @@ func (t *knownTransaction) toResponseOrError() (*http.Response, error) {
 
 func (t *knownTransaction) toResponseContent() (int, map[string]any) {
 	if t == nil {
-		return 404, map[string]any{
+		return http.StatusNotFound, map[string]any{
 			"detail":    "The requested resource could not be found",
 			"extraInfo": "transaction not found",
 			"instance":  nil,
-			"status":    404,
+			"status":    http.StatusNotFound,
 			"title":     "Not found",
 			"txid":      nil,
 			"type":      "https://bitcoin-sv.github.io/arc/#/errors?id=_404",
 		}
 	}
 
-	return 200, map[string]any{
+	return http.StatusOK, map[string]any{
 		"blockHash":    t.blockHash,
 		"blockHeight":  t.blockHeight,
 		"competingTxs": nil,
