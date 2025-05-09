@@ -41,10 +41,10 @@ type TxReqBroadcastStatus string
 
 // Possible transaction request broadcast statuses
 const (
-	TxReqSimplifiedReadyToSend TxReqBroadcastStatus = "readyToSend"
-	TxReqSimplifiedAlreadySent TxReqBroadcastStatus = "alreadySent"
-	TxReqSimplifiedError       TxReqBroadcastStatus = "error"
-	TxReqSimplifiedUnknown     TxReqBroadcastStatus = "unknown"
+	TxReqBroadcastReadyToSend TxReqBroadcastStatus = "readyToSend"
+	TxReqBroadcastAlreadySent TxReqBroadcastStatus = "alreadySent"
+	TxReqBroadcastError       TxReqBroadcastStatus = "error"
+	TxReqBroadcastUnknown     TxReqBroadcastStatus = "unknown"
 )
 
 // BroadcastStatus returns the simplified broadcast status of a transaction request based on its current status.
@@ -54,20 +54,30 @@ func (s ProvenTxReqStatus) BroadcastStatus() TxReqBroadcastStatus {
 		ProvenTxStatusNonFinal,
 		ProvenTxStatusInvalid,
 		ProvenTxStatusDoubleSpend:
-		return TxReqSimplifiedError
+		return TxReqBroadcastError
 	case ProvenTxStatusSending,
 		ProvenTxStatusUnsent,
 		ProvenTxStatusNoSend,
 		ProvenTxStatusUnprocessed:
-		return TxReqSimplifiedReadyToSend
+		return TxReqBroadcastReadyToSend
 	case ProvenTxStatusUnmined,
 		ProvenTxStatusCallback,
 		ProvenTxStatusUnconfirmed,
 		ProvenTxStatusCompleted:
-		return TxReqSimplifiedAlreadySent
+		return TxReqBroadcastAlreadySent
 	case ProvenTxStatusUnfail:
 		fallthrough
 	default:
-		return TxReqSimplifiedUnknown
+		return TxReqBroadcastUnknown
 	}
+}
+
+// ProvenTxReqStatusesForSourceTransactions is a provenTxReq status list of txs that can be taken as subject-transaction's input sources
+var ProvenTxReqStatusesForSourceTransactions = []ProvenTxReqStatus{
+	ProvenTxStatusUnsent,
+	ProvenTxStatusUnmined,
+	ProvenTxStatusUnconfirmed,
+	ProvenTxStatusSending,
+	ProvenTxStatusNoSend,
+	ProvenTxStatusCompleted,
 }

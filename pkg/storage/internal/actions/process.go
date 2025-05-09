@@ -52,7 +52,7 @@ func (p *process) Process(ctx context.Context, userID int, args *wdk.ProcessActi
 		}, nil
 	}
 
-	err := p.broadcastSingleTx(ctx, string(*args.TxID))
+	_, err := p.broadcastSingleTx(ctx, string(*args.TxID))
 	if err != nil {
 		return nil, fmt.Errorf("failed to broadcast transaction: %w", err)
 	}
@@ -178,12 +178,43 @@ func (p *process) newStatuses(args *wdk.ProcessActionArgs) (txStatus wdk.TxStatu
 	return
 }
 
-func (p *process) broadcastSingleTx(ctx context.Context, txID string) error {
-	_, err := p.provenTxRepo.FindProvenTxStatus(ctx, txID)
+func (p *process) broadcastSingleTx(ctx context.Context, txID string) (wdk.SendWithResultStatus, error) {
+	sendStatus, err := p.sendStatusByReqTxSatus(ctx, txID)
 	if err != nil {
-		return fmt.Errorf("failed to find proven tx status: %w", err)
+		return "", err
 	}
 
-	// TODO: Implement broadcastSingleTx
-	return nil
+	if sendStatus != wdk.SendWithResultStatusSending {
+		return sendStatus, nil
+	}
+
+	beef, err := p.provenTxRepo.BuildValidBEEF(ctx, txID, wdk.ProvenTxReqStatusesForSourceTransactions)
+	if err != nil {
+		return "", fmt.Errorf("failed to build valid BEEF: %w", err)
+	}
+
+	// TODO: SPV of the beef
+
+	_ = beef // TODO Services::PostBEEF
+	return wdk.SendWithResultStatusSending, nil
+}
+
+func (p *process) sendStatusByReqTxSatus(ctx context.Context, txID string) (wdk.SendWithResultStatus, error) {
+	reqTxStatus, err := p.provenTxRepo.FindProvenTxStatus(ctx, txID)
+	if err != nil {
+		return "", fmt.Errorf("failed to find proven tx status: %w", err)
+	}
+
+	switch reqTxStatus.BroadcastStatus() {
+	case wdk.TxReqBroadcastReadyToSend:
+		return wdk.SendWithResultStatusSending, nil
+	case wdk.TxReqBroadcastError:
+		return wdk.SendWithResultStatusFailed, nil
+	case wdk.TxReqBroadcastAlreadySent:
+		return wdk.SendWithResultStatusUnproven, nil
+	case wdk.TxReqBroadcastUnknown:
+		fallthrough
+	default:
+		return "", fmt.Errorf("unknown broadcast status")
+	}
 }

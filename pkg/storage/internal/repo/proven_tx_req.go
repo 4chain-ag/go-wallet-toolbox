@@ -5,11 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/bsv-blockchain/go-sdk/transaction"
 	"time"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/entity"
 	"gorm.io/gorm"
+)
+
+const (
+	maxDepthOfRecursion = 1000
 )
 
 type ProvenTxReq struct {
@@ -76,4 +81,78 @@ func (p *ProvenTxReq) FindProvenTxStatus(ctx context.Context, txID string) (wdk.
 		return "", fmt.Errorf("failed to find proven tx status: %w", err)
 	}
 	return model.Status, nil
+}
+
+func (p *ProvenTxReq) BuildValidBEEF(ctx context.Context, txID string, sourceTxsStatusFilter []wdk.ProvenTxReqStatus) (*transaction.Beef, error) {
+	beef := transaction.NewBeefV2()
+	err := p.recursiveBuildValidBEEF(ctx, 0, beef, txID, sourceTxsStatusFilter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build valid BEEF: %w", err)
+	}
+
+	return beef, nil
+}
+
+func (p *ProvenTxReq) recursiveBuildValidBEEF(ctx context.Context, depth int, mergeToBeef *transaction.Beef, txID string, statusFilter []wdk.ProvenTxReqStatus) error {
+	if depth > maxDepthOfRecursion {
+		return fmt.Errorf("max depth of recursion reached: %d", maxDepthOfRecursion)
+	}
+
+	var model models.ProvenTxReq
+	query :=	p.db.WithContext(ctx).
+		Model(&model).
+		Select("raw_tx, input_beef")
+
+	queryForSubjectTx := depth == 0
+	if !queryForSubjectTx && len(statusFilter) > 0 {
+		query = query.Where("status IN ? ", statusFilter)
+	}
+
+	err := query.First(&model, "tx_id = ? ", txID).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return fmt.Errorf("failed to find proven tx raw tx and input beef: %w", err)
+	}
+
+	if model.RawTx == nil || model.InputBeef == nil {
+		return fmt.Errorf("raw tx or input beef is nil")
+	}
+
+	tx, err := transaction.NewTransactionFromBytes(model.RawTx)
+	if err != nil {
+		return fmt.Errorf("failed to build transaction object from raw tx bytes: %w", err)
+	}
+
+	for i := range tx.Inputs {
+		if len(tx.Inputs[i].SourceTXID) == 0 {
+			return fmt.Errorf("input SourceTXID is empty at index %d", i)
+		}
+	}
+
+	_, err = mergeToBeef.MergeRawTx(model.RawTx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to merge raw tx into BEEF object: %w", err)
+	}
+
+	err = mergeToBeef.MergeBeefBytes(model.InputBeef)
+	if err != nil {
+		return fmt.Errorf("failed to merge input beef into BEEF object: %w", err)
+	}
+
+	var sourceTXID string
+	for _, input := range tx.Inputs {
+		sourceTXID = input.SourceTXID.String()
+		beefTx := mergeToBeef.FindTransaction(sourceTXID)
+		if beefTx == nil {
+			err = p.recursiveBuildValidBEEF(ctx, depth + 1, mergeToBeef, sourceTXID, statusFilter)
+			if err != nil {
+				return fmt.Errorf("failed to recursively find proven tx and merge into BEEF: %w", err)
+			}
+		}
+	}
+
+	// Result is in mergeToBeef
+	return nil
 }

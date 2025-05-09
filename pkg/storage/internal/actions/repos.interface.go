@@ -2,6 +2,7 @@ package actions
 
 import (
 	"context"
+	"github.com/bsv-blockchain/go-sdk/transaction"
 	"iter"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/entity"
@@ -33,4 +34,5 @@ type ProvenTxRepo interface {
 	UpsertProvenTxReq(ctx context.Context, req *entity.UpsertProvenTxReq, historyNote string, historyAttrs map[string]any) error
 	FindProvenTxRawTX(ctx context.Context, txID string) ([]byte, error)
 	FindProvenTxStatus(ctx context.Context, txID string) (wdk.ProvenTxReqStatus, error)
+	BuildValidBEEF(ctx context.Context, txID string, sourceTxsStatusFilter []wdk.ProvenTxReqStatus) (*transaction.Beef, error)
 }
