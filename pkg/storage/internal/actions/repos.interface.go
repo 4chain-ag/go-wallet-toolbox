@@ -14,7 +14,7 @@ type BasketRepo interface {
 
 type OutputRepo interface {
 	FindOutputs(ctx context.Context, outputIDs iter.Seq[uint]) ([]*wdk.TableOutput, error)
-	FindInputsAndOutputsOfTransaction(ctx context.Context, userID int, transactionID uint) (inputs []*wdk.TableOutput, outputs []*wdk.TableOutput, err error)
+	FindInputsAndOutputsOfTransaction(ctx context.Context, transactionID uint) (inputs []*wdk.TableOutput, outputs []*wdk.TableOutput, err error)
 }
 
 type TransactionsRepo interface {

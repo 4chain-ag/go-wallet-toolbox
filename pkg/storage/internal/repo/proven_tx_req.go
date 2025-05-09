@@ -30,9 +30,9 @@ func (p *ProvenTxReq) UpsertProvenTxReq(ctx context.Context, req *entity.UpsertP
 	return nil
 }
 
-func upsertProvenTxReq(tx *gorm.DB, req *entity.UpsertProvenTxReq, historyNote string, historyAttrs map[string]any) error {
+func upsertProvenTxReq(db *gorm.DB, req *entity.UpsertProvenTxReq, historyNote string, historyAttrs map[string]any) error {
 	var model models.ProvenTxReq
-	err := tx.First(&model, "tx_id = ? ", req.TxID).Error
+	err := db.First(&model, "tx_id = ? ", req.TxID).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return fmt.Errorf("cannot upsert proven tx req: %w", err)
 	}
@@ -44,7 +44,7 @@ func upsertProvenTxReq(tx *gorm.DB, req *entity.UpsertProvenTxReq, historyNote s
 
 	model.AddNote(time.Now(), historyNote, historyAttrs)
 
-	return tx.Save(&model).Error
+	return db.Save(&model).Error
 }
 
 func (p *ProvenTxReq) FindProvenTxRawTX(ctx context.Context, txID string) ([]byte, error) {

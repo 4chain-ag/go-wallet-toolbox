@@ -62,7 +62,7 @@ func (p *process) processNewTx(ctx context.Context, userID int, args *wdk.Proces
 		return err
 	}
 
-	_, outputs, err := p.outputRepo.FindInputsAndOutputsOfTransaction(ctx, userID, tableTx.TransactionID)
+	_, outputs, err := p.outputRepo.FindInputsAndOutputsOfTransaction(ctx, tableTx.TransactionID)
 	if err != nil {
 		return fmt.Errorf("failed to find inputs and outputs of transaction: %w", err)
 	}
@@ -140,18 +140,17 @@ func (p *process) validateNewTxOutputs(tx *transaction.Transaction, outputs []*w
 }
 
 func (p *process) newStatuses(args *wdk.ProcessActionArgs) (txStatus wdk.TxStatus, reqStatus wdk.ProvenTxReqStatus) {
-	if args.IsNoSend {
+	switch {
+	case args.IsNoSend:
 		reqStatus = wdk.ProvenTxStatusNoSend
 		txStatus = wdk.TxStatusNoSend
-		return
-	}
-
-	if args.IsDelayed {
+	case args.IsDelayed:
 		reqStatus = wdk.ProvenTxStatusUnsent
-	} else {
+		txStatus = wdk.TxStatusUnprocessed
+	default:
 		reqStatus = wdk.ProvenTxStatusUnprocessed
+		txStatus = wdk.TxStatusUnprocessed
 	}
 
-	txStatus = wdk.TxStatusUnprocessed
 	return
 }

@@ -18,7 +18,7 @@ type TableOutput struct {
 	ProvidedBy         string    `json:"providedBy"`
 	Purpose            string    `json:"purpose"`
 	Type               string    `json:"type"`
-	Txid               *string   `json:"txid,omitempty"`
+	TxID               *string   `json:"txid,omitempty"`
 	DerivationPrefix   *string   `json:"derivationPrefix,omitempty"`
 	DerivationSuffix   *string   `json:"derivationSuffix,omitempty"`
 	CustomInstructions *string   `json:"customInstructions,omitempty"`

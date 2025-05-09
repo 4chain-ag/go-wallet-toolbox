@@ -218,7 +218,8 @@ func (txs *Transactions) UpdateTransaction(
 		}
 
 		err = tx.Model(models.Output{}).
-			Where("user_id = ? and transaction_id = ?", userID, transactionID).
+			Scopes(scopes.UserID(userID)).
+			Where("transaction_id = ?", transactionID).
 			Update("spendable", updatedTx.Spendable).Error
 		if err != nil {
 			return err

@@ -6,7 +6,6 @@ import (
 	"iter"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/scopes"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/go-softwarelab/common/pkg/slices"
@@ -44,19 +43,8 @@ func (o *Outputs) FindOutputs(ctx context.Context, outputIDs iter.Seq[uint]) ([]
 	return slices.Map(outputs, o.mapModelToTableOutput), nil
 }
 
-func (o *Outputs) FindInputsAndOutputsOfTransaction(ctx context.Context, userID int, transactionID uint) (inputs []*wdk.TableOutput, outputs []*wdk.TableOutput, err error) {
+func (o *Outputs) FindInputsAndOutputsOfTransaction(ctx context.Context, transactionID uint) (inputs []*wdk.TableOutput, outputs []*wdk.TableOutput, err error) {
 	session := o.db.WithContext(ctx)
-
-	var transaction models.Transaction
-	err = session.
-		Model(models.Transaction{}).
-		Select("id, tx_id").
-		Scopes(scopes.UserID(userID)).
-		Where("id = ?", transactionID).
-		First(&transaction).Error
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to find transaction by userID: %d and transactionID: %d: %w", userID, transactionID, err)
-	}
 
 	var outputRows []*models.Output
 	err = session.
@@ -65,10 +53,6 @@ func (o *Outputs) FindInputsAndOutputsOfTransaction(ctx context.Context, userID 
 		Find(&outputRows).Error
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to find outputs for transactionID: %d: %w", transactionID, err)
-	}
-
-	for i := range outputRows {
-		outputRows[i].Transaction = &transaction
 	}
 
 	var inputRows []*models.Output
@@ -80,17 +64,13 @@ func (o *Outputs) FindInputsAndOutputsOfTransaction(ctx context.Context, userID 
 		return nil, nil, fmt.Errorf("failed to find inputs for transactionID: %d: %w", transactionID, err)
 	}
 
-	for i := range inputRows {
-		inputRows[i].Transaction = &transaction
-	}
-
 	inputs = slices.Map(inputRows, o.mapModelToTableOutput)
 	outputs = slices.Map(outputRows, o.mapModelToTableOutput)
 	return
 }
 
 func (o *Outputs) mapModelToTableOutput(model *models.Output) *wdk.TableOutput {
-	return &wdk.TableOutput{
+	output := &wdk.TableOutput{
 		CreatedAt:          model.CreatedAt,
 		UpdatedAt:          model.UpdatedAt,
 		OutputID:           model.ID,
@@ -105,10 +85,13 @@ func (o *Outputs) mapModelToTableOutput(model *models.Output) *wdk.TableOutput {
 		ProvidedBy:         model.ProvidedBy,
 		Purpose:            model.Purpose,
 		Type:               model.Type,
-		Txid:               model.Transaction.TxID,
 		DerivationPrefix:   model.DerivationPrefix,
 		DerivationSuffix:   model.DerivationSuffix,
 		CustomInstructions: model.CustomInstructions,
 		LockingScript:      model.LockingScript,
 	}
+	if model.Transaction != nil {
+		output.TxID = model.Transaction.TxID
+	}
+	return output
 }
