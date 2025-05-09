@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
 	"time"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
@@ -49,7 +50,10 @@ func upsertProvenTxReq(db *gorm.DB, req *entity.UpsertProvenTxReq, historyNote s
 
 func (p *ProvenTxReq) FindProvenTxRawTX(ctx context.Context, txID string) ([]byte, error) {
 	var model models.ProvenTxReq
-	err := p.db.WithContext(ctx).First(&model, "tx_id = ? ", txID).Error
+	err := p.db.WithContext(ctx).
+		Model(&model).
+		Select("raw_tx").
+		First(&model, "tx_id = ? ", txID).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -57,4 +61,19 @@ func (p *ProvenTxReq) FindProvenTxRawTX(ctx context.Context, txID string) ([]byt
 		return nil, fmt.Errorf("failed to find proven tx raw tx: %w", err)
 	}
 	return model.RawTx, nil
+}
+
+func (p *ProvenTxReq) FindProvenTxStatus(ctx context.Context, txID string) (wdk.ProvenTxReqStatus, error) {
+	var model models.ProvenTxReq
+	err := p.db.WithContext(ctx).
+		Model(&model).
+		Select("status").
+		First(&model, "tx_id = ? ", txID).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", nil
+		}
+		return "", fmt.Errorf("failed to find proven tx status: %w", err)
+	}
+	return model.Status, nil
 }

@@ -35,3 +35,39 @@ const (
 	ProvenTxStatusDoubleSpend ProvenTxReqStatus = "doubleSpend"
 	ProvenTxStatusUnfail      ProvenTxReqStatus = "unfail"
 )
+
+// TxReqBroadcastStatus is a reduced ProvenTxReqStatus, used to decide whether to broadcast a transaction or not.
+type TxReqBroadcastStatus string
+
+// Possible transaction request broadcast statuses
+const (
+	TxReqSimplifiedReadyToSend TxReqBroadcastStatus = "readyToSend"
+	TxReqSimplifiedAlreadySent TxReqBroadcastStatus = "alreadySent"
+	TxReqSimplifiedError       TxReqBroadcastStatus = "error"
+	TxReqSimplifiedUnknown     TxReqBroadcastStatus = "unknown"
+)
+
+// BroadcastStatus returns the simplified broadcast status of a transaction request based on its current status.
+func (s ProvenTxReqStatus) BroadcastStatus() TxReqBroadcastStatus {
+	switch s {
+	case ProvenTxStatusUnknown,
+		ProvenTxStatusNonFinal,
+		ProvenTxStatusInvalid,
+		ProvenTxStatusDoubleSpend:
+		return TxReqSimplifiedError
+	case ProvenTxStatusSending,
+		ProvenTxStatusUnsent,
+		ProvenTxStatusNoSend,
+		ProvenTxStatusUnprocessed:
+		return TxReqSimplifiedReadyToSend
+	case ProvenTxStatusUnmined,
+		ProvenTxStatusCallback,
+		ProvenTxStatusUnconfirmed,
+		ProvenTxStatusCompleted:
+		return TxReqSimplifiedAlreadySent
+	case ProvenTxStatusUnfail:
+		fallthrough
+	default:
+		return TxReqSimplifiedUnknown
+	}
+}
