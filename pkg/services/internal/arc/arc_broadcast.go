@@ -22,15 +22,13 @@ func (s *Service) broadcast(ctx context.Context, txHex string) (*TXInfo, error) 
 	req := s.httpClient.R().
 		SetContext(ctx).
 		SetHeaders(s.broadcastHeaders).
+		SetBody(broadcastRequestBody{
+			RawTx: txHex,
+		}).
 		SetResult(result).
 		SetError(arcErr)
 
-	req.SetBody(broadcastRequestBody{
-		RawTx: txHex,
-	})
-
 	response, err := req.Post(s.broadcastURL)
-
 	if err != nil {
 		var netError net.Error
 		if errors.As(err, &netError) {
