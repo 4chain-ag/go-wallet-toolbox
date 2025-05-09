@@ -136,7 +136,11 @@ func (p *ProvenTxReq) recursiveBuildValidBEEF(ctx context.Context, depth int, me
 		return fmt.Errorf("failed to merge raw tx into BEEF object: %w", err)
 	}
 
-	err = mergeToBeef.MergeBeefBytes(model.InputBeef)
+	// MergeBeefBytes doesn't work for AtomicBeef
+	// double-checked with the TS version: model.InputBeef can be either AtomicBeef or Beef
+	// TODO: Raise an issue (or PR with solution) in go-sdk
+	// for now a temporary solution
+	err = mergeBEEF(mergeToBeef, model.InputBeef)
 	if err != nil {
 		return fmt.Errorf("failed to merge input beef into BEEF object: %w", err)
 	}
@@ -154,5 +158,26 @@ func (p *ProvenTxReq) recursiveBuildValidBEEF(ctx context.Context, depth int, me
 	}
 
 	// Result is in mergeToBeef
+	return nil
+}
+
+// mergeBEEF merges the BEEF object with another BEEF encoded in bytes.
+// temporary solution for the issue with AtomicBeef
+func mergeBEEF(mergeToBeef *transaction.Beef, otherBeefBytes []byte) error {
+	otherBeef, _, _, err := transaction.ParseBeef(otherBeefBytes)
+	if err != nil {
+		return fmt.Errorf("failed to parse input beef: %w", err)
+	}
+
+	for _, bump := range otherBeef.BUMPs {
+		mergeToBeef.MergeBump(bump)
+	}
+
+	for _, tx := range otherBeef.Transactions {
+		if _, err = mergeToBeef.MergeBeefTx(tx); err != nil {
+			return fmt.Errorf("failed to merge beef tx: %w", err)
+		}
+	}
+
 	return nil
 }
