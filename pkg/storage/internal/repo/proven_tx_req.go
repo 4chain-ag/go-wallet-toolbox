@@ -136,10 +136,14 @@ func (p *ProvenTxReq) recursiveBuildValidBEEF(ctx context.Context, depth int, me
 		return fmt.Errorf("failed to merge raw tx into BEEF object: %w", err)
 	}
 
-	// MergeBeefBytes doesn't work for AtomicBeef
-	// double-checked with the TS version: model.InputBeef can be either AtomicBeef or Beef
-	// TODO: Raise an issue (or PR with solution) in go-sdk
-	// for now a temporary solution
+	/*
+		MergeBeefBytes doesn't work for AtomicBeef
+		double-checked with the TS version: model.InputBeef can be either AtomicBeef or Beef
+		TODO: Raise an issue (or PR with solution) in go-sdk
+		should be:
+		err = mergeToBeef.MergeBeefBytes(model.InputBeef)
+		for now a temporary solution:
+	*/
 	err = mergeBEEF(mergeToBeef, model.InputBeef)
 	if err != nil {
 		return fmt.Errorf("failed to merge input beef into BEEF object: %w", err)
