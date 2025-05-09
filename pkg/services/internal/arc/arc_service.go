@@ -2,14 +2,14 @@ package arc
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
 	"fmt"
+	"iter"
 	"log/slog"
-	"net"
-	"net/http"
 	"time"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/internal/logging"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/internal/httpx"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/services/results"
 	"github.com/bsv-blockchain/go-sdk/transaction"
@@ -17,6 +17,7 @@ import (
 	"github.com/go-softwarelab/common/pkg/is"
 	"github.com/go-softwarelab/common/pkg/seq"
 	"github.com/go-softwarelab/common/pkg/seq2"
+	"github.com/go-softwarelab/common/pkg/types"
 )
 
 // Custom ARC defined http status codes
@@ -26,13 +27,13 @@ const (
 	StatusCumulativeFeeValidationFailed = 473
 )
 
-var ErrProblematicStatus = errors.New("arc returned problematic status")
-
 type Service struct {
-	logger       *slog.Logger
-	httpClient   *resty.Client
-	config       Config
-	broadcastURL string
+	logger           *slog.Logger
+	httpClient       *resty.Client
+	config           Config
+	broadcastURL     string
+	queryTxURL       string
+	broadcastHeaders httpx.Headers
 }
 
 // NewARCService creates a new arc service.
@@ -52,24 +53,27 @@ func NewARCService(logger *slog.Logger, httpClient *resty.Client, config Config)
 		SetHeaders(headers)
 
 	service := &Service{
-		logger:       logging.Child(logger, "arc"),
-		httpClient:   httpClient,
-		config:       config,
+		logger:     logging.Child(logger, "arc"),
+		httpClient: httpClient,
+		config:     config,
+
 		broadcastURL: config.URL + "/v1/tx",
+		broadcastHeaders: httpx.NewHeaders().
+			Set("X-CallbackUrl").IfNotEmpty(config.CallbackURL).
+			Set("X-CallbackToken").IfNotEmpty(config.CallbackToken).
+			Set("X-WaitFor").IfNotEmpty(config.WaitFor),
+
+		queryTxURL: config.URL + "/v1/tx/{txID}",
 	}
 
 	return service
 }
 
 // PostBeef attempts to post beef with given txIDs
-func (s *Service) PostBeef(ctx context.Context, beef *transaction.Beef, txids []string) (*results.PostBEEF, error) {
-	beefTxs := seq2.Values(seq2.FromMap(beef.Transactions))
-	canBeSerializedToBEEFV1 := seq.Every(beefTxs, func(tx *transaction.BeefTx) bool {
-		return tx.DataFormat != transaction.TxIDOnly && tx.Transaction != nil
-	})
-
-	if !canBeSerializedToBEEFV1 {
-		return nil, fmt.Errorf("arc is not supporting beef v2 and provided beef cannot be converted to v1")
+func (s *Service) PostBeef(ctx context.Context, beef *transaction.Beef, txIDs []string) (*results.PostBEEF, error) {
+	err := s.validateBEEF(beef)
+	if err != nil {
+		return nil, err
 	}
 
 	beefHex, err := toHex(beef)
@@ -77,24 +81,108 @@ func (s *Service) PostBeef(ctx context.Context, beef *transaction.Beef, txids []
 		return nil, err
 	}
 
-	res, err := s.broadcast(ctx, beefHex)
+	response, err := s.broadcast(ctx, beefHex)
 	if err != nil {
 		return nil, fmt.Errorf("failed to broadcast beef: %w", err)
 	}
 
+	resultsForTxID := s.getTxIDResults(ctx, response, txIDs)
+
 	return &results.PostBEEF{
-		TxIDResults: []results.PostTxID{
-			{
-				TxID: res.TxID,
-			},
-		},
+		TxIDResults: seq.Collect(resultsForTxID),
 	}, nil
 
-	// TODO:
-	// for each txids
-	// 	if txid == broadcasted tx.ID
-	// 		get tx
+}
 
+func (s *Service) getTxIDResults(ctx context.Context, txInfo *TXInfo, txIDs []string) iter.Seq[results.PostTxID] {
+	txIDsWithMissingTxInfo := seq.Filter(seq.FromSlice(txIDs), func(txID string) bool {
+		return txInfo.TxID != txID
+	})
+
+	txsData := internal.MapParallel(ctx, txIDsWithMissingTxInfo, s.getTransactionData)
+
+	subjectTxResult := internal.NewNamedResult(txInfo.TxID, types.SuccessResult(txInfo))
+	txsData = seq.Prepend(txsData, subjectTxResult)
+
+	return seq.Map(txsData, toResultForPostTxID)
+}
+
+func toResultForPostTxID(it *internal.NamedResult[*TXInfo]) results.PostTxID {
+	if it.IsError() {
+		return results.PostTxID{
+			TxID:   it.Name(),
+			Result: results.ResultStatusError,
+			Error:  it.MustGetError(),
+		}
+	}
+	info := it.MustGetValue()
+
+	result := results.PostTxID{
+		Result:       results.ResultStatusSuccess,
+		TxID:         it.Name(),
+		DoubleSpend:  info.TXStatus == DoubleSpendAttempted,
+		BlockHash:    info.BlockHash,
+		BlockHeight:  info.BlockHeight,
+		CompetingTxs: info.CompetingTxs,
+		Data:         info,
+	}
+
+	if is.NotBlankString(info.MerklePath) {
+		merklePath, err := transaction.NewMerklePathFromHex(info.MerklePath)
+		if err != nil {
+			result.Error = err
+			result.Result = results.ResultStatusError
+		} else {
+			result.MerklePath = merklePath
+		}
+	}
+
+	dataBytes, err := json.Marshal(info)
+	if err != nil {
+		// fallback to string representation in very unlikely case of json marshal error.
+		result.Data = fmt.Sprintf("%+v", info)
+	} else {
+		result.Data = string(dataBytes)
+	}
+
+	return result
+}
+
+func (s *Service) validateBEEF(beef *transaction.Beef) error {
+	if beef == nil {
+		return fmt.Errorf("cannot broadcast nil beef")
+	}
+
+	if len(beef.Transactions) == 0 {
+		return fmt.Errorf("cannot broadcast empty beef")
+	}
+
+	beefTxs := seq2.Values(seq2.FromMap(beef.Transactions))
+	canBeSerializedToBEEFV1 := seq.Every(beefTxs, func(tx *transaction.BeefTx) bool {
+		return tx.DataFormat != transaction.TxIDOnly && tx.Transaction != nil
+	})
+
+	if !canBeSerializedToBEEFV1 {
+		return fmt.Errorf("arc is not supporting beef v2 and provided beef cannot be converted to v1")
+	}
+	return nil
+}
+
+func (s *Service) getTransactionData(ctx context.Context, txID string) *internal.NamedResult[*TXInfo] {
+	txInfo, err := s.queryTransaction(ctx, txID)
+	if err != nil {
+		return internal.NewNamedResult(txID, types.FailureResult[*TXInfo](fmt.Errorf("arc query tx %s failed: %w", txID, err)))
+	}
+
+	if txInfo == nil {
+		return internal.NewNamedResult(txID, types.FailureResult[*TXInfo](fmt.Errorf("not found tx %s in arc", txID)))
+	}
+
+	if txInfo.TxID != txID {
+		return internal.NewNamedResult(txID, types.FailureResult[*TXInfo](fmt.Errorf("got response for tx %s while querying for %s", txInfo.TxID, txID)))
+	}
+
+	return internal.NewNamedResult(txID, types.SuccessResult(txInfo))
 }
 
 func toHex(beef *transaction.Beef) (string, error) {
@@ -143,57 +231,4 @@ func toHex(beef *transaction.Beef) (string, error) {
 		return "", fmt.Errorf("failed to convert subject tx into BEEF hex: %w", err)
 	}
 	return beefHex, nil
-}
-
-func (s *Service) broadcast(ctx context.Context, txHex string) (*TXInfo, error) {
-	result := &TXInfo{}
-	arcErr := &APIError{}
-
-	headers := httpx.NewHeaders().
-		Set("X-CallbackUrl").IfNotEmpty(s.config.CallbackURL).
-		Set("X-CallbackToken").IfNotEmpty(s.config.CallbackToken).
-		Set("X-WaitFor").IfNotEmpty(s.config.WaitFor)
-
-	req := s.httpClient.R().
-		SetContext(ctx).
-		SetHeaders(headers).
-		SetResult(result).
-		SetError(arcErr)
-
-	req.SetBody(requestBody{
-		RawTx: txHex,
-	})
-
-	response, err := req.Post(s.broadcastURL)
-
-	if err != nil {
-		var netError net.Error
-		if errors.As(err, &netError) {
-			return nil, fmt.Errorf("arc is unreachable: %w", netError)
-		}
-		return nil, fmt.Errorf("failed to send request to arc: %w", err)
-	}
-
-	switch response.StatusCode() {
-	case http.StatusOK:
-		if result.TXStatus.IsProblematic() {
-			return nil, fmt.Errorf("%w: tx status: %s", ErrProblematicStatus, result.TXStatus)
-		}
-		return result, nil
-	case http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound:
-		return nil, fmt.Errorf("arc returned unauthorized: %w", arcErr)
-	case StatusNotExtendedFormat:
-		return nil, fmt.Errorf("arc expects transaction in extended format: %w", arcErr)
-	case StatusFeeTooLow, StatusCumulativeFeeValidationFailed:
-		return nil, fmt.Errorf("arc rejected transaction because of wrong fee: %w", arcErr)
-	default:
-		return nil, fmt.Errorf("arc cannot process provided transaction: %w", arcErr)
-	}
-}
-
-type requestBody struct {
-	// Even though the name suggests that it is a raw transaction,
-	// it is actually a hex encoded transaction
-	// and can be in Raw, Extended Format or BEEF format.
-	RawTx string `json:"rawTx"`
 }
