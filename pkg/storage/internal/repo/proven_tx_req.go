@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
-	"github.com/bsv-blockchain/go-sdk/transaction"
 	"time"
 
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/database/models"
 	"github.com/4chain-ag/go-wallet-toolbox/pkg/storage/internal/entity"
+	"github.com/4chain-ag/go-wallet-toolbox/pkg/wdk"
+	"github.com/bsv-blockchain/go-sdk/transaction"
 	"gorm.io/gorm"
 )
 
@@ -99,7 +99,7 @@ func (p *ProvenTxReq) recursiveBuildValidBEEF(ctx context.Context, depth int, me
 	}
 
 	var model models.ProvenTxReq
-	query :=	p.db.WithContext(ctx).
+	query := p.db.WithContext(ctx).
 		Model(&model).
 		Select("raw_tx, input_beef")
 
@@ -146,7 +146,7 @@ func (p *ProvenTxReq) recursiveBuildValidBEEF(ctx context.Context, depth int, me
 		sourceTXID = input.SourceTXID.String()
 		beefTx := mergeToBeef.FindTransaction(sourceTXID)
 		if beefTx == nil {
-			err = p.recursiveBuildValidBEEF(ctx, depth + 1, mergeToBeef, sourceTXID, statusFilter)
+			err = p.recursiveBuildValidBEEF(ctx, depth+1, mergeToBeef, sourceTXID, statusFilter)
 			if err != nil {
 				return fmt.Errorf("failed to recursively find proven tx and merge into BEEF: %w", err)
 			}
